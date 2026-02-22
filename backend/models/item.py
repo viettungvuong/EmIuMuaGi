@@ -3,10 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import DateTime, String, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.database import Base
+from database import Base
 
 
 class Item(Base):
@@ -22,7 +23,6 @@ class Item(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
-    # Discriminator column — tells SQLAlchemy which subclass to instantiate
     item_type: Mapped[str] = mapped_column(String(50), nullable=False)
 
     __mapper_args__ = {
@@ -32,3 +32,22 @@ class Item(Base):
 
     def __repr__(self) -> str:
         return f"<Item id={self.id} name={self.item_name!r} qty={self.quantity}>"
+
+
+# ---------------------------------------------------------------------------
+# Pydantic schemas
+# ---------------------------------------------------------------------------
+
+class ItemBase(BaseModel):
+    item_name: str
+    quantity: int = 1
+    buy_url: Optional[str] = None
+    shop_name: Optional[str] = None
+
+
+class ItemResponse(ItemBase):
+    id: int
+    item_type: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

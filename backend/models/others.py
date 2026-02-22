@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
+from pydantic import ConfigDict
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models.item import Item
+from models.item import Item, ItemBase, ItemResponse
 
 
 class Others(Item):
@@ -25,3 +26,21 @@ class Others(Item):
             f"<Others id={self.id} name={self.item_name!r} "
             f"category={self.category!r}>"
         )
+
+
+# ---------------------------------------------------------------------------
+# Pydantic schemas
+# ---------------------------------------------------------------------------
+
+class OthersCreate(ItemBase):
+    item_type: Literal["others"] = "others"
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class OthersResponse(ItemResponse):
+    item_type: Literal["others"]
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

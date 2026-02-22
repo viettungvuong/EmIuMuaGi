@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv
-from models import AuthRequest, AuthResponse
+from schemas import AuthRequest, AuthResponse
 
 load_dotenv()
 

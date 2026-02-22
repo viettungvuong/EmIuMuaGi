@@ -1,22 +1,22 @@
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
-from models import Item, ItemCreate
+from schemas import ItemResponse, ItemCreate
 
 router = APIRouter(prefix="/api/items", tags=["items"])
 
 # In-memory store
-items_db: list[Item] = []
+items_db: list[ItemResponse] = []
 
 
-@router.get("", response_model=list[Item])
+@router.get("", response_model=list[ItemResponse])
 async def get_items():
     return items_db
 
 
-@router.post("", response_model=Item, status_code=201)
+@router.post("", response_model=ItemResponse, status_code=201)
 async def create_item(item: ItemCreate):
-    new_item = Item(
+    new_item = ItemResponse(
         id=str(uuid.uuid4()),
         name=item.name,
         description=item.description,

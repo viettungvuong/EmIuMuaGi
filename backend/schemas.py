@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 
-class Item(BaseModel):
+class ItemResponse(BaseModel):
     id: str
     name: str
     description: Optional[str] = ""

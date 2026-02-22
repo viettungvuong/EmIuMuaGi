@@ -12,14 +12,14 @@ export default function AddPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { setError('Name is required.'); return; }
+    if (!name.trim()) { setError('Vui lòng nhập tên.'); return; }
     setLoading(true);
     setError('');
     try {
       await client.post('/api/items', { name: name.trim(), description: description.trim() });
       navigate('/');
     } catch {
-      setError('Failed to add item. Please try again.');
+      setError('Thêm mục thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -29,28 +29,28 @@ export default function AddPage() {
     <div className="add-page">
       <div className="add-card">
         <button className="back-btn" onClick={() => navigate('/')}>
-          ← Back
+          ← Quay Lại
         </button>
-        <h1 className="add-title">Add New Item</h1>
+        <h1 className="add-title">Thêm Mục Mới</h1>
         <form onSubmit={handleSubmit} className="add-form">
           <div className="field-group">
-            <label className="field-label" htmlFor="item-name">Name *</label>
+            <label className="field-label" htmlFor="item-name">Tên *</label>
             <input
               id="item-name"
               type="text"
               className={`field-input ${error && !name.trim() ? 'input-error' : ''}`}
-              placeholder="Item name…"
+              placeholder="Tên mục…"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
             />
           </div>
           <div className="field-group">
-            <label className="field-label" htmlFor="item-desc">Description</label>
+            <label className="field-label" htmlFor="item-desc">Mô Tả</label>
             <textarea
               id="item-desc"
               className="field-input field-textarea"
-              placeholder="Optional description…"
+              placeholder="Mô tả (không bắt buộc)…"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
@@ -58,7 +58,7 @@ export default function AddPage() {
           </div>
           {error && <p className="error-msg">{error}</p>}
           <button type="submit" className="add-submit-btn" disabled={loading}>
-            {loading ? <span className="spinner" /> : '✓ Add Item'}
+            {loading ? <span className="spinner" /> : '✓ Thêm Mục'}
           </button>
         </form>
       </div>

@@ -18,7 +18,7 @@ export default function PasswordPage() {
       localStorage.setItem('authenticated', 'true');
       navigate('/');
     } catch {
-      setError('Incorrect password. Please try again.');
+      setError('Mật khẩu không đúng. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -28,14 +28,14 @@ export default function PasswordPage() {
     <div className="password-page">
       <div className="password-card">
         <div className="lock-icon">🔒</div>
-        <h1 className="password-title">Secure Access</h1>
-        <p className="password-subtitle">Enter your password to continue</p>
+        <h1 className="password-title">Truy Cập Bảo Mật</h1>
+        <p className="password-subtitle">Nhập mật khẩu để tiếp tục</p>
         <form onSubmit={handleSubmit} className="password-form">
           <div className="input-wrapper">
             <input
               type="password"
               className={`password-input ${error ? 'input-error' : ''}`}
-              placeholder="Enter password…"
+              placeholder="Nhập mật khẩu…"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
@@ -43,7 +43,7 @@ export default function PasswordPage() {
           </div>
           {error && <p className="error-msg">{error}</p>}
           <button type="submit" className="submit-btn" disabled={loading || !password}>
-            {loading ? <span className="spinner" /> : 'Unlock'}
+            {loading ? <span className="spinner" /> : 'Mở Khóa'}
           </button>
         </form>
       </div>

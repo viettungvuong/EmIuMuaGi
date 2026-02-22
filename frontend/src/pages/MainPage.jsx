@@ -39,22 +39,22 @@ export default function MainPage() {
     <div className="main-page">
       <header className="main-header">
         <div className="header-left">
-          <h1 className="main-title">My<span className="accent"> Items</span></h1>
-          <span className="item-count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+          <h1 className="main-title">Danh Sách<span className="accent"> Của Tôi</span></h1>
+          <span className="item-count">{items.length} mục</span>
         </div>
-        <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        <button className="logout-btn" onClick={handleLogout}>Đăng Xuất</button>
       </header>
 
       <div className="items-container">
         {loading ? (
           <div className="loading-state">
             <div className="loading-spinner" />
-            <p>Loading items…</p>
+            <p>Đang tải…</p>
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">📭</span>
-            <p className="empty-text">No items yet. Add your first one!</p>
+            <p className="empty-text">Chưa có mục nào. Hãy thêm mục đầu tiên!</p>
           </div>
         ) : (
           <ul className="items-list">
@@ -66,7 +66,7 @@ export default function MainPage() {
                     <p className="item-description">{item.description}</p>
                   )}
                   <span className="item-date">
-                    {new Date(item.created_at).toLocaleDateString('en-US', {
+                    {new Date(item.created_at).toLocaleDateString('vi-VN', {
                       month: 'short', day: 'numeric', year: 'numeric',
                     })}
                   </span>
@@ -74,7 +74,7 @@ export default function MainPage() {
                 <button
                   className="delete-btn"
                   onClick={() => handleDelete(item.id)}
-                  aria-label="Delete item"
+                  aria-label="Xóa mục"
                 >
                   🗑
                 </button>
@@ -84,7 +84,7 @@ export default function MainPage() {
         )}
       </div>
 
-      <button className="fab" onClick={() => navigate('/add')} aria-label="Add new item">
+      <button className="fab" onClick={() => navigate('/add')} aria-label="Thêm mục mới">
         +
       </button>
     </div>

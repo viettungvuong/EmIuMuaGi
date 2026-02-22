@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.orm import with_polymorphic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -18,10 +19,13 @@ _MODEL_MAP = {
     "others": Others,
 }
 
+# Eager-load all subtype tables in one LEFT OUTER JOIN
+_ALL_TYPES = with_polymorphic(Item, [Clothes, FoodAndDrink, Others])
+
 
 @router.get("", response_model=list[AnyItemResponse])
 async def get_items(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Item))
+    result = await db.execute(select(_ALL_TYPES))
     return result.scalars().all()
 
 

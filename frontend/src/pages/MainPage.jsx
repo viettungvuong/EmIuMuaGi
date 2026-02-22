@@ -3,6 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/MainPage.css';
 
+const TYPE_LABELS = {
+  clothes: 'Quần Áo',
+  food_and_drink: 'Đồ Ăn & Uống',
+  others: 'Khác',
+};
+
+const TYPE_COLORS = {
+  clothes: '#7c3aed',
+  food_and_drink: '#0891b2',
+  others: '#6b7280',
+};
+
+function ItemSubInfo({ item }) {
+  if (item.item_type === 'clothes') {
+    const parts = [item.size, item.color, item.brand].filter(Boolean);
+    return parts.length ? <p className="item-subinfo">{parts.join(' · ')}</p> : null;
+  }
+  if (item.item_type === 'food_and_drink') {
+    const parts = [item.size, item.sugar && `Đường: ${item.sugar}`].filter(Boolean);
+    const toppingStr = item.toppings?.length ? `Topping: ${item.toppings.join(', ')}` : null;
+    return (parts.length || toppingStr) ? (
+      <p className="item-subinfo">{[...parts, toppingStr].filter(Boolean).join(' · ')}</p>
+    ) : null;
+  }
+  if (item.item_type === 'others' && item.category) {
+    return <p className="item-subinfo">{item.category}</p>;
+  }
+  return null;
+}
+
 export default function MainPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,15 +91,30 @@ export default function MainPage() {
             {items.map((item) => (
               <li key={item.id} className="item-card">
                 <div className="item-info">
-                  <h3 className="item-name">{item.name}</h3>
-                  {item.description && (
-                    <p className="item-description">{item.description}</p>
+                  <div className="item-header-row">
+                    <h3 className="item-name">{item.item_name}</h3>
+                    <span
+                      className="item-type-badge"
+                      style={{ background: TYPE_COLORS[item.item_type] + '22', color: TYPE_COLORS[item.item_type], borderColor: TYPE_COLORS[item.item_type] + '55' }}
+                    >
+                      {TYPE_LABELS[item.item_type] ?? item.item_type}
+                    </span>
+                  </div>
+                  <ItemSubInfo item={item} />
+                  <div className="item-meta">
+                    {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
+                    {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
+                    <span className="item-date">
+                      {new Date(item.created_at).toLocaleDateString('vi-VN', {
+                        month: 'short', day: 'numeric', year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  {item.buy_url && (
+                    <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
+                      🔗 Xem sản phẩm
+                    </a>
                   )}
-                  <span className="item-date">
-                    {new Date(item.created_at).toLocaleDateString('vi-VN', {
-                      month: 'short', day: 'numeric', year: 'numeric',
-                    })}
-                  </span>
                 </div>
                 <button
                   className="delete-btn"

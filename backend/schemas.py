@@ -22,6 +22,7 @@ class AuthResponse(BaseModel):
 
 # ---------------------------------------------------------------------------
 # Discriminated unions — FastAPI uses item_type to pick the right schema
+# This could be any one of three types, based on item_type
 # ---------------------------------------------------------------------------
 
 AnyItemCreate = Annotated[

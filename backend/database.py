@@ -1,34 +1,30 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 
-DATABASE_URL = "sqlite+aiosqlite:///./app.db"
+DATABASE_URL = "sqlite:///./app.db"
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
-AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
 class Base(DeclarativeBase):
     pass
 
 
-async def init_db():
+def init_db():
     """Create all tables on startup."""
-    async with engine.begin() as conn:
-        # Import every model module so SQLAlchemy registers their tables
-        import models.item          # noqa: F401
-        import models.clothes       # noqa: F401
-        import models.food_and_drink  # noqa: F401
-        import models.others        # noqa: F401
-        await conn.run_sync(Base.metadata.create_all)
+    import models.item          # noqa: F401
+    import models.clothes       # noqa: F401
+    import models.food_and_drink  # noqa: F401
+    import models.others        # noqa: F401
+    Base.metadata.create_all(bind=engine)
 
 
-
-async def get_db():
+def get_db():
     """FastAPI dependency that yields a DB session."""
-    async with AsyncSessionLocal() as session:
-        yield session
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

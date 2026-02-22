@@ -1,19 +1,12 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db
 from routers import auth, items
 
+init_db()  # create all tables on startup
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()   # create all tables on startup
-    yield
-
-
-app = FastAPI(title="EmIuMuaGi API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="EmIuMuaGi API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +21,7 @@ app.include_router(items.router)
 
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "EmIuMuaGi API is running"}
 
 

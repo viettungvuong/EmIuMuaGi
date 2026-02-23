@@ -9,11 +9,7 @@ const TYPE_LABELS = {
   others: 'Khác',
 };
 
-const TYPE_COLORS = {
-  clothes: '#7c3aed',
-  food_and_drink: '#0891b2',
-  others: '#6b7280',
-};
+const TYPE_COLOR = '#cb1d7aff';
 
 function ItemSubInfo({ item }) {
   if (item.item_type === 'clothes') {
@@ -95,7 +91,7 @@ export default function MainPage() {
                     <h3 className="item-name">{item.item_name}</h3>
                     <span
                       className="item-type-badge"
-                      style={{ background: TYPE_COLORS[item.item_type] + '22', color: TYPE_COLORS[item.item_type], borderColor: TYPE_COLORS[item.item_type] + '55' }}
+                      style={{ background: TYPE_COLOR + '22', color: TYPE_COLOR, borderColor: TYPE_COLOR + '55' }}
                     >
                       {TYPE_LABELS[item.item_type] ?? item.item_type}
                     </span>

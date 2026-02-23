@@ -42,3 +42,14 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     db.delete(item)
     db.commit()
+
+
+@router.patch("/{item_id}/buy", response_model=AnyItemResponse)
+def buy_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    item.bought = True
+    db.commit()
+    db.refresh(item)
+    return item

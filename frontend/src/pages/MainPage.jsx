@@ -56,6 +56,15 @@ export default function MainPage() {
     }
   };
 
+  const handleBuy = async (id) => {
+    try {
+      const { data } = await client.patch(`/api/items/${id}/buy`);
+      setItems((prev) => prev.map((i) => i.id === id ? data : i));
+    } catch (err) {
+      console.error('Failed to mark item as bought:', err);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('authenticated');
     navigate('/login');
@@ -85,43 +94,55 @@ export default function MainPage() {
         ) : (
           <ul className="items-list">
             {items.map((item) => (
-              <li key={item.id} className="item-card">
-                <div className="item-info">
-                  <div className="item-header-row">
-                    <h3 className="item-name">{item.item_name}</h3>
-                    <span
-                      className="item-type-badge"
-                      style={{ background: TYPE_COLOR + '22', color: TYPE_COLOR, borderColor: TYPE_COLOR + '55' }}
-                    >
-                      {TYPE_LABELS[item.item_type] ?? item.item_type}
-                    </span>
-                  </div>
-                  <ItemSubInfo item={item} />
-                  <div className="item-meta">
-                    {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
-                    {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
-                    <span className="item-date">
-                      {new Date(item.created_at).toLocaleDateString('vi-VN', {
-                        month: 'short', day: 'numeric', year: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                  {item.buy_url && (
-                    <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
-                      🔗 Xem sản phẩm
-                    </a>
-                  )}
-                </div>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(item.id)}
-                  aria-label="Xóa mục"
-                >
-                  🗑
-                </button>
-              </li>
-            ))}
-          </ul>
+              <li key={item.id} className={`item-card ${item.bought ? 'bought' : ''}`}>
+                    <div className="item-info">
+                      <div className="item-header-row">
+                        <h3 className="item-name">{item.item_name}</h3>
+                        <span
+                          className="item-type-badge"
+                          style={{ background: TYPE_COLOR + '22', color: TYPE_COLOR, borderColor: TYPE_COLOR + '55' }}
+                        >
+                          {TYPE_LABELS[item.item_type] ?? item.item_type}
+                        </span>
+                      </div>
+                      <ItemSubInfo item={item} />
+                      <div className="item-meta">
+                        {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
+                        {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
+                        <span className="item-date">
+                          {new Date(item.created_at).toLocaleString('vi-VN', {
+                            month: 'short', day: 'numeric', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      {item.buy_url && (
+                        <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
+                          🔗 Xem sản phẩm
+                        </a>
+                      )}
+                    </div>
+                    <div className="item-actions">
+                      {!item.bought && (
+                        <button 
+                          className="buy-btn"
+                          onClick={() => handleBuy(item.id)}
+                          aria-label="Đã mua mục này"
+                        >
+                          ✓ Anh đã mua
+                        </button>
+                      )}
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete(item.id)}
+                        aria-label="Xóa mục"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
         )}
       </div>
 

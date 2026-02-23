@@ -51,5 +51,6 @@ class ItemResponse(ItemBase):
     id: int
     item_type: str
     created_at: datetime
+    bought: bool
 
     model_config = ConfigDict(from_attributes=True)

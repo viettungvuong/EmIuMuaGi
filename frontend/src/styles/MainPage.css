@@ -114,6 +114,15 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
+.item-card.bought {
+  opacity: 0.6;
+}
+
+.item-card.bought .item-name {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
 @keyframes item-in {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -177,6 +186,31 @@
 }
 
 .item-link:hover { opacity: 0.75; text-decoration: underline; }
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.buy-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.buy-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+}
 
 .delete-btn {
   background: transparent;

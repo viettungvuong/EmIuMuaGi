@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at 30% 100%, #1a1050 0%, #0d0f1a 60%);
+  background: pink;
   padding: 24px;
 }
 
@@ -12,7 +12,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow), 0 0 80px rgba(108, 99, 255, 0.1);
+  box-shadow: var(--shadow), 0 0 80px rgba(236, 72, 153, 0.1);
   padding: 48px 40px;
   width: 100%;
   max-width: 500px;
@@ -78,11 +78,11 @@
 .type-tab.active {
   border-color: var(--accent);
   color: var(--text);
-  background: rgba(108, 99, 255, 0.12);
+  background: rgba(236, 72, 153, 0.12);
 }
 
 .type-tab:hover:not(.active) {
-  border-color: rgba(108, 99, 255, 0.3);
+  border-color: rgba(236, 72, 153, 0.3);
   color: var(--text);
 }
 
@@ -131,7 +131,7 @@
 
 .field-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
 }
 
 .field-input::placeholder { color: var(--text-muted); }
@@ -157,14 +157,14 @@
   justify-content: center;
   min-height: 50px;
   transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.35);
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.35);
   margin-top: 8px;
 }
 
 .add-submit-btn:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(108, 99, 255, 0.45);
+  box-shadow: 0 6px 28px rgba(236, 72, 153, 0.45);
 }
 
 .add-submit-btn:active:not(:disabled) { transform: translateY(0); }

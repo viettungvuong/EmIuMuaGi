@@ -1,7 +1,7 @@
 .main-page {
   min-height: 100vh;
   padding: 0 0 120px;
-  background: radial-gradient(ellipse at 70% 0%, #1a1050 0%, #0d0f1a 55%);
+  background: pink;
 }
 
 .main-header {
@@ -80,7 +80,7 @@
 .loading-spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid rgba(108, 99, 255, 0.2);
+  border: 3px solid rgba(236, 72, 153, 0.2);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -109,7 +109,7 @@
 }
 
 .item-card:hover {
-  border-color: rgba(108, 99, 255, 0.3);
+  border-color: rgba(236, 72, 153, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
@@ -209,7 +209,7 @@
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 6px 28px rgba(108, 99, 255, 0.45);
+  box-shadow: 0 6px 28px rgba(236, 72, 153, 0.45);
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
@@ -218,5 +218,5 @@
 
 .fab:hover {
   transform: scale(1.1) rotate(90deg);
-  box-shadow: 0 8px 36px rgba(108, 99, 255, 0.55);
+  box-shadow: 0 8px 36px rgba(236, 72, 153, 0.55);
 }

@@ -69,7 +69,7 @@ export default function MainPage() {
     <div className="main-page">
       <header className="main-header">
         <div className="header-left">
-          <h1 className="main-title">Danh Sách<span className="accent"> Của Tôi</span></h1>
+          <h1 className="main-title">Em Iu<span className="accent"> Muốn Gìiiiii</span></h1>
           <span className="item-count">{items.length} mục</span>
         </div>
         <button className="logout-btn" onClick={handleLogout}>Đăng Xuất</button>
@@ -83,8 +83,8 @@ export default function MainPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📭</span>
-            <p className="empty-text">Chưa có mục nào. Hãy thêm mục đầu tiên!</p>
+            <span className="empty-icon">🧐</span>
+            <p className="empty-text">Bà xã chưa mún mua gì hỏooooo</p>
           </div>
         ) : (
           <ul className="items-list">

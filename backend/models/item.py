@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import DateTime, String, Integer, func
+from sqlalchemy import DateTime, String, Integer, func, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -24,6 +24,8 @@ class Item(Base):
         DateTime, server_default=func.now(), nullable=False
     )
     item_type: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    bought: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __mapper_args__ = {
         "polymorphic_identity": "item",

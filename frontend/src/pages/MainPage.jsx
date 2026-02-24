@@ -93,7 +93,14 @@ export default function MainPage() {
           </div>
         ) : (
           <ul className="items-list">
-            {items.map((item) => (
+            {[...items]
+              .sort((a, b) => {
+                if (a.bought === b.bought) {
+                  return new Date(b.created_at) - new Date(a.created_at);
+                }
+                return a.bought ? 1 : -1;
+              })
+              .map((item) => (
               <li key={item.id} className={`item-card ${item.bought ? 'bought' : ''}`}>
                     <div className="item-info">
                       <div className="item-header-row">

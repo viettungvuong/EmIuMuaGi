@@ -169,3 +169,24 @@
 
 .add-submit-btn:active:not(:disabled) { transform: translateY(0); }
 .add-submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .add-page {
+    padding: 12px;
+    align-items: flex-start;
+  }
+  
+  .add-card {
+    padding: 32px 20px;
+    border-radius: var(--radius-sm);
+  }
+  
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .add-title {
+    font-size: 1.5rem;
+  }
+}

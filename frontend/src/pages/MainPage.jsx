@@ -57,6 +57,9 @@ export default function MainPage() {
   };
 
   const handleBuy = async (id) => {
+    const isConfirmed = window.confirm("Có chắc anh đã mua chưaaaaaa");
+    if (!isConfirmed) return;
+
     try {
       const { data } = await client.patch(`/api/items/${id}/buy`);
       setItems((prev) => prev.map((i) => i.id === id ? data : i));

@@ -32,6 +32,7 @@ function ItemSubInfo({ item }) {
 export default function MainPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   const navigate = useNavigate();
 
   const fetchItems = async () => {
@@ -56,9 +57,14 @@ export default function MainPage() {
     }
   };
 
-  const handleBuy = async (id) => {
-    const isConfirmed = window.confirm("Có chắc anh đã mua chưaaaaaa");
-    if (!isConfirmed) return;
+  const handleBuy = (id) => {
+    setConfirmModal({ isOpen: true, itemId: id });
+  };
+
+  const confirmBuy = async () => {
+    const id = confirmModal.itemId;
+    setConfirmModal({ isOpen: false, itemId: null });
+    if (!id) return;
 
     try {
       const { data } = await client.patch(`/api/items/${id}/buy`);
@@ -66,6 +72,10 @@ export default function MainPage() {
     } catch (err) {
       console.error('Failed to mark item as bought:', err);
     }
+  };
+
+  const cancelBuy = () => {
+    setConfirmModal({ isOpen: false, itemId: null });
   };
 
   const handleLogout = () => {
@@ -160,6 +170,18 @@ export default function MainPage() {
       <button className="fab" onClick={() => navigate('/add')} aria-label="Thêm mục mới">
         +
       </button>
+
+      {confirmModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <p className="modal-text">Có chắc anh đã mua chưaaaaaa 🧐</p>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={cancelBuy}>Chưa nha</button>
+              <button className="modal-btn confirm" onClick={confirmBuy}>Đã mua rùii</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

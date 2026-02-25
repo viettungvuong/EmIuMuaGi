@@ -11,8 +11,8 @@ load_dotenv()
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 APP_PASSWORD = os.getenv("APP_PASSWORD", "secret123")
-AES_KEY = b'1234567890123456'
-AES_IV = b'1234567890123456'
+AES_KEY = os.getenv("AES_KEY", "1234567890123456").encode('utf-8')
+AES_IV = os.getenv("AES_IV", "1234567890123456").encode('utf-8')
 
 def decrypt_password(enc_b64: str) -> str:
     try:

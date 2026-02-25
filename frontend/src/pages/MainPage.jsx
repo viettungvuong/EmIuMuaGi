@@ -34,6 +34,7 @@ export default function MainPage() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [hideBought, setHideBought] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   const navigate = useNavigate();
 
@@ -88,7 +89,8 @@ export default function MainPage() {
   const filteredItems = items.filter(item => {
     const matchesFilter = filterType === 'all' || item.item_type === filterType;
     const matchesSearch = item.item_name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const matchesHide = hideBought ? !item.bought : true;
+    return matchesFilter && matchesSearch && matchesHide;
   });
 
   return (
@@ -122,22 +124,32 @@ export default function MainPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <div className="filter-tabs">
-                <button 
-                  className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
-                  onClick={() => setFilterType('all')}
-                >
-                  Tất Cả
-                </button>
-                {Object.entries(TYPE_LABELS).map(([type, label]) => (
+              <div className="filter-options">
+                <div className="filter-tabs">
                   <button 
-                    key={type}
-                    className={`filter-tab ${filterType === type ? 'active' : ''}`}
-                    onClick={() => setFilterType(type)}
+                    className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilterType('all')}
                   >
-                    {label}
+                    Tất Cả
                   </button>
-                ))}
+                  {Object.entries(TYPE_LABELS).map(([type, label]) => (
+                    <button 
+                      key={type}
+                      className={`filter-tab ${filterType === type ? 'active' : ''}`}
+                      onClick={() => setFilterType(type)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <label className="hide-bought-toggle">
+                  <input 
+                    type="checkbox" 
+                    checked={hideBought} 
+                    onChange={(e) => setHideBought(e.target.checked)} 
+                  />
+                  <span>Ẩn đồ đã mua</span>
+                </label>
               </div>
             </div>
 

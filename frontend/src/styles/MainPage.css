@@ -286,6 +286,14 @@
   color: var(--text-muted);
 }
 
+.filter-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .filter-tabs {
   display: flex;
   gap: 8px;
@@ -323,6 +331,33 @@
 .filter-tab:hover:not(.active) {
   border-color: rgba(236, 72, 153, 0.4);
   color: var(--text);
+}
+
+.hide-bought-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  user-select: none;
+  transition: color 0.2s;
+  background: var(--surface-2);
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.hide-bought-toggle:hover {
+  color: var(--text);
+  border-color: rgba(236, 72, 153, 0.4);
+}
+
+.hide-bought-toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 /* Modal */

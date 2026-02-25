@@ -1,3 +1,4 @@
+import CryptoJS from 'crypto-js';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
@@ -14,7 +15,16 @@ export default function PasswordPage() {
     setError('');
     setLoading(true);
     try {
-      await client.post('/api/auth/login', { password });
+      const key = CryptoJS.enc.Utf8.parse('1234567890123456');
+      const iv = CryptoJS.enc.Utf8.parse('1234567890123456');
+
+      const encryptedPassword = CryptoJS.AES.encrypt(password, key, {
+          iv: iv,
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7
+      }).toString();
+
+      await client.post('/api/auth/login', { password: encryptedPassword });
       localStorage.setItem('authenticated', 'true');
       navigate('/');
     } catch {

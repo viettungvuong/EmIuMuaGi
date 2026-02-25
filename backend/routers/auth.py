@@ -10,7 +10,7 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-APP_PASSWORD = os.getenv("APP_PASSWORD", "secret123")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
 AES_KEY = os.getenv("AES_KEY").encode('utf-8')
 AES_IV = os.getenv("AES_IV").encode('utf-8')
 

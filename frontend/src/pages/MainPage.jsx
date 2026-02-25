@@ -32,6 +32,8 @@ function ItemSubInfo({ item }) {
 export default function MainPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   const navigate = useNavigate();
 
@@ -83,6 +85,12 @@ export default function MainPage() {
     navigate('/login');
   };
 
+  const filteredItems = items.filter(item => {
+    const matchesFilter = filterType === 'all' || item.item_type === filterType;
+    const matchesSearch = item.item_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   return (
     <div className="main-page">
       <header className="main-header">
@@ -105,14 +113,48 @@ export default function MainPage() {
             <p className="empty-text">Bà xã chưa mún mua gì hỏooooo</p>
           </div>
         ) : (
-          <ul className="items-list">
-            {[...items]
-              .sort((a, b) => {
-                if (a.bought === b.bought) {
-                  return new Date(b.created_at) - new Date(a.created_at);
-                }
-                return a.bought ? 1 : -1;
-              })
+          <div className="items-content">
+            <div className="controls-section">
+              <input 
+                type="text" 
+                className="search-bar" 
+                placeholder="Tìm kiếm danh sách..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <div className="filter-tabs">
+                <button 
+                  className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilterType('all')}
+                >
+                  Tất Cả
+                </button>
+                {Object.entries(TYPE_LABELS).map(([type, label]) => (
+                  <button 
+                    key={type}
+                    className={`filter-tab ${filterType === type ? 'active' : ''}`}
+                    onClick={() => setFilterType(type)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {filteredItems.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">😅</span>
+                <p className="empty-text">Không tìm thấy món nào phù hợp nữa...</p>
+              </div>
+            ) : (
+              <ul className="items-list">
+                {[...filteredItems]
+                  .sort((a, b) => {
+                    if (a.bought === b.bought) {
+                      return new Date(b.created_at) - new Date(a.created_at);
+                    }
+                    return a.bought ? 1 : -1;
+                  })
               .map((item) => (
               <li key={item.id} className={`item-card ${item.bought ? 'bought' : ''}`}>
                     <div className="item-info">
@@ -164,6 +206,8 @@ export default function MainPage() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
         )}
       </div>
 

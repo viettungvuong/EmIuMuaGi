@@ -15,8 +15,8 @@ export default function PasswordPage() {
     setError('');
     setLoading(true);
     try {
-      const aesKey = import.meta.env.VITE_AES_KEY || '1234567890123456';
-      const aesIv = import.meta.env.VITE_AES_IV || '1234567890123456';
+      const aesKey = import.meta.env.VITE_AES_KEY;
+      const aesIv = import.meta.env.VITE_AES_IV;
 
       const key = CryptoJS.enc.Utf8.parse(aesKey);
       const iv = CryptoJS.enc.Utf8.parse(aesIv);

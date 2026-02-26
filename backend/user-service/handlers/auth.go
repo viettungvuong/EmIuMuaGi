@@ -71,7 +71,6 @@ func decryptPassword(encB64 string) string {
 		return ""
 	}
 
-	// Because Javascript CryptoJS often appends trailing null bytes after decrypting if the encoding wasn't strict
 	unpadded = bytes.TrimRight(unpadded, "\x00")
 
 	return string(unpadded)

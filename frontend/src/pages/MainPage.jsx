@@ -184,7 +184,7 @@ export default function MainPage() {
                         {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
                         {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
                         <span className="item-date">
-                          {item.created_at ? new Date(item.created_at + (String(item.created_at).includes('Z') ? '' : 'Z')).toLocaleString('vi-VN', {
+                          {item.created_at ? new Date(item.created_at).toLocaleString('vi-VN', {
                             timeZone: 'Asia/Ho_Chi_Minh',
                             month: 'short', day: 'numeric', year: 'numeric',
                             hour: '2-digit', minute: '2-digit'

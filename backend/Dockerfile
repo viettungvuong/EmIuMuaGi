@@ -1,16 +1,19 @@
-FROM python:3.12-slim
+FROM golang:1.23-alpine AS builder
+
+RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Install dependencies first (for better layer caching)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy backend code
 COPY . .
+RUN CGO_ENABLED=1 go build -ldflags="-extldflags=-static" -o main .
 
-# Fly.io default port is usually 8080
+FROM alpine:latest
+WORKDIR /app
+COPY --from=builder /app/main .
+
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["./main"]

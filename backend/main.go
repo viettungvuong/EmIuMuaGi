@@ -54,9 +54,6 @@ func main() {
 
 	// Figure out the port and start the server
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8000"
-	}
 
 	log.Printf("Starting server on port %s...", port)
 	r.Run("0.0.0.0:" + port)

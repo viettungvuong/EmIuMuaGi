@@ -7,15 +7,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/viettungvuong/emiumuagi-backend/database"
-	"github.com/viettungvuong/emiumuagi-backend/handlers"
+	"github.com/viettungvuong/emiumuagi-user-service/handlers"
 )
 
 func main() {
-	_ = godotenv.Load(".env")
-
-	// Initialize the database connection & schemas
-	database.InitDB()
+	_ = godotenv.Load("../.env")
 
 	r := gin.Default()
 
@@ -23,6 +19,7 @@ func main() {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
 		"http://localhost:5173",
+		"http://127.0.0.1:5173",
 		"https://viettungvuong.github.io",
 	}
 	config.AllowCredentials = true
@@ -32,23 +29,24 @@ func main() {
 
 	// Root path
 	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "EmIuMuaGi API is running"})
+		c.JSON(200, gin.H{"message": "EmIuMuaGi User Service API is running"})
 	})
 
+	// API Paths
 	api := r.Group("/api")
 	{
-		items := api.Group("/items")
+		auth := api.Group("/auth")
 		{
-			items.GET("", handlers.GetItems)
-			items.POST("", handlers.CreateItem)
-			items.DELETE("/:item_id", handlers.DeleteItem)
-			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
+			auth.POST("/login", handlers.Login)
 		}
 	}
 
 	// Figure out the port and start the server
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8001" // Note: Different default port than item-service
+	}
 
-	log.Printf("Starting server on port %s...", port)
+	log.Printf("Starting user server on port %s...", port)
 	r.Run("0.0.0.0:" + port)
 }

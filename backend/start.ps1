@@ -12,12 +12,6 @@ Start-Sleep -Seconds 2
 Write-Host "Starting API Gateway (Port 8000)..." -ForegroundColor Cyan
 $api = Start-Process -FilePath "go" -ArgumentList "run main.go" -WorkingDirectory "api-gateway" -PassThru -NoNewWindow
 
-Write-Host "=====================================================" -ForegroundColor Green
-Write-Host "✅ All microservices are running!" -ForegroundColor Green
-Write-Host "Gateway is live at: http://localhost:8000" -ForegroundColor Green
-Write-Host "Press [CTRL+C] at any time to softly kill all servers." -ForegroundColor Yellow
-Write-Host "=====================================================" -ForegroundColor Green
-
 try {
     # Block infinitely until the user hits CTRL+C
     while ($true) {

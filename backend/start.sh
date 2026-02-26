@@ -21,11 +21,5 @@ cd api-gateway
 go run main.go &
 cd ..
 
-echo "====================================================="
-echo "✅ All microservices are running!"
-echo "Gateway is live at: http://localhost:8000"
-echo "Press [CTRL+C] at any time to softly kill all servers."
-echo "====================================================="
-
 # Wait indefinitely and stream all child logs to the same terminal
 wait

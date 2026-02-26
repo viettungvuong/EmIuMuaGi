@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load(".env")
+	_ = godotenv.Load("../.env")
 
 	// Initialize the database connection & schemas
 	database.InitDB()

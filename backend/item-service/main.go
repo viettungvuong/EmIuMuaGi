@@ -13,7 +13,6 @@ import (
 func main() {
 	_ = godotenv.Load("../.env")
 
-	// Initialize the database connection & schemas
 	database.InitDB()
 
 	r := gin.Default()
@@ -34,10 +33,9 @@ func main() {
 		}
 	}
 
-	// Figure out the port and start the server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8002" // Item service port
+		port = "8002"
 	}
 
 	log.Printf("Starting item server on port %s...", port)

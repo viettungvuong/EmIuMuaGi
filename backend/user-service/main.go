@@ -28,10 +28,9 @@ func main() {
 		}
 	}
 
-	// Figure out the port and start the server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8001" // Note: Different default port than item-service
+		port = "8001"
 	}
 
 	log.Printf("Starting user server on port %s...", port)

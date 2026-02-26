@@ -46,9 +46,7 @@ func main() {
 		c.JSON(200, gin.H{"message": "EmIuMuaGi API Gateway is running"})
 	})
 
-	// Setup Reverse Proxies
-	// Note: We use c.Request.URL.Path to determine routing, or we can use Group
-
+	// Redirect based on endpoints
 	r.Any("/api/auth/*path", proxy("http://localhost:8001"))
 	r.Any("/api/items", proxy("http://localhost:8002"))
 	r.Any("/api/items/*path", proxy("http://localhost:8002"))

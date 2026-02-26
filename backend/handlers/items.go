@@ -31,6 +31,7 @@ func sendPushNotification(title string, message string) {
 			log.Println("Failed to send notification:", err)
 			return
 		}
+		log.Println("Notification sent about new item added")
 		defer resp.Body.Close()
 	}()
 }
@@ -142,7 +143,7 @@ func CreateItem(c *gin.Context) {
 
 	input.Item = item
 	sendPushNotification("Mới mún mua thêm đồ nè! 🛍️", "Vừa thêm vào danh sách: "+item.ItemName)
-
+	log.Printf("Added new item %s\n", item.ItemName)
 	c.JSON(http.StatusCreated, input)
 }
 
@@ -168,10 +169,12 @@ func DeleteItem(c *gin.Context) {
 	tx.Delete(&models.Item{}, id)
 	tx.Commit()
 
+	log.Printf("Deleted %s\n", item.ItemName)
+
 	c.Status(http.StatusNoContent)
 }
 
-func BuyItem(c *gin.Context) {
+func MarkItemAsBought(c *gin.Context) {
 	id := c.Param("item_id")
 	var item models.Item
 
@@ -183,13 +186,6 @@ func BuyItem(c *gin.Context) {
 	item.Bought = true
 	database.DB.Save(&item)
 
-	// In the real system, fetching the item fully is required to return AnyItemResponse
-	// We can cheat here and just return the base Item with bought=True, the frontend just updates the single item state in map which overrides specific fields but wait!
-	// Javascript spread `prev.map(i => i.id === id ? data : i)` will OVERWRITE ALL FIELDS with ONLY the Base fields!
-	// So we must fetch the full requested object and turn it into AnyItemResponse or just return `i`.
-	// For simplicity, let's just make the frontend partially update the state instead, or fetch the item properly.
-
-	// Actually, let's just re-fetch it through GetItems logic (we can just execute a similar SQL, but with WHERE id=?)
 	var res struct {
 		models.Item
 		CSize    *string `gorm:"column:c_size"`

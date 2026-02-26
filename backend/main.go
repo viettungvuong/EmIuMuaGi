@@ -22,7 +22,7 @@ func main() {
 	// CORS Configuration
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
-		"http://127.0.0.1:5173",
+		"http://localhost:5173",
 		"https://viettungvuong.github.io",
 	}
 	config.AllowCredentials = true
@@ -48,7 +48,7 @@ func main() {
 			items.GET("", handlers.GetItems)
 			items.POST("", handlers.CreateItem)
 			items.DELETE("/:item_id", handlers.DeleteItem)
-			items.PATCH("/:item_id/buy", handlers.BuyItem)
+			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
 		}
 	}
 

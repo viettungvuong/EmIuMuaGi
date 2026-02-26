@@ -70,7 +70,7 @@ export default function MainPage() {
     if (!id) return;
 
     try {
-      const { data } = await client.patch(`/api/items/${id}/buy`);
+      const { data } = await client.patch(`/api/items/${id}/bought`);
       setItems((prev) => prev.map((i) => i.id === id ? data : i));
     } catch (err) {
       console.error('Failed to mark item as bought:', err);

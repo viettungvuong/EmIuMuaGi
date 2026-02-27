@@ -59,7 +59,7 @@ func GetItems(c *gin.Context) {
 			o.category, o.notes as o_notes
 		FROM items i
 		LEFT JOIN clothes c ON i.id = c.id
-		LEFT JOIN food_and_drink f ON i.id = f.id
+		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
 		ORDER BY i.created_at DESC
 	`).Scan(&results).Error
@@ -206,7 +206,7 @@ func MarkItemAsBought(c *gin.Context) {
 			o.category, o.notes as o_notes
 		FROM items i
 		LEFT JOIN clothes c ON i.id = c.id
-		LEFT JOIN food_and_drink f ON i.id = f.id
+		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
 		WHERE i.id = ?
 	`, id).Scan(&res)

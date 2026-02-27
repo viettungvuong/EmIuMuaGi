@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/viettungvuong/emiumuagi-backend/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -11,16 +12,28 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dbUrl := os.Getenv("DATABASE_URL")
-	if dbUrl == "" {
-		dbUrl = "./app.db"
-	}
+    dbUrl := os.Getenv("DATABASE_URL")
+    if dbUrl == "" {
+        dbUrl = "./app.db"
+    }
 
-	var err error
-	DB, err = gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
+    var err error
+    DB, err = gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
+    if err != nil {
+        log.Fatal("Failed to connect to database:", err)
+    }
 
-	log.Println("Database connected successfully.")
+    // --- ADD THIS BLOCK ---
+    err = DB.AutoMigrate(
+        &models.Item{},
+        &models.Clothes{},
+        &models.FoodAndDrink{},
+        &models.Others{},
+    )
+    if err != nil {
+        log.Fatal("Failed to migrate database:", err)
+    }
+    // -----------------------
+
+    log.Println("Database connected and migrated successfully.")
 }

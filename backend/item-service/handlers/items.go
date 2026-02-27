@@ -158,11 +158,12 @@ func DeleteItem(c *gin.Context) {
 
 	tx := database.DB.Begin()
 
-	if item.ItemType == "clothes" {
+	switch item.ItemType {
+	case "clothes":
 		tx.Delete(&models.Clothes{}, id)
-	} else if item.ItemType == "food_and_drink" {
+	case "food_and_drink":
 		tx.Delete(&models.FoodAndDrink{}, id)
-	} else if item.ItemType == "others" {
+	case "others":
 		tx.Delete(&models.Others{}, id)
 	}
 
@@ -212,11 +213,12 @@ func MarkItemAsBought(c *gin.Context) {
 	`, id).Scan(&res)
 
 	resp := models.AnyItemResponse{Item: res.Item}
-	if res.ItemType == "clothes" {
+	switch res.ItemType {
+	case "clothes":
 		resp.Size = res.CSize
 		resp.Color = res.Color
 		resp.Brand = res.Brand
-	} else if res.ItemType == "food_and_drink" {
+	case "food_and_drink":
 		resp.Sugar = res.Sugar
 		resp.Size = res.FSize
 		resp.Notes = res.FNotes
@@ -226,7 +228,7 @@ func MarkItemAsBought(c *gin.Context) {
 				resp.Toppings = t
 			}
 		}
-	} else if res.ItemType == "others" {
+	case "others":
 		resp.Category = res.Category
 		resp.Notes = res.ONotes
 	}

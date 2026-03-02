@@ -65,7 +65,10 @@ export default function AddPage() {
   return (
     <div className="add-page">
       <div className="add-card">
-        <button className="back-btn" onClick={() => navigate('/')}>← Quay Lại</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <button className="back-btn" onClick={() => navigate('/')}>← Quay Lại</button>
+          <button className="back-btn" style={{ color: 'var(--accent)' }} onClick={() => navigate('/question')}>Hỏi Đáp →</button>
+        </div>
         <h1 className="add-title">Thêm Mục Mới</h1>
 
         <form onSubmit={handleSubmit} className="add-form">

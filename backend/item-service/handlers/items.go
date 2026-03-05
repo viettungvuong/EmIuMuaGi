@@ -262,6 +262,7 @@ func MarkItemAsBought(c *gin.Context) {
 
 func AddReview(c *gin.Context) {
 	id := c.Param("item_id")
+
 	var item models.Item
 
 	if err := database.DB.First(&item, id).Error; err != nil {
@@ -272,6 +273,8 @@ func AddReview(c *gin.Context) {
 	var reqBody struct {
 		Score   int    `json:"score" binding:"required"`
 		Content string `json:"content"`
+		// Using a pointer allows it to be nil
+		HistoryID *uuid.UUID `json:"historyId"`
 	}
 
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
@@ -279,11 +282,19 @@ func AddReview(c *gin.Context) {
 		return
 	}
 
-	// Find the latest History for this item
 	var history models.History
-	if err := database.DB.Where("item_id = ?", item.ID).Order("time desc").First(&history).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "History not found for this item, cannot add review"})
-		return
+	// Find the latest History for this item (if historyID not provided)
+	if reqBody.HistoryID != nil {
+		if err := database.DB.First(&history, *reqBody.HistoryID).Error; err != nil { // find in History schema
+			c.JSON(http.StatusNotFound, gin.H{"error": "Specific history record not found"})
+			return
+		}
+	} else {
+		// Fallback: find the latest history for the given item
+		if err := database.DB.Where("item_id = ?", item.ID).Order("time desc").First(&history).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "No history found for this item, cannot add review"})
+			return
+		}
 	}
 
 	// Create Review

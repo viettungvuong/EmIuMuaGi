@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -173,6 +174,20 @@ func DeleteItem(c *gin.Context) {
 	log.Printf("Deleted %s\n", item.ItemName)
 
 	c.Status(http.StatusNoContent)
+}
+
+func AddHistory(ctx context.Context, item_id uint) {
+	h := models.History{
+		ItemID: item_id,
+		Time:   time.Now(),
+	}
+
+	// Store on db
+	result := database.DB.WithContext(ctx).Create(&h)
+
+	if result.Error != nil {
+		return
+	}
 }
 
 func MarkItemAsBought(c *gin.Context) {

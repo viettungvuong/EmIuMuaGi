@@ -176,7 +176,7 @@ func DeleteItem(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func AddHistory(ctx context.Context, item_id uint) {
+func addHistory(ctx context.Context, item_id uint) {
 	h := models.History{
 		ItemID: item_id,
 		Time:   time.Now(),
@@ -201,6 +201,9 @@ func MarkItemAsBought(c *gin.Context) {
 
 	item.Bought = true
 	database.DB.Save(&item)
+
+	// Automatically create a history entry
+	addHistory(c.Request.Context(), item.ID)
 
 	var res struct {
 		models.Item
@@ -249,4 +252,45 @@ func MarkItemAsBought(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func AddReview(c *gin.Context) {
+	id := c.Param("item_id")
+	var item models.Item
+
+	if err := database.DB.First(&item, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	var reqBody struct {
+		Score   int    `json:"score" binding:"required"`
+		Content string `json:"content"`
+	}
+
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Find the latest History for this item
+	var history models.History
+	if err := database.DB.Where("item_id = ?", item.ID).Order("time desc").First(&history).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "History not found for this item, cannot add review"})
+		return
+	}
+
+	// Create Review
+	review := models.Review{
+		HistoryID: history.ID,
+		Score:     reqBody.Score,
+		Content:   reqBody.Content,
+	}
+
+	if err := database.DB.Create(&review).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create review"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, review)
 }

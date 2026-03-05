@@ -30,6 +30,7 @@ func main() {
 			items.POST("", handlers.CreateItem)
 			items.DELETE("/:item_id", handlers.DeleteItem)
 			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
+			items.POST("/:item_id/review", handlers.AddReview)
 		}
 	}
 

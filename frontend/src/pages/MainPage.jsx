@@ -43,6 +43,7 @@ export default function MainPage() {
   const [filterType, setFilterType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [hideBought, setHideBought] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   const [reviewModal, setReviewModal] = useState({
     isOpen: false,
     itemId: null,
@@ -76,29 +77,45 @@ export default function MainPage() {
   };
 
   const handleBuy = (id) => {
+    setConfirmModal({ isOpen: true, itemId: id });
+  };
+
+  const confirmBuy = async () => {
+    const id = confirmModal.itemId;
+    setConfirmModal({ isOpen: false, itemId: null });
+    if (!id) return;
+
+    try {
+      const { data } = await client.patch(`/api/items/${id}/bought`);
+      setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+    } catch (err) {
+      console.error("Failed to mark item as bought:", err);
+    }
+  };
+
+  const cancelBuy = () => {
+    setConfirmModal({ isOpen: false, itemId: null });
+  };
+
+  const handleReview = (id) => {
     const item = items.find((i) => i.id === id);
     setReviewModal({ isOpen: true, itemId: id, item });
     setReviewForm({ score: 5, content: "" });
   };
 
-  const confirmBuyAndReview = async () => {
+  const submitReview = async () => {
     const id = reviewModal.itemId;
     setReviewModal({ isOpen: false, itemId: null, item: null });
     if (!id) return;
 
     try {
-      // For now, this still calls the bought endpoint. The backend will be updated to handle review and history.
-      const { data } = await client.patch(
-        `/api/items/${id}/bought`,
-        reviewForm,
-      );
-      setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+      await client.post(`/api/items/${id}/review`, reviewForm);
     } catch (err) {
-      console.error("Failed to mark item as bought and review:", err);
+      console.error("Failed to submit review:", err);
     }
   };
 
-  const cancelBuy = () => {
+  const cancelReview = () => {
     setReviewModal({ isOpen: false, itemId: null, item: null });
   };
 
@@ -253,6 +270,16 @@ export default function MainPage() {
                         )}
                       </div>
                       <div className="item-actions">
+                        {item.bought && (
+                          <button
+                            className="buy-btn"
+                            onClick={() => handleReview(item.id)}
+                            aria-label="Đánh giá mục này"
+                            style={{ background: "#cb1d7a" }}
+                          >
+                            ⭐ Đánh giá
+                          </button>
+                        )}
                         {!item.bought && (
                           <button
                             className="buy-btn"
@@ -286,10 +313,22 @@ export default function MainPage() {
         +
       </button>
 
+      {confirmModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <p className="modal-text">Có chắc anh đã mua chưaaaaaa 🧐</p>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={cancelBuy}>Chưa nha</button>
+              <button className="modal-btn confirm" onClick={confirmBuy}>Đã mua rùii</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {reviewModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2 className="modal-title">Có chắc anh đã mua chưaaaaaa 🧐</h2>
+            <h2 className="modal-title">Em iu có mua đánh giáaa</h2>
             <p className="modal-text">
               Viết vài dòng cảm nhận về{" "}
               <strong>{reviewModal.item?.item_name}</strong> luôn để em biết
@@ -370,14 +409,14 @@ export default function MainPage() {
             </div>
 
             <div className="modal-actions" style={{ marginTop: "20px" }}>
-              <button className="modal-btn cancel" onClick={cancelBuy}>
-                Chưa nha
+              <button className="modal-btn cancel" onClick={cancelReview}>
+                Hủy
               </button>
               <button
                 className="modal-btn confirm"
-                onClick={confirmBuyAndReview}
+                onClick={submitReview}
               >
-                Đã mua rùii
+                Gửi Đánh Giá
               </button>
             </div>
           </div>

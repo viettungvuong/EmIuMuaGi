@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	"github.com/viettungvuong/emiumuagi-backend/models"
 )
@@ -176,7 +177,7 @@ func DeleteItem(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func addHistory(ctx context.Context, item_id uint) {
+func addHistory(ctx context.Context, item_id uint) uuid.UUID {
 	h := models.History{
 		ItemID: item_id,
 		Time:   time.Now(),
@@ -186,8 +187,10 @@ func addHistory(ctx context.Context, item_id uint) {
 	result := database.DB.WithContext(ctx).Create(&h)
 
 	if result.Error != nil {
-		return
+		return uuid.Nil
 	}
+
+	return h.ID
 }
 
 func MarkItemAsBought(c *gin.Context) {
@@ -203,7 +206,7 @@ func MarkItemAsBought(c *gin.Context) {
 	database.DB.Save(&item)
 
 	// Automatically create a history entry
-	addHistory(c.Request.Context(), item.ID)
+	historyId := addHistory(c.Request.Context(), item.ID)
 
 	var res struct {
 		models.Item
@@ -230,7 +233,10 @@ func MarkItemAsBought(c *gin.Context) {
 		WHERE i.id = ?
 	`, id).Scan(&res)
 
-	resp := models.AnyItemResponse{Item: res.Item}
+	resp := models.AnyItemResponse{Item: res.Item, Additional: map[string]any{
+		"HistoryID": historyId,
+	}}
+
 	switch res.ItemType {
 	case "clothes":
 		resp.Size = res.CSize

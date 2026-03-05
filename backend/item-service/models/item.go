@@ -36,14 +36,15 @@ type Others struct {
 	Notes    *string `gorm:"size:500" json:"notes"`
 }
 
-// AnyItemResponse is used to serialize and deserialize the mixed responses, similar to Python's Pydantic AnyItemResponse union.
+// AnyItemResponse is used to serialize and deserialize the mixed responses
 type AnyItemResponse struct {
 	Item
-	Size     *string  `json:"size,omitempty"`
-	Color    *string  `json:"color,omitempty"`
-	Brand    *string  `json:"brand,omitempty"`
-	Sugar    *string  `json:"sugar,omitempty"`
-	Notes    *string  `json:"notes,omitempty"`
-	Toppings []string `json:"toppings,omitempty"`
-	Category *string  `json:"category,omitempty"`
+	Size       *string        `json:"size,omitempty"`
+	Color      *string        `json:"color,omitempty"`
+	Brand      *string        `json:"brand,omitempty"`
+	Sugar      *string        `json:"sugar,omitempty"`
+	Notes      *string        `json:"notes,omitempty"`
+	Toppings   []string       `json:"toppings,omitempty"`
+	Category   *string        `json:"category,omitempty"`
+	Additional map[string]any `json:"additional,omitempty`
 }

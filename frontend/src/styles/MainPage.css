@@ -481,3 +481,42 @@
     font-size: 1.8rem;
   }
 }
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+  text-align: left;
+}
+
+.review-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.review-input,
+.review-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.review-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.review-input:focus,
+.review-textarea:focus {
+  outline: none;
+  border-color: #cb1d7a;
+  box-shadow: 0 0 0 2px rgba(203, 29, 122, 0.1);
+}

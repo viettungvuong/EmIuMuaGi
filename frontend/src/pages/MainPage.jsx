@@ -1,29 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import client from '../api/client';
-import '../styles/MainPage.css';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import client from "../api/client";
+import "../styles/MainPage.css";
 
 const TYPE_LABELS = {
-  clothes: 'Quần Áo',
-  food_and_drink: 'Đồ Ăn & Uống',
-  others: 'Khác',
+  clothes: "Quần Áo",
+  food_and_drink: "Đồ Ăn & Uống",
+  others: "Khác",
 };
 
-const TYPE_COLOR = '#cb1d7aff';
+const TYPE_COLOR = "#cb1d7aff";
 
 function ItemSubInfo({ item }) {
-  if (item.item_type === 'clothes') {
+  if (item.item_type === "clothes") {
     const parts = [item.size, item.color, item.brand].filter(Boolean);
-    return parts.length ? <p className="item-subinfo">{parts.join(' · ')}</p> : null;
-  }
-  if (item.item_type === 'food_and_drink') {
-    const parts = [item.size, item.sugar && `Đường: ${item.sugar}`].filter(Boolean);
-    const toppingStr = item.toppings?.length ? `Topping: ${item.toppings.join(', ')}` : null;
-    return (parts.length || toppingStr) ? (
-      <p className="item-subinfo">{[...parts, toppingStr].filter(Boolean).join(' · ')}</p>
+    return parts.length ? (
+      <p className="item-subinfo">{parts.join(" · ")}</p>
     ) : null;
   }
-  if (item.item_type === 'others' && item.category) {
+  if (item.item_type === "food_and_drink") {
+    const parts = [item.size, item.sugar && `Đường: ${item.sugar}`].filter(
+      Boolean,
+    );
+    const toppingStr = item.toppings?.length
+      ? `Topping: ${item.toppings.join(", ")}`
+      : null;
+    return parts.length || toppingStr ? (
+      <p className="item-subinfo">
+        {[...parts, toppingStr].filter(Boolean).join(" · ")}
+      </p>
+    ) : null;
+  }
+  if (item.item_type === "others" && item.category) {
     return <p className="item-subinfo">{item.category}</p>;
   }
   return null;
@@ -32,63 +40,78 @@ function ItemSubInfo({ item }) {
 export default function MainPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [hideBought, setHideBought] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
+  const [reviewModal, setReviewModal] = useState({
+    isOpen: false,
+    itemId: null,
+    item: null,
+  });
+  const [reviewForm, setReviewForm] = useState({ score: 5, content: "" });
   const navigate = useNavigate();
 
   const fetchItems = async () => {
     try {
-      const { data } = await client.get('/api/items');
+      const { data } = await client.get("/api/items");
       setItems(data);
     } catch (err) {
-      console.error('Failed to fetch items:', err);
+      console.error("Failed to fetch items:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   const handleDelete = async (id) => {
     try {
       await client.delete(`/api/items/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
     } catch (err) {
-      console.error('Failed to delete item:', err);
+      console.error("Failed to delete item:", err);
     }
   };
 
   const handleBuy = (id) => {
-    setConfirmModal({ isOpen: true, itemId: id });
+    const item = items.find((i) => i.id === id);
+    setReviewModal({ isOpen: true, itemId: id, item });
+    setReviewForm({ score: 5, content: "" });
   };
 
-  const confirmBuy = async () => {
-    const id = confirmModal.itemId;
-    setConfirmModal({ isOpen: false, itemId: null });
+  const confirmBuyAndReview = async () => {
+    const id = reviewModal.itemId;
+    setReviewModal({ isOpen: false, itemId: null, item: null });
     if (!id) return;
 
     try {
-      const { data } = await client.patch(`/api/items/${id}/bought`);
-      setItems((prev) => prev.map((i) => i.id === id ? data : i));
+      // For now, this still calls the bought endpoint. The backend will be updated to handle review and history.
+      const { data } = await client.patch(
+        `/api/items/${id}/bought`,
+        reviewForm,
+      );
+      setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
     } catch (err) {
-      console.error('Failed to mark item as bought:', err);
+      console.error("Failed to mark item as bought and review:", err);
     }
   };
 
   const cancelBuy = () => {
-    setConfirmModal({ isOpen: false, itemId: null });
+    setReviewModal({ isOpen: false, itemId: null, item: null });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authenticated');
-    navigate('/login');
+    localStorage.removeItem("authenticated");
+    navigate("/login");
   };
 
-  const filteredItems = items.filter(item => {
-    const matchesFilter = filterType === 'all' || item.item_type === filterType;
-    const matchesSearch = item.item_name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredItems = items.filter((item) => {
+    const matchesFilter = filterType === "all" || item.item_type === filterType;
+    const matchesSearch = item.item_name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesHide = hideBought ? !item.bought : true;
     return matchesFilter && matchesSearch && matchesHide;
   });
@@ -97,10 +120,14 @@ export default function MainPage() {
     <div className="main-page">
       <header className="main-header">
         <div className="header-left">
-          <h1 className="main-title">Em Iu<span className="accent"> Muốn Gìiiiii</span></h1>
+          <h1 className="main-title">
+            Em Iu<span className="accent"> Muốn Gìiiiii</span>
+          </h1>
           <span className="item-count">{items.length} mục</span>
         </div>
-        <button className="logout-btn" onClick={handleLogout}>Đăng Xuất</button>
+        <button className="logout-btn" onClick={handleLogout}>
+          Đăng Xuất
+        </button>
       </header>
 
       <div className="items-container">
@@ -117,25 +144,25 @@ export default function MainPage() {
         ) : (
           <div className="items-content">
             <div className="controls-section">
-              <input 
-                type="text" 
-                className="search-bar" 
-                placeholder="Tìm kiếm danh sách..." 
+              <input
+                type="text"
+                className="search-bar"
+                placeholder="Tìm kiếm danh sách..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <div className="filter-options">
                 <div className="filter-tabs">
-                  <button 
-                    className={`filter-tab ${filterType === 'all' ? 'active' : ''}`}
-                    onClick={() => setFilterType('all')}
+                  <button
+                    className={`filter-tab ${filterType === "all" ? "active" : ""}`}
+                    onClick={() => setFilterType("all")}
                   >
                     Tất Cả
                   </button>
                   {Object.entries(TYPE_LABELS).map(([type, label]) => (
-                    <button 
+                    <button
                       key={type}
-                      className={`filter-tab ${filterType === type ? 'active' : ''}`}
+                      className={`filter-tab ${filterType === type ? "active" : ""}`}
                       onClick={() => setFilterType(type)}
                     >
                       {label}
@@ -143,10 +170,10 @@ export default function MainPage() {
                   ))}
                 </div>
                 <label className="hide-bought-toggle">
-                  <input 
-                    type="checkbox" 
-                    checked={hideBought} 
-                    onChange={(e) => setHideBought(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    checked={hideBought}
+                    onChange={(e) => setHideBought(e.target.checked)}
                   />
                   <span>Ẩn đồ đã mua</span>
                 </label>
@@ -156,7 +183,9 @@ export default function MainPage() {
             {filteredItems.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-icon">😅</span>
-                <p className="empty-text">Không tìm thấy món nào phù hợp nữa...</p>
+                <p className="empty-text">
+                  Không tìm thấy món nào phù hợp nữa...
+                </p>
               </div>
             ) : (
               <ul className="items-list">
@@ -167,73 +196,189 @@ export default function MainPage() {
                     }
                     return a.bought ? 1 : -1;
                   })
-              .map((item) => (
-              <li key={item.id} className={`item-card ${item.bought ? 'bought' : ''}`}>
-                    <div className="item-info">
-                      <div className="item-header-row">
-                        <h3 className="item-name">{item.item_name}</h3>
-                        <span
-                          className="item-type-badge"
-                          style={{ background: TYPE_COLOR + '22', color: TYPE_COLOR, borderColor: TYPE_COLOR + '55' }}
-                        >
-                          {TYPE_LABELS[item.item_type] ?? item.item_type}
-                        </span>
+                  .map((item) => (
+                    <li
+                      key={item.id}
+                      className={`item-card ${item.bought ? "bought" : ""}`}
+                    >
+                      <div className="item-info">
+                        <div className="item-header-row">
+                          <h3 className="item-name">{item.item_name}</h3>
+                          <span
+                            className="item-type-badge"
+                            style={{
+                              background: TYPE_COLOR + "22",
+                              color: TYPE_COLOR,
+                              borderColor: TYPE_COLOR + "55",
+                            }}
+                          >
+                            {TYPE_LABELS[item.item_type] ?? item.item_type}
+                          </span>
+                        </div>
+                        <ItemSubInfo item={item} />
+                        <div className="item-meta">
+                          {item.shop_name && (
+                            <span className="item-shop">
+                              🏪 {item.shop_name}
+                            </span>
+                          )}
+                          {item.quantity > 1 && (
+                            <span className="item-qty">x{item.quantity}</span>
+                          )}
+                          <span className="item-date">
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString(
+                                  "vi-VN",
+                                  {
+                                    timeZone: "Asia/Ho_Chi_Minh",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )
+                              : ""}
+                          </span>
+                        </div>
+                        {item.buy_url && (
+                          <a
+                            className="item-link"
+                            href={item.buy_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            🔗 Xem sản phẩm
+                          </a>
+                        )}
                       </div>
-                      <ItemSubInfo item={item} />
-                      <div className="item-meta">
-                        {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
-                        {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
-                        <span className="item-date">
-                          {item.created_at ? new Date(item.created_at).toLocaleString('vi-VN', {
-                            timeZone: 'Asia/Ho_Chi_Minh',
-                            month: 'short', day: 'numeric', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                          }) : ''}
-                        </span>
-                      </div>
-                      {item.buy_url && (
-                        <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
-                          🔗 Xem sản phẩm
-                        </a>
-                      )}
-                    </div>
-                    <div className="item-actions">
-                      {!item.bought && (
-                        <button 
-                          className="buy-btn"
-                          onClick={() => handleBuy(item.id)}
-                          aria-label="Đã mua mục này"
+                      <div className="item-actions">
+                        {!item.bought && (
+                          <button
+                            className="buy-btn"
+                            onClick={() => handleBuy(item.id)}
+                            aria-label="Đã mua mục này"
+                          >
+                            ✓ Anh đã mua
+                          </button>
+                        )}
+                        <button
+                          className="delete-btn"
+                          onClick={() => handleDelete(item.id)}
+                          aria-label="Xóa mục"
                         >
-                          ✓ Anh đã mua
+                          🗑
                         </button>
-                      )}
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDelete(item.id)}
-                        aria-label="Xóa mục"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </li>
-                ))}
+                      </div>
+                    </li>
+                  ))}
               </ul>
             )}
           </div>
         )}
       </div>
 
-      <button className="fab" onClick={() => navigate('/add')} aria-label="Thêm mục mới">
+      <button
+        className="fab"
+        onClick={() => navigate("/add")}
+        aria-label="Thêm mục mới"
+      >
         +
       </button>
 
-      {confirmModal.isOpen && (
+      {reviewModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <p className="modal-text">Có chắc anh đã mua chưaaaaaa 🧐</p>
-            <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={cancelBuy}>Chưa nha</button>
-              <button className="modal-btn confirm" onClick={confirmBuy}>Đã mua rùii</button>
+            <h2 className="modal-title">Có chắc anh đã mua chưaaaaaa 🧐</h2>
+            <p className="modal-text">
+              Viết vài dòng cảm nhận về{" "}
+              <strong>{reviewModal.item?.item_name}</strong> luôn để em biết
+              nhaaa!
+            </p>
+
+            <div
+              className="review-form"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                marginTop: "15px",
+                textAlign: "left",
+              }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  fontSize: "0.9rem",
+                  fontWeight: 500,
+                  color: "#333",
+                }}
+              >
+                Chấm điểm (1-5 sao):
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={reviewForm.score}
+                  onChange={(e) =>
+                    setReviewForm({
+                      ...reviewForm,
+                      score: parseInt(e.target.value),
+                    })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    fontFamily: "inherit",
+                    fontSize: "1rem",
+                  }}
+                />
+              </label>
+              <label
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  fontSize: "0.9rem",
+                  fontWeight: 500,
+                  color: "#333",
+                }}
+              >
+                Cảm nhận của em:
+                <textarea
+                  value={reviewForm.content}
+                  onChange={(e) =>
+                    setReviewForm({ ...reviewForm, content: e.target.value })
+                  }
+                  rows={3}
+                  placeholder="Quá chuẩn lun..."
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    fontFamily: "inherit",
+                    fontSize: "1rem",
+                    resize: "vertical",
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: "20px" }}>
+              <button className="modal-btn cancel" onClick={cancelBuy}>
+                Chưa nha
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={confirmBuyAndReview}
+              >
+                Đã mua rùii
+              </button>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ type Review struct {
 	HistoryID uuid.UUID `gorm:"type:uuid;not null" json:"history_id"`
 	History   History   `gorm:"foreignKey:HistoryID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"history"`
 	Score     int       `gorm:"not null" json:"score"`
+	Content   string    `json:"content"`
 }
 
 func (r *Review) BeforeCreate(tx *gorm.DB) (err error) {

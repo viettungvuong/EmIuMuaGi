@@ -9,7 +9,7 @@ import (
 	"github.com/viettungvuong/emiumuagi-backend/database"
 )
 
-func viewHistories(c *gin.Context) {
+func GetHistories(c *gin.Context) {
 	var res []struct {
 		ID     uuid.UUID `json:"id"`
 		ItemID uint      `json:"item_id"`

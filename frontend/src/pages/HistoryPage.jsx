@@ -27,10 +27,12 @@ export default function HistoryPage() {
   return (
     <div className="history-page">
       <header className="history-header">
-        <button className="back-btn" onClick={() => navigate("/")}>
-          ← Về
-        </button>
-        <h1 className="history-title">Lịch Sử Mua Đồ</h1>
+        <div className="history-header-left">
+          <button className="back-btn" onClick={() => navigate("/")}>
+            ←
+          </button>
+          <h1 className="history-title">Lịch Sử Mua Đồ</h1>
+        </div>
       </header>
 
       <div className="history-container">

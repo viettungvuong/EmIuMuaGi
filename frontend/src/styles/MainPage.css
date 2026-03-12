@@ -42,6 +42,12 @@
   font-weight: 500;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .logout-btn {
   padding: 8px 18px;
   background: transparent;
@@ -58,6 +64,25 @@
   border-color: var(--danger);
   color: var(--danger);
   background: rgba(255, 77, 109, 0.06);
+}
+
+.history-link-btn {
+  padding: 8px 18px;
+  background: rgba(236, 72, 153, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-link-btn:hover {
+  background: rgba(236, 72, 153, 0.2);
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .items-container {

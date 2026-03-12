@@ -142,9 +142,14 @@ export default function MainPage() {
           </h1>
           <span className="item-count">{items.length} mục</span>
         </div>
-        <button className="logout-btn" onClick={handleLogout}>
-          Đăng Xuất
-        </button>
+        <div className="header-right">
+          <button className="history-link-btn" onClick={() => navigate("/history")}>
+            Lịch Sử
+          </button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Đăng Xuất
+          </button>
+        </div>
       </header>
 
       <div className="items-container">

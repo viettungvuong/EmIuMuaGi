@@ -3,6 +3,7 @@ import PasswordPage from './pages/PasswordPage';
 import MainPage from './pages/MainPage';
 import AddPage from './pages/AddPage';
 import QuestionPage from './pages/QuestionPage';
+import HistoryPage from './pages/HistoryPage';
 
 function ProtectedRoute({ children }) {
   const isAuth = localStorage.getItem('authenticated') === 'true';
@@ -35,6 +36,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <QuestionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
             </ProtectedRoute>
           }
         />

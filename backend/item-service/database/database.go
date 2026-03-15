@@ -5,20 +5,21 @@ import (
 	"os"
 
 	"github.com/viettungvuong/emiumuagi-backend/models"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
 func InitDB() {
-	dbUrl := os.Getenv("DATABASE_URL")
-	if dbUrl == "" {
-		dbUrl = "./app.db"
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		// Default to local postgres if no environment variable is set
+		dsn = "host=localhost user=postgres password=postgres dbname=emiumuagi port=5432 sslmode=disable TimeZone=Asia/Ho_Chi_Minh"
 	}
 
 	var err error
-	DB, err = gorm.Open(sqlite.Open(dbUrl), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

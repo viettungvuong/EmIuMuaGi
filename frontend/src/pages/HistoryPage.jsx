@@ -51,21 +51,37 @@ export default function HistoryPage() {
             {histories.map((history) => (
               <li key={history.id} className="history-card">
                 <div className="history-info">
+                  <div className="history-header-card">
+                    <h3 className="history-item-name">{history.item_name}</h3>
+                    <p className="history-date">
+                      {history.time
+                        ? new Date(history.time).toLocaleString("vi-VN", {
+                            timeZone: "Asia/Ho_Chi_Minh",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Không xác định"}
+                    </p>
+                  </div>
+
+                  {history.score !== null && (
+                    <div className="history-review">
+                      <div className="review-stars">
+                        {"★".repeat(history.score)}
+                        {"☆".repeat(5 - history.score)}
+                      </div>
+                      {history.content && (
+                        <p className="review-content">"{history.content}"</p>
+                      )}
+                    </div>
+                  )}
+
                   <p className="history-meta">
                     <span className="history-label">Mã món đồ: </span>
                     <span className="history-id">{history.item_id}</span>
-                  </p>
-                  <p className="history-date">
-                    {history.time
-                      ? new Date(history.time).toLocaleString("vi-VN", {
-                          timeZone: "Asia/Ho_Chi_Minh",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "Không xác định"}
                   </p>
                 </div>
               </li>

@@ -33,6 +33,7 @@ func main() {
 	// CORS Configuration (API Gateway handles all CORS)
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
+		"http://localhost",
 		"http://localhost:5173",
 		"http://127.0.0.1:5173",
 		"https://viettungvuong.github.io",

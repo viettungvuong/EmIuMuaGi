@@ -13,10 +13,6 @@ var DB *gorm.DB
 
 func InitDB() {
 	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		// Default to local postgres if no environment variable is set
-		dsn = "host=localhost user=postgres password=postgres dbname=emiumuagi port=5432 sslmode=disable TimeZone=Asia/Ho_Chi_Minh"
-	}
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})

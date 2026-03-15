@@ -44,12 +44,6 @@ export default function MainPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hideBought, setHideBought] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
-  const [reviewModal, setReviewModal] = useState({
-    isOpen: false,
-    itemId: null,
-    item: null,
-  });
-  const [reviewForm, setReviewForm] = useState({ score: 5, content: "" });
   const navigate = useNavigate();
 
   const fetchItems = async () => {
@@ -95,28 +89,6 @@ export default function MainPage() {
 
   const cancelBuy = () => {
     setConfirmModal({ isOpen: false, itemId: null });
-  };
-
-  const handleReview = (id) => {
-    const item = items.find((i) => i.id === id);
-    setReviewModal({ isOpen: true, itemId: id, item });
-    setReviewForm({ score: 5, content: "" });
-  };
-
-  const submitReview = async () => {
-    const id = reviewModal.itemId;
-    setReviewModal({ isOpen: false, itemId: null, item: null });
-    if (!id) return;
-
-    try {
-      await client.post(`/api/items/${id}/review`, reviewForm);
-    } catch (err) {
-      console.error("Failed to submit review:", err);
-    }
-  };
-
-  const cancelReview = () => {
-    setReviewModal({ isOpen: false, itemId: null, item: null });
   };
 
   const handleLogout = () => {
@@ -276,14 +248,7 @@ export default function MainPage() {
                       </div>
                       <div className="item-actions">
                         {item.bought && (
-                          <button
-                            className="buy-btn"
-                            onClick={() => handleReview(item.id)}
-                            aria-label="Đánh giá mục này"
-                            style={{ background: "#cb1d7a" }}
-                          >
-                            ⭐ Đánh giá
-                          </button>
+                          <div className="bought-badge">✓</div>
                         )}
                         {!item.bought && (
                           <button
@@ -325,104 +290,6 @@ export default function MainPage() {
             <div className="modal-actions">
               <button className="modal-btn cancel" onClick={cancelBuy}>Chưa nha</button>
               <button className="modal-btn confirm" onClick={confirmBuy}>Đã mua rùii</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {reviewModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2 className="modal-title">Em iu có mua đánh giáaa</h2>
-            <p className="modal-text">
-              Viết vài dòng cảm nhận về{" "}
-              <strong>{reviewModal.item?.item_name}</strong> luôn để em biết
-              nhaaa!
-            </p>
-
-            <div
-              className="review-form"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "15px",
-                marginTop: "15px",
-                textAlign: "left",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "5px",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                  color: "#333",
-                }}
-              >
-                Chấm điểm (1-5 sao):
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={reviewForm.score}
-                  onChange={(e) =>
-                    setReviewForm({
-                      ...reviewForm,
-                      score: parseInt(e.target.value),
-                    })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "inherit",
-                    fontSize: "1rem",
-                  }}
-                />
-              </label>
-              <label
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "5px",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                  color: "#333",
-                }}
-              >
-                Cảm nhận của em:
-                <textarea
-                  value={reviewForm.content}
-                  onChange={(e) =>
-                    setReviewForm({ ...reviewForm, content: e.target.value })
-                  }
-                  rows={3}
-                  placeholder="Quá chuẩn lun..."
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    fontFamily: "inherit",
-                    fontSize: "1rem",
-                    resize: "vertical",
-                  }}
-                />
-              </label>
-            </div>
-
-            <div className="modal-actions" style={{ marginTop: "20px" }}>
-              <button className="modal-btn cancel" onClick={cancelReview}>
-                Hủy
-              </button>
-              <button
-                className="modal-btn confirm"
-                onClick={submitReview}
-              >
-                Gửi Đánh Giá
-              </button>
             </div>
           </div>
         </div>

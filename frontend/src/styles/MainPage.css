@@ -223,7 +223,7 @@
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 8px;
-  color: #10b981;
+  color: #2f552f;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -235,6 +235,17 @@
 .buy-btn:hover {
   background: rgba(16, 185, 129, 0.2);
   border-color: rgba(16, 185, 129, 0.5);
+}
+
+.bought-badge {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: #10b981;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  white-space: nowrap;
 }
 
 .delete-btn {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -189,6 +190,8 @@ func addHistory(ctx context.Context, item_id uint) uuid.UUID {
 	if result.Error != nil {
 		return uuid.Nil
 	}
+
+	fmt.Printf("Add history for %+v successfully\n", item_id)
 
 	return h.ID
 }

@@ -27,11 +27,16 @@ func main() {
 		items := api.Group("/items")
 		{
 			items.GET("", handlers.GetItems)
-			items.GET("/history", handlers.GetHistories)
 			items.POST("", handlers.CreateItem)
 			items.DELETE("/:item_id", handlers.DeleteItem)
 			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
 			items.POST("/:item_id/review", handlers.AddReview)
+		}
+
+		history := api.Group("/history")
+		{
+			history.GET("", handlers.GetHistories)
+			history.POST("/:history_id/review", handlers.AddReviewHistory)
 		}
 	}
 

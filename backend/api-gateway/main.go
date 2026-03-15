@@ -50,6 +50,8 @@ func main() {
 	r.Any("/api/auth/*path", proxy("http://localhost:8001"))
 	r.Any("/api/items", proxy("http://localhost:8002"))
 	r.Any("/api/items/*path", proxy("http://localhost:8002"))
+	r.Any("/api/history", proxy("http://localhost:8002"))
+	r.Any("/api/history/*path", proxy("http://localhost:8002"))
 
 	// Fallback custom matcher just in case
 	r.NoRoute(func(c *gin.Context) {
@@ -58,7 +60,7 @@ func main() {
 			proxy("http://localhost:8001")(c)
 			return
 		}
-		if strings.HasPrefix(path, "/api/items") {
+		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") {
 			proxy("http://localhost:8002")(c)
 			return
 		}

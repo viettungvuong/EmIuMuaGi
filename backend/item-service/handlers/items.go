@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	"github.com/viettungvuong/emiumuagi-backend/models"
 )
@@ -175,6 +178,24 @@ func DeleteItem(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func addHistory(ctx context.Context, item_id uint) uuid.UUID {
+	h := models.History{
+		ItemID: item_id,
+		Time:   time.Now(),
+	}
+
+	// Store on db
+	result := database.DB.WithContext(ctx).Create(&h)
+
+	if result.Error != nil {
+		return uuid.Nil
+	}
+
+	fmt.Printf("Add history for %+v successfully\n", item_id)
+
+	return h.ID
+}
+
 func MarkItemAsBought(c *gin.Context) {
 	id := c.Param("item_id")
 	var item models.Item
@@ -186,6 +207,9 @@ func MarkItemAsBought(c *gin.Context) {
 
 	item.Bought = true
 	database.DB.Save(&item)
+
+	// Automatically create a history entry
+	historyId := addHistory(c.Request.Context(), item.ID)
 
 	var res struct {
 		models.Item
@@ -212,7 +236,10 @@ func MarkItemAsBought(c *gin.Context) {
 		WHERE i.id = ?
 	`, id).Scan(&res)
 
-	resp := models.AnyItemResponse{Item: res.Item}
+	resp := models.AnyItemResponse{Item: res.Item, Additional: map[string]any{
+		"HistoryID": historyId,
+	}}
+
 	switch res.ItemType {
 	case "clothes":
 		resp.Size = res.CSize

@@ -36,7 +36,7 @@ func main() {
 		history := api.Group("/history")
 		{
 			history.GET("", handlers.GetHistories)
-			history.POST("/:history_id/review", handlers.AddReviewHistory)
+			history.POST("/:history_id/review", handlers.AddReview)
 		}
 	}
 

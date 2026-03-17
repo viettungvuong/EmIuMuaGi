@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -13,9 +15,17 @@ type Review struct {
 	Content   string    `json:"content"`
 }
 
+const MAX_LENGTH_CONTENT = 256
+
 func (r *Review) BeforeCreate(tx *gorm.DB) (err error) {
 	if r.ID == uuid.Nil {
 		r.ID, err = uuid.NewV7() // use UUIDv7
+	}
+	if r.Score < 0 || r.Score > 5 {
+		return errors.New("Score must be between 0 and 5") // prevent it from being stored on DB
+	}
+	if len(r.Content) > MAX_LENGTH_CONTENT {
+		return errors.New("Content is too long")
 	}
 	return
 }

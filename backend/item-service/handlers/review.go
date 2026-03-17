@@ -19,7 +19,7 @@ func AddReview(c *gin.Context) {
 		return
 	}
 
-	// try find History object
+	// try find History object based on param
 	var history models.History
 	if err := database.DB.First(&history, hUUID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "History record not found"})

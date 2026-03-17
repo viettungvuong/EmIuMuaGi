@@ -44,7 +44,7 @@ func AddReview(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&review).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create review"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

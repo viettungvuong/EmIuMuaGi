@@ -10,6 +10,8 @@ function ProtectedRoute({ children }) {
   return isAuth ? children : <Navigate to="/login" replace />;
 }
 
+
+
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>

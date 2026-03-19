@@ -11,7 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthRequest struct {
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type SignupRequest struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -76,8 +83,12 @@ func decryptPassword(encB64 string) string {
 	return string(unpadded)
 }
 
+func SignUp(c *gin.Context) {
+
+}
+
 func Login(c *gin.Context) {
-	var req AuthRequest
+	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return

@@ -9,6 +9,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/viettungvuong/emiumuagi-user-service/database"
+	"github.com/viettungvuong/emiumuagi-user-service/models"
 )
 
 type LoginRequest struct {
@@ -43,6 +45,38 @@ func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
 		}
 	}
 	return data[:length-padLen], nil
+}
+
+func pkcs7Pad(data []byte, blockSize int) []byte {
+	padding := blockSize - (len(data) % blockSize)
+	padText := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(data, padText...)
+}
+
+func encryptPassword(originalPassword string) string {
+	aesKeyStr := os.Getenv("AES_KEY")
+	aesIVStr := os.Getenv("AES_IV")
+	if aesKeyStr == "" || aesIVStr == "" {
+		return ""
+	}
+
+	key := []byte(aesKeyStr)
+	iv := []byte(aesIVStr)
+	plaintext := []byte(originalPassword)
+
+	// Pad the plaintext before encryption
+	plaintext = pkcs7Pad(plaintext, aes.BlockSize)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return ""
+	}
+
+	ciphertext := make([]byte, len(plaintext))
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(ciphertext, plaintext)
+
+	return base64.StdEncoding.EncodeToString(ciphertext)
 }
 
 func decryptPassword(encB64 string) string {
@@ -84,7 +118,26 @@ func decryptPassword(encB64 string) string {
 }
 
 func SignUp(c *gin.Context) {
+	var req SignupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
 
+	encryptedPassword := encryptPassword(req.Password)
+
+	user := models.User{
+		ID:       req.Username,
+		Email:    req.Email,
+		Password: encryptedPassword,
+	} // create new object
+
+	if err := database.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already exists"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
 func Login(c *gin.Context) {

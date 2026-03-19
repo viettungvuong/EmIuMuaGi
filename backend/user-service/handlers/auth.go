@@ -147,13 +147,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	appPassword := os.Getenv("APP_PASSWORD")
-
-	decryptedPass := decryptPassword(req.Password)
-	if req.Password == appPassword || decryptedPass == appPassword {
-		c.JSON(http.StatusOK, AuthResponse{Success: true, Message: "Authenticated successfully"})
+	var user models.User
+	if err := database.DB.Where("id = ?", req.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
-
-	c.JSON(http.StatusUnauthorized, gin.H{"detail": "Invalid password"})
 }

@@ -26,7 +26,7 @@ func proxy(target string) gin.HandlerFunc {
 }
 
 func main() {
-	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env")
 
 	r := gin.Default()
 

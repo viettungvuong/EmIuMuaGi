@@ -115,6 +115,7 @@ export default function MainPage() {
           <span className="item-count">{items.length} mục</span>
         </div>
         <div className="header-right">
+          <span className="user-welcome">Chào, {localStorage.getItem("username") || "bạn"} 👋</span>
           <button className="history-link-btn" onClick={() => navigate("/history")}>
             Lịch Sử
           </button>

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import PasswordPage from './pages/PasswordPage';
+import AuthPage from './pages/AuthPage';
 import MainPage from './pages/MainPage';
 import AddPage from './pages/AddPage';
 import QuestionPage from './pages/QuestionPage';
@@ -10,13 +10,11 @@ function ProtectedRoute({ children }) {
   return isAuth ? children : <Navigate to="/login" replace />;
 }
 
-
-
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
-        <Route path="/login" element={<PasswordPage />} />
+        <Route path="/login" element={<AuthPage />} />
         <Route
           path="/"
           element={

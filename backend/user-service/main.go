@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load(".env")
+	godotenv.Load(".env")
 
 	database.InitDB()
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/viettungvuong/emiumuagi-user-service/database"
+	"github.com/viettungvuong/emiumuagi-user-service/internal"
 	"github.com/viettungvuong/emiumuagi-user-service/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginRequest struct {
@@ -25,16 +25,6 @@ type AuthResponse struct {
 	Message string `json:"message"`
 }
 
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
 func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,7 +32,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := hashPassword(req.Password)
+	hashedPassword, err := internal.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
 		return
@@ -75,7 +65,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if !checkPasswordHash(req.Password, user.Password) {
+	if !internal.CheckPasswordHash(req.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}

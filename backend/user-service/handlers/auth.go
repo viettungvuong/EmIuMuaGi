@@ -1,17 +1,22 @@
 package handlers
 
 import (
-	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
-	"encoding/base64"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/viettungvuong/emiumuagi-user-service/database"
+	"github.com/viettungvuong/emiumuagi-user-service/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthRequest struct {
+type LoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type SignupRequest struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -20,76 +25,60 @@ type AuthResponse struct {
 	Message string `json:"message"`
 }
 
-func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
-	length := len(data)
-	if length == 0 || length%blockSize != 0 {
-		return nil, os.ErrInvalid
-	}
-	padLen := int(data[length-1])
-	if padLen > blockSize || padLen == 0 {
-		return nil, os.ErrInvalid
-	}
-	padding := data[length-padLen:]
-	for _, pad := range padding {
-		if int(pad) != padLen {
-			return nil, os.ErrInvalid
-		}
-	}
-	return data[:length-padLen], nil
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
 }
 
-func decryptPassword(encB64 string) string {
-	aesKeyStr := os.Getenv("AES_KEY")
-	aesIVStr := os.Getenv("AES_IV")
-
-	if aesKeyStr == "" || aesIVStr == "" {
-		return ""
-	}
-
-	key := []byte(aesKeyStr)
-	iv := []byte(aesIVStr)
-
-	encBytes, err := base64.StdEncoding.DecodeString(encB64)
-	if err != nil || len(encBytes) == 0 {
-		return ""
-	}
-	if len(encBytes)%aes.BlockSize != 0 {
-		return ""
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return ""
-	}
-
-	mode := cipher.NewCBCDecrypter(block, iv)
-	decryptedBytes := make([]byte, len(encBytes))
-	mode.CryptBlocks(decryptedBytes, encBytes)
-
-	unpadded, err := pkcs7Unpad(decryptedBytes, aes.BlockSize)
-	if err != nil {
-		return ""
-	}
-
-	unpadded = bytes.TrimRight(unpadded, "\x00")
-
-	return string(unpadded)
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
-func Login(c *gin.Context) {
-	var req AuthRequest
+func SignUp(c *gin.Context) {
+	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	appPassword := os.Getenv("APP_PASSWORD")
-
-	decryptedPass := decryptPassword(req.Password)
-	if req.Password == appPassword || decryptedPass == appPassword {
-		c.JSON(http.StatusOK, AuthResponse{Success: true, Message: "Authenticated successfully"})
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
 		return
 	}
 
-	c.JSON(http.StatusUnauthorized, gin.H{"detail": "Invalid password"})
+	user := models.User{
+		ID:       req.Username,
+		Email:    req.Email,
+		Password: hashedPassword,
+	} // create new object
+
+	if err := database.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already exists"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+}
+
+func Login(c *gin.Context) {
+	var req LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("id = ?", req.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	if !checkPasswordHash(req.Password, user.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }

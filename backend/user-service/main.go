@@ -6,11 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/viettungvuong/emiumuagi-user-service/database"
 	"github.com/viettungvuong/emiumuagi-user-service/handlers"
 )
 
 func main() {
-	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env")
+
+	database.InitDB()
 
 	r := gin.Default()
 
@@ -25,6 +28,7 @@ func main() {
 		auth := api.Group("/auth")
 		{
 			auth.POST("/login", handlers.Login)
+			auth.POST("/signup", handlers.SignUp)
 		}
 	}
 

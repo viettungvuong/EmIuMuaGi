@@ -62,24 +62,24 @@ func SignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
-func Login(c *gin.Context) bool {
+func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return false
+		return
 	}
 
 	var user models.User
 	if err := database.DB.Where("id = ?", req.Username).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return false
+		return
 	}
 
 	if !checkPasswordHash(req.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
-		return false
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
-	return true
+	return
 }

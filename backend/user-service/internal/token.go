@@ -12,7 +12,8 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-const EXPIRY_MINUTES = 30
+const EXPIRY_MINUTES_ACCESS = 30
+const EXPIRY_DAY_REFRESH = 7
 
 func GenerateTokens(username string) (string, string, error) {
 	accessSecret := []byte(os.Getenv("JWT_SECRET"))
@@ -22,7 +23,7 @@ func GenerateTokens(username string) (string, string, error) {
 	accessClaims := &Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_MINUTES * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_MINUTES_ACCESS * time.Minute)),
 		},
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
@@ -35,7 +36,7 @@ func GenerateTokens(username string) (string, string, error) {
 	refreshClaims := &Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_MINUTES * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_DAY_REFRESH * time.Minute)), // refresh token must be valid for longer
 		},
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)

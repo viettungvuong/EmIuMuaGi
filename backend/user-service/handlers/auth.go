@@ -70,5 +70,15 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	accessToken, refreshToken, err := internal.GenerateTokens(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }

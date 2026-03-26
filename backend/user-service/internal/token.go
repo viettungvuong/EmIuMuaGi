@@ -35,7 +35,7 @@ func GenerateTokens(username string) (string, string, error) {
 	refreshClaims := &Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)), // User asked for 15 mins for both?
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_MINUTES * time.Minute)),
 		},
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)

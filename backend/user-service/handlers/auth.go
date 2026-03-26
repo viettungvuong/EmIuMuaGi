@@ -3,7 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"os"
+
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/viettungvuong/emiumuagi-user-service/database"
 	"github.com/viettungvuong/emiumuagi-user-service/internal"
 	"github.com/viettungvuong/emiumuagi-user-service/models"
@@ -76,9 +79,39 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true) // HttpOnly cookie
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
+		"message":       "Login successful",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
+	})
+}
+
+func RefreshToken(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token") // extract from cookie
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
+		return
+	}
+
+	claims := &internal.Claims{}
+	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	accessToken, err := internal.GenerateAccessToken(claims.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
 	})
 }

@@ -29,6 +29,7 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
+			auth.GET("/refresh", handlers.RefreshToken)
 		}
 	}
 

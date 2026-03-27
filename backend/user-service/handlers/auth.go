@@ -28,6 +28,17 @@ type AuthResponse struct {
 	Message string `json:"message"`
 }
 
+// SignUp handles user registration
+// @Summary Register a new user
+// @Description Create a new user with username, email, and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param signup body SignupRequest true "Signup details"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /auth/signup [post]
 func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,6 +66,16 @@ func SignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
+// Login handles user authentication
+// @Summary User login
+// @Description Authenticate user and return JWT tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param login body LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

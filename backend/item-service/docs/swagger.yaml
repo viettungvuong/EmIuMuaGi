@@ -1,0 +1,94 @@
+basePath: /api
+definitions:
+  models.AnyItemResponse:
+    properties:
+      additional:
+        additionalProperties: {}
+        type: object
+      bought:
+        type: boolean
+      brand:
+        type: string
+      buy_url:
+        type: string
+      category:
+        type: string
+      color:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      item_name:
+        type: string
+      item_type:
+        type: string
+      notes:
+        type: string
+      quantity:
+        type: integer
+      shop_name:
+        type: string
+      size:
+        type: string
+      sugar:
+        type: string
+      toppings:
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:8002
+info:
+  contact: {}
+  description: Microservice for item and history management.
+  title: EmIuMuaGi Item Service API
+  version: "1.0"
+paths:
+  /items:
+    get:
+      description: Get a list of all items including clothes, food_and_drink, and
+        others
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AnyItemResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List all items
+      tags:
+      - items
+    post:
+      consumes:
+      - application/json
+      description: Create a new item (clothes, food_and_drink, or others)
+      parameters:
+      - description: Item to create
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/models.AnyItemResponse'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AnyItemResponse'
+      security:
+      - BearerAuth: []
+      summary: Create an item
+      tags:
+      - items
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

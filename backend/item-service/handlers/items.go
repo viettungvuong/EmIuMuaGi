@@ -39,6 +39,14 @@ func sendPushNotification(title string, message string) {
 	}()
 }
 
+// GetItems retrieves all items with their specific type details
+// @Summary List all items
+// @Description Get a list of all items including clothes, food_and_drink, and others
+// @Tags items
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.AnyItemResponse
+// @Router /items [get]
 func GetItems(c *gin.Context) {
 	type PolledItem struct {
 		models.Item
@@ -99,6 +107,16 @@ func GetItems(c *gin.Context) {
 	c.JSON(http.StatusOK, responses)
 }
 
+// CreateItem creates a new item
+// @Summary Create an item
+// @Description Create a new item (clothes, food_and_drink, or others)
+// @Tags items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param item body models.AnyItemResponse true "Item to create"
+// @Success 201 {object} models.AnyItemResponse
+// @Router /items [post]
 func CreateItem(c *gin.Context) {
 	var input models.AnyItemResponse
 	if err := c.ShouldBindJSON(&input); err != nil {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/AuthPage.css';
 
-export default function AuthPage() {
+export default function AuthPage({ setIsAuth }) {
   const [mode, setMode] = useState('login'); // 'login' or 'signup'
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -21,8 +21,8 @@ export default function AuthPage() {
       if (mode === 'login') {
         const response = await client.post('/api/auth/login', { username, password });
         if (response.data.success || response.status === 200) {
-          localStorage.setItem('authenticated', 'true');
           localStorage.setItem('username', username);
+          setIsAuth(true); // Notify App component
           navigate('/');
         }
       } else {

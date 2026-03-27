@@ -8,6 +8,7 @@ const client = axios.create({
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
   },
+  withCredentials: true,
 });
 
 export default client;

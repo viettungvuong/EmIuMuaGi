@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	"github.com/viettungvuong/emiumuagi-backend/handlers"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
 )
 
 func main() {
@@ -23,6 +24,7 @@ func main() {
 	})
 
 	api := r.Group("/api")
+	api.Use(internal.AuthMiddleware())
 	{
 		items := api.Group("/items")
 		{

@@ -1,5 +1,15 @@
 package main
 
+// @title EmIuMuaGi Item Service API
+// @version 1.0
+// @description Microservice for item and history management.
+// @host localhost:8002
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
 import (
 	"log"
 	"os"
@@ -8,6 +18,10 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	"github.com/viettungvuong/emiumuagi-backend/handlers"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
+	_ "github.com/viettungvuong/emiumuagi-backend/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -22,7 +36,10 @@ func main() {
 		c.JSON(200, gin.H{"message": "EmIuMuaGi API is running"})
 	})
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	api := r.Group("/api")
+	api.Use(internal.AuthMiddleware())
 	{
 		items := api.Group("/items")
 		{

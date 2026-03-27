@@ -3,10 +3,13 @@ package handlers
 import (
 	"net/http"
 
+	"os"
+
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/viettungvuong/emiumuagi-user-service/database"
+	"github.com/viettungvuong/emiumuagi-user-service/internal"
 	"github.com/viettungvuong/emiumuagi-user-service/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginRequest struct {
@@ -25,16 +28,17 @@ type AuthResponse struct {
 	Message string `json:"message"`
 }
 
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
+// SignUp handles user registration
+// @Summary Register a new user
+// @Description Create a new user with username, email, and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param signup body SignupRequest true "Signup details"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /auth/signup [post]
 func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,7 +46,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := hashPassword(req.Password)
+	hashedPassword, err := internal.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
 		return
@@ -62,6 +66,16 @@ func SignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
+// Login handles user authentication
+// @Summary User login
+// @Description Authenticate user and return JWT tokens
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param login body LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -75,10 +89,57 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if !checkPasswordHash(req.Password, user.Password) {
+	if !internal.CheckPasswordHash(req.Password, user.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	accessToken, refreshToken, err := internal.GenerateTokens(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
+
+	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true) // HttpOnly cookie
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Login successful",
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
+func RefreshToken(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token") // extract from cookie
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
+		return
+	}
+
+	claims := &internal.Claims{}
+	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	accessToken, err := internal.GenerateAccessToken(claims.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
+	})
+}
+
+func GetMe(c *gin.Context) {
+	username, _ := c.Get("username") // from middleware
+	c.JSON(http.StatusOK, gin.H{
+		"username": username,
+	})
 }

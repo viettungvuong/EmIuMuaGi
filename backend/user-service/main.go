@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/viettungvuong/emiumuagi-user-service/database"
 	"github.com/viettungvuong/emiumuagi-user-service/handlers"
+	"github.com/viettungvuong/emiumuagi-user-service/internal"
 	_ "github.com/viettungvuong/emiumuagi-user-service/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -41,6 +42,13 @@ func main() {
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
 			auth.GET("/refresh", handlers.RefreshToken)
+		}
+
+		// Protected endpoints
+		protected := api.Group("/")
+		protected.Use(internal.AuthMiddleware())
+		{
+			protected.GET("/me", handlers.GetMe)
 		}
 	}
 

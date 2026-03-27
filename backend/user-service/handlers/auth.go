@@ -100,7 +100,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true) // HttpOnly cookie
+	// Set HttpOnly cookies for both tokens
+	c.SetCookie("access_token", accessToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Login successful",
@@ -131,6 +133,8 @@ func RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
 		return
 	}
+
+	c.SetCookie("access_token", accessToken, 30*60, "/", "", false, true) // 30 min access token cookie
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,

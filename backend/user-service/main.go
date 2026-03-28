@@ -49,6 +49,7 @@ func main() {
 		protected.Use(internal.AuthMiddleware())
 		{
 			protected.GET("/me", handlers.GetMe)
+			protected.POST("/partner/add/:inviteID", handlers.AddPartner)
 		}
 	}
 

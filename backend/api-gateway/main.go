@@ -40,7 +40,7 @@ func main() {
 	}
 	config.AllowCredentials = true
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"*"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "ngrok-skip-browser-warning"}
 	r.Use(cors.New(config))
 
 	r.GET("/", func(c *gin.Context) {

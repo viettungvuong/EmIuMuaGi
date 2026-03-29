@@ -12,12 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/viettungvuong/emiumuagi-user-service/database"
-	"github.com/viettungvuong/emiumuagi-user-service/handlers"
-	"github.com/viettungvuong/emiumuagi-user-service/internal"
-	_ "github.com/viettungvuong/emiumuagi-user-service/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/viettungvuong/emiumuagi-user-service/database"
+	_ "github.com/viettungvuong/emiumuagi-user-service/docs"
+	"github.com/viettungvuong/emiumuagi-user-service/handlers"
+	"github.com/viettungvuong/emiumuagi-user-service/internal"
 )
 
 func main() {
@@ -44,11 +44,16 @@ func main() {
 			auth.GET("/refresh", handlers.RefreshToken)
 		}
 
-		// Protected endpoints
-		protected := api.Group("/")
-		protected.Use(internal.AuthMiddleware())
+		partner := api.Group("/partner")
+		partner.Use(internal.AuthMiddleware())
 		{
-			protected.GET("/me", handlers.GetMe)
+			partner.POST("/partner/add/:inviteID", handlers.AddPartner)
+		}
+
+		misc := api.Group("/")
+		misc.Use(internal.AuthMiddleware())
+		{
+			misc.GET("/me", handlers.GetMe)
 		}
 	}
 

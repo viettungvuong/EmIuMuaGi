@@ -17,7 +17,6 @@ import (
 	"github.com/viettungvuong/emiumuagi-user-service/database"
 	_ "github.com/viettungvuong/emiumuagi-user-service/docs"
 	"github.com/viettungvuong/emiumuagi-user-service/handlers"
-	"github.com/viettungvuong/emiumuagi-user-service/internal"
 )
 
 func main() {
@@ -45,7 +44,6 @@ func main() {
 		}
 
 		partner := api.Group("/partner")
-		partner.Use(internal.AuthMiddleware())
 		{
 			partner.POST("/add/:inviteID", handlers.AddPartner)
 		}

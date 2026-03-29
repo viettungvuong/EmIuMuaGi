@@ -16,12 +16,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/viettungvuong/emiumuagi-backend/database"
-	"github.com/viettungvuong/emiumuagi-backend/handlers"
-	"github.com/viettungvuong/emiumuagi-backend/internal"
-	_ "github.com/viettungvuong/emiumuagi-backend/docs"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/viettungvuong/emiumuagi-backend/database"
+	_ "github.com/viettungvuong/emiumuagi-backend/docs"
+	"github.com/viettungvuong/emiumuagi-backend/handlers"
 )
 
 func main() {
@@ -39,7 +38,6 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
-	api.Use(internal.AuthMiddleware())
 	{
 		items := api.Group("/items")
 		{

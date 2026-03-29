@@ -21,20 +21,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await client.get('/api/me');
-        if (response.status === 200) {
-          setIsAuth(true);
-        }
-      } catch (err) {
-        setIsAuth(false);
-        console.log("No valid session found.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuthStatus();
+    // Simply set loading to false as the /api/me check was removed.
+    setLoading(false);
   }, []);
 
   return (

@@ -47,14 +47,9 @@ func main() {
 		partner := api.Group("/partner")
 		partner.Use(internal.AuthMiddleware())
 		{
-			partner.POST("/partner/add/:inviteID", handlers.AddPartner)
+			partner.POST("/add/:inviteID", handlers.AddPartner)
 		}
 
-		misc := api.Group("/")
-		misc.Use(internal.AuthMiddleware())
-		{
-			misc.GET("/me", handlers.GetMe)
-		}
 	}
 
 	port := os.Getenv("PORT")

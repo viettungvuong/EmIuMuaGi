@@ -49,6 +49,7 @@ func main() {
 
 	// Redirect based on endpoints
 	r.Any("/api/auth/*path", proxy("http://localhost:8001"))
+	r.Any("/api/partner/*path", proxy("http://localhost:8001"))
 	r.Any("/api/items", proxy("http://localhost:8002"))
 	r.Any("/api/items/*path", proxy("http://localhost:8002"))
 	r.Any("/api/history", proxy("http://localhost:8002"))
@@ -57,7 +58,7 @@ func main() {
 	// Fallback custom matcher just in case
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
-		if strings.HasPrefix(path, "/api/auth") {
+		if strings.HasPrefix(path, "/api/auth") || strings.HasPrefix(path, "/api/partner") {
 			proxy("http://localhost:8001")(c)
 			return
 		}

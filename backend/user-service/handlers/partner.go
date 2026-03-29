@@ -11,8 +11,8 @@ import (
 
 func AddPartner(c *gin.Context) {
 	// Extract the user identity from the JWT claims already set by the middleware
-	username, exists := c.Get("username")
-	if !exists {
+	username := c.GetString("username")
+	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User identity not found in token"})
 		return
 	}

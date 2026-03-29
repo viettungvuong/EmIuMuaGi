@@ -140,10 +140,3 @@ func RefreshToken(c *gin.Context) {
 		"access_token": accessToken,
 	})
 }
-
-func GetMe(c *gin.Context) {
-	username, _ := c.Get("username") // from middleware
-	c.JSON(http.StatusOK, gin.H{
-		"username": username,
-	})
-}

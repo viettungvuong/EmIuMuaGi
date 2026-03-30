@@ -5,14 +5,15 @@ import (
 )
 
 type Item struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ItemName  string    `gorm:"size:255;not null" json:"item_name"`
-	Quantity  int       `gorm:"default:1;not null" json:"quantity"`
-	BuyURL    *string   `gorm:"size:2048" json:"buy_url"`
-	ShopName  *string   `gorm:"size:255" json:"shop_name"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	ItemType  string    `gorm:"size:50;not null" json:"item_type"`
-	Bought    bool      `gorm:"default:false;not null" json:"bought"`
+	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	ItemName        string    `gorm:"size:255;not null" json:"item_name"`
+	Quantity        int       `gorm:"default:1;not null" json:"quantity"`
+	BuyURL          *string   `gorm:"size:2048" json:"buy_url"`
+	ShopName        *string   `gorm:"size:255" json:"shop_name"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ItemType        string    `gorm:"size:50;not null" json:"item_type"`
+	Bought          bool      `gorm:"default:false;not null" json:"bought"`
+	ItemMediaFolder *string   `gorm:"size:4096" json:"item_media_folder"`
 }
 
 type Clothes struct {

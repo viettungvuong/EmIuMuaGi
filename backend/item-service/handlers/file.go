@@ -17,10 +17,10 @@ import (
 const uploadDir = "./uploads"
 
 // filePayload holds the pre-read bytes and metadata so goroutines
-// don't touch *gin.Context after the handler returns.
 type filePayload struct {
 	data     []byte
 	filename string
+	taskID   string // track individual file progress
 }
 
 // UploadItemFiles handles file uploads for an item.
@@ -31,68 +31,63 @@ type filePayload struct {
 // Content-Type: multipart/form-data
 // Field name: "files" (supports multiple)
 func UploadItemFiles(c *gin.Context) {
-	itemID := c.Param("item_id") // files (images, videos for an item)
-
-	// Parse the multipart form — limit total size to 50 MB (50 << 20)
-	if err := c.Request.ParseMultipartForm(50 << 20); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
-		return
-	}
-
+	itemID := c.Param("item_id")
 	formFiles := c.Request.MultipartForm.File["files"]
-	if len(formFiles) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No files provided under field 'files'"})
-		return
-	}
 
-	// ── Step 1: Read all file bytes NOW, while still inside the handler ──
-	// This is the critical step — we must not let goroutines read from c.Request.
 	payloads := make([]filePayload, 0, len(formFiles))
-	for _, fh := range formFiles { // read each file
+	taskIDs := make([]string, 0, len(formFiles)) // return to the client for later polling
+
+	for _, fh := range formFiles {
 		data, err := readFileHeader(fh)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file: " + fh.Filename})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
 			return
 		}
+
+		// Create custom task_id: filename + nanosecond timestamp
+		customTaskID := fmt.Sprintf("%s_%d", fh.Filename, time.Now().UnixNano())
+
 		payloads = append(payloads, filePayload{
 			data:     data,
 			filename: fh.Filename,
+			taskID:   customTaskID,
 		})
+		taskIDs = append(taskIDs, customTaskID)
 	}
 
-	// ── Step 2: Respond immediately — client doesn't wait for disk writes ──
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":    "Upload is being proceeded in background",
-		"item_id":    itemID,
-		"file_count": len(payloads),
-	})
-
-	// ── Step 3: Save files concurrently in goroutines ──
-	// Each file gets its own goroutine. WaitGroup used for structured cleanup/logging.
-	var wg sync.WaitGroup
 	destDir := filepath.Join(uploadDir, itemID)
-
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		log.Printf("[upload] Failed to create dir %s: %v", destDir, err)
+		log.Printf("[upload] Failed to create dir: %v", err)
 		return
 	}
 
+	// ── Step 3: Respond with the list of Task IDs ──
+	c.JSON(http.StatusAccepted, gin.H{
+		"message":  "Files are processing",
+		"item_id":  itemID,
+		"task_ids": taskIDs, // use for polling the status
+	})
+
+	var wg sync.WaitGroup
 	for _, p := range payloads {
-		wg.Add(1)                      // increase count of goroutines
-		go func(payload filePayload) { // start goroutine here
-			defer wg.Done() // no matter how the function ends (success or fail), wg.Done() is gone through
+		wg.Add(1)
+		// The 'p' inside the ( ) is what creates the connection.
+		// It tells Go: "Take the current value of 'p' and give it to this specific goroutine."
+		go func(payload filePayload) {
+			defer wg.Done()
+
+			// Use the specific TaskID assigned to this goroutine
 			if _, err := saveFile(destDir, payload); err != nil {
-				log.Printf("[upload] Failed to save %s: %v", payload.filename, err)
+				log.Printf("[upload][Task:%s] Failed: %v", payload.taskID, err)
 			} else {
-				log.Printf("[upload] Saved %s for item %s", payload.filename, itemID)
+				log.Printf("[upload][Task:%s] Success for %s", payload.taskID, payload.filename)
 			}
-		}(p) // pass by value — no shared state, no race
+		}(p) // pass current p to payload param
 	}
 
-	// Wait in a separate goroutine so the HTTP response is already sent
 	go func() {
-		wg.Wait() // block the code from continue until goroutine count is 0 (put into goroutine to not block the whole program)
-		log.Printf("[upload] All %d file(s) saved for item %s", len(payloads), itemID)
+		wg.Wait()
+		log.Printf("[upload] Finished all tasks for item %s", itemID)
 	}()
 }
 

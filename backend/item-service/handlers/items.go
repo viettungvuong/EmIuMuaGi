@@ -80,9 +80,9 @@ func GetItems(c *gin.Context) {
 		return
 	}
 
-	responses := make([]models.AnyItemResponse, 0, len(results))
+	responses := make([]models.AnyItem, 0, len(results))
 	for _, res := range results {
-		resp := models.AnyItemResponse{Item: res.Item}
+		resp := models.AnyItem{Item: res.Item}
 		if res.ItemType == "clothes" {
 			resp.Size = res.CSize
 			resp.Color = res.Color
@@ -118,7 +118,7 @@ func GetItems(c *gin.Context) {
 // @Success 201 {object} models.AnyItemResponse
 // @Router /items [post]
 func CreateItem(c *gin.Context) {
-	var input models.AnyItemResponse
+	var input models.AnyItem
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -254,7 +254,7 @@ func MarkItemAsBought(c *gin.Context) {
 		WHERE i.id = ?
 	`, id).Scan(&res)
 
-	resp := models.AnyItemResponse{Item: res.Item, Additional: map[string]any{
+	resp := models.AnyItem{Item: res.Item, Additional: map[string]any{
 		"HistoryID": historyId,
 	}}
 

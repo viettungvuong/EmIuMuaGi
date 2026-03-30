@@ -36,8 +36,8 @@ type Others struct {
 	Notes    *string `gorm:"size:500" json:"notes"`
 }
 
-// AnyItemResponse is used to serialize and deserialize the any item
-type AnyItemResponse struct {
+// AnyItem is used to serialize and deserialize the any item
+type AnyItem struct {
 	Item
 	Size       *string        `json:"size,omitempty"`
 	Color      *string        `json:"color,omitempty"`

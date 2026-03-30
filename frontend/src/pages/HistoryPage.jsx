@@ -113,11 +113,6 @@ export default function HistoryPage() {
                       ⭐ Đánh giá ngay
                     </button>
                   )}
-
-                  <p className="history-meta">
-                    <span className="history-label">Mã món đồ: </span>
-                    <span className="history-id">{history.item_id}</span>
-                  </p>
                 </div>
               </li>
             ))}

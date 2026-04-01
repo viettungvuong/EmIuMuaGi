@@ -187,6 +187,8 @@ func TaskStatus(c *gin.Context) {
 		return
 	}
 
+	log.Printf("Polled for status of %s", taskID)
+
 	c.JSON(http.StatusOK, gin.H{
 		"task_id": taskID,
 		"status":  status,

@@ -80,10 +80,51 @@ export default function AddPage() {
         : { category: form.category || null };
 
     try {
-      await client.post('/api/items', { ...base, ...subtypeFields });
+      // 1. Create the item
+      const itemRes = await client.post('/api/items', { ...base, ...subtypeFields });
+      const itemId = itemRes.data.id;
+
+      // 2. Upload media files if any
+      if (mediaFiles.length > 0) {
+        const formData = new FormData();
+        mediaFiles.forEach((m) => formData.append('files', m.file));
+
+        const uploadRes = await client.post(`/api/items/${itemId}/files`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        const taskIds = uploadRes.data.task_ids || [];
+        
+        // 3. Polling mechanism
+        if (taskIds.length > 0) {
+          const pendingTasks = new Set(taskIds);
+
+          while (pendingTasks.size > 0) {
+            // Wait 1.5 seconds before polling again
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            for (const taskId of pendingTasks) {
+              try {
+                const statusRes = await client.get(`/api/items/${itemId}/tasks/${taskId}`);
+                const { status } = statusRes.data;
+                
+                if (status === 'completed' || status === 'failed') {
+                  pendingTasks.delete(taskId);
+                }
+              } catch (err) {
+                // If it returns 404, it might have been already cleared or failed, so we evict it
+                if (err.response?.status === 404) {
+                  pendingTasks.delete(taskId);
+                }
+              }
+            }
+          }
+        }
+      }
+
       navigate('/');
     } catch {
-      setError('Thêm mục thất bại. Vui lòng thử lại.');
+      setError('Thêm mục hoặc tải lên thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

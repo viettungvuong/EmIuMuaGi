@@ -33,8 +33,20 @@ type filePayload struct {
 // Content-Type: multipart/form-data
 // Field name: "files" (supports multiple)
 func UploadItemFiles(c *gin.Context) {
-	itemID := c.Param("item_id")
-	formFiles := c.Request.MultipartForm.File["files"]
+	itemID := c.Param("item_id") // files (images, videos for an item)
+
+	// Parse the form first
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
+		return
+	}
+
+	formFiles := form.File["files"]
+	if len(formFiles) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No files provided"})
+		return
+	}
 
 	payloads := make([]filePayload, 0, len(formFiles))
 	taskIDs := make([]string, 0, len(formFiles)) // return to the client for later polling

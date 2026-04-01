@@ -16,6 +16,8 @@ import (
 
 const uploadDir = "./uploads"
 
+var uploadTasks sync.Map // tracks status: map[string]string (taskID -> "pending", "completed", "failed")
+
 // filePayload holds the pre-read bytes and metadata so goroutines
 type filePayload struct {
 	data     []byte
@@ -53,6 +55,7 @@ func UploadItemFiles(c *gin.Context) {
 			taskID:   customTaskID,
 		})
 		taskIDs = append(taskIDs, customTaskID)
+		uploadTasks.Store(customTaskID, "pending") // Initialize task status
 	}
 
 	destDir := filepath.Join(uploadDir, itemID)
@@ -77,10 +80,12 @@ func UploadItemFiles(c *gin.Context) {
 			defer wg.Done()
 
 			// Use the specific TaskID assigned to this goroutine
-			if _, err := saveFile(destDir, payload); err != nil {
+			if dest, err := saveFile(destDir, payload); err != nil {
 				log.Printf("[upload][Task:%s] Failed: %v", payload.taskID, err)
+				uploadTasks.Store(payload.taskID, "failed")
 			} else {
-				log.Printf("[upload][Task:%s] Success for %s", payload.taskID, payload.filename)
+				log.Printf("[upload][Task:%s] Success for %s -> %s", payload.taskID, payload.filename, dest)
+				uploadTasks.Store(payload.taskID, "completed")
 			}
 		}(p) // pass current p to payload param
 	}
@@ -88,7 +93,29 @@ func UploadItemFiles(c *gin.Context) {
 	go func() {
 		wg.Wait()
 		log.Printf("[upload] Finished all tasks for item %s", itemID)
+
+		// Garbage collection: If the client drops connection/closes browser
+		// and never polls the result, these will stay in the map forever.
+		// Wait 5 minutes to give the frontend plenty of time to poll it normally,
+		// then forcibly evict them.
+		timeoutMinute := 5
+		time.Sleep(time.Duration(timeoutMinute) * time.Minute)
+		for _, taskID := range taskIDs {
+			checkTask(taskID)
+		}
 	}()
+}
+
+func checkTask(taskID string) {
+	status, exists := uploadTasks.Load(taskID)
+	if !exists {
+		log.Printf("Task %s does not exists", taskID)
+		return
+	}
+
+	if status == "completed" || status == "failed" {
+		uploadTasks.Delete(taskID) // delete task from map
+	}
 }
 
 // readFileHeader opens and fully reads a multipart.FileHeader into a []byte.
@@ -137,4 +164,21 @@ func Deletefile(c *gin.Context) {
 		"item_id":   itemID,
 		"file_name": fileName,
 	})
+}
+
+func TaskStatus(c *gin.Context) {
+	taskID := c.Param("task_id")
+
+	status, exists := uploadTasks.Load(taskID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"task_id": taskID,
+		"status":  status,
+	})
+
+	checkTask(taskID) // evict task if done
 }

@@ -41,12 +41,7 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
-
-			authProtected := auth.Group("/")
-			authProtected.Use(internal.AuthMiddleware())
-			{
-				authProtected.GET("/refresh", handlers.RefreshToken)
-			}
+			auth.GET("/refresh", handlers.RefreshToken) // get Refresh Token directly from the token
 		}
 
 		partner := api.Group("/partner")

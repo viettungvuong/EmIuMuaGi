@@ -21,11 +21,5 @@ cd api-gateway
 go run main.go &
 cd ..
 
-echo "Expose to ngrok (Port 8000)"
-# This opens a new tab, sets the directory, and runs the command
-osascript -e 'tell application "Terminal" to activate' \
-  -e 'tell application "System Events" to keystroke "t" using {command down}' \
-  -e 'tell application "Terminal" to do script "cd '$(pwd)'/api-gateway && ngrok http 8000 --url=nonspherical-ethelene-pangenetically.ngrok-free.dev" in front window'
-
 # Wait indefinitely and stream all child logs to the same terminal
 wait

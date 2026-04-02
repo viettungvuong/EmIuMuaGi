@@ -61,10 +61,12 @@ func GetItems(c *gin.Context) {
 		ONotes   *string `gorm:"column:o_notes"`
 	}
 
+	owner := c.GetString("username")
+
 	var results []PolledItem
 
 	err := database.DB.Raw(`
-		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought,
+		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes
@@ -72,17 +74,18 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
+		WHERE i.owner = ?
 		ORDER BY i.created_at DESC
-	`).Scan(&results).Error
+	`, owner).Scan(&results).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve items"})
 		return
 	}
 
-	responses := make([]models.AnyItemResponse, 0, len(results))
+	responses := make([]models.AnyItem, 0, len(results))
 	for _, res := range results {
-		resp := models.AnyItemResponse{Item: res.Item}
+		resp := models.AnyItem{Item: res.Item}
 		if res.ItemType == "clothes" {
 			resp.Size = res.CSize
 			resp.Color = res.Color
@@ -118,7 +121,7 @@ func GetItems(c *gin.Context) {
 // @Success 201 {object} models.AnyItemResponse
 // @Router /items [post]
 func CreateItem(c *gin.Context) {
-	var input models.AnyItemResponse
+	var input models.AnyItem
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -131,6 +134,9 @@ func CreateItem(c *gin.Context) {
 	tx := database.DB.Begin()
 
 	item := input.Item
+	// Automatically assign the authenticated user's username as the owner
+	item.Owner = c.GetString("username")
+
 	if err := tx.Create(&item).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create base item"})
@@ -170,10 +176,16 @@ func CreateItem(c *gin.Context) {
 
 func DeleteItem(c *gin.Context) {
 	id := c.Param("item_id")
+	currentUser := c.GetString("username")
 	var item models.Item
 
 	if err := database.DB.First(&item, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	if item.Owner != currentUser {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not allowed to delete this item"})
 		return
 	}
 
@@ -254,7 +266,7 @@ func MarkItemAsBought(c *gin.Context) {
 		WHERE i.id = ?
 	`, id).Scan(&res)
 
-	resp := models.AnyItemResponse{Item: res.Item, Additional: map[string]any{
+	resp := models.AnyItem{Item: res.Item, Additional: map[string]any{
 		"HistoryID": historyId,
 	}}
 

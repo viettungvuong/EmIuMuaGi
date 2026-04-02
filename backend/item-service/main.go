@@ -21,6 +21,7 @@ import (
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	_ "github.com/viettungvuong/emiumuagi-backend/docs"
 	"github.com/viettungvuong/emiumuagi-backend/handlers"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
 )
 
 func main() {
@@ -38,6 +39,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
+	api.Use(internal.AuthMiddleware())
 	{
 		items := api.Group("/items")
 		{
@@ -46,6 +48,8 @@ func main() {
 			items.DELETE("/:item_id", handlers.DeleteItem)
 			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
 			items.POST("/:item_id/review", handlers.AddReview)
+			items.POST("/:item_id/files", handlers.UploadItemFiles)
+			items.GET("/:item_id/tasks/:task_id", handlers.TaskStatus)
 		}
 
 		history := api.Group("/history")

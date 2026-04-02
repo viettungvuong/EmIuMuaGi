@@ -1,0 +1,65 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Build Frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+        env:
+          VITE_API_URL: "/api"
+
+      # 2. Build Backend (Linux Binaries)
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Build Backend Services
+        working-directory: ./backend
+        run: |
+          mkdir -p bin
+          cd api-gateway && GOOS=linux GOARCH=amd64 go build -o ../bin/api-gateway . && cd ..
+          cd user-service && GOOS=linux GOARCH=amd64 go build -o ../bin/user-service . && cd ..
+          cd item-service && GOOS=linux GOARCH=amd64 go build -o ../bin/item-service . && cd ..
+
+      # 3. Upload to VPS
+      - name: Copy Files to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          source: "frontend/dist/*,backend/bin/*"
+          target: "~/emiumuagi"
+
+      # 4. Restart Services
+      - name: Restart Services on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd ~/emiumuagi
+            # Ensure the binaries are executable
+            chmod +x backend/bin/*
+            # Restart Go microservices using PM2
+            pm2 delete gateway user-service item-service || true
+            pm2 start backend/bin/api-gateway --name gateway
+            pm2 start backend/bin/user-service --name user-service
+            pm2 start backend/bin/item-service --name item-service
+            # Note: You should configure Nginx to serve frontend/dist and proxy /api

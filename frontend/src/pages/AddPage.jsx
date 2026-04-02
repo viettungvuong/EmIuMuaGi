@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/AddPage.css';
@@ -20,11 +20,39 @@ export default function AddPage() {
     // others
     category: '',
   });
+  const [mediaFiles, setMediaFiles] = useState([]); // { file, preview, type }
+  const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const addFiles = useCallback((files) => {
+    const accepted = Array.from(files).filter((f) =>
+      f.type.startsWith('image/') || f.type.startsWith('video/')
+    );
+    const newEntries = accepted.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      type: file.type.startsWith('video/') ? 'video' : 'image',
+    }));
+    setMediaFiles((prev) => [...prev, ...newEntries]);
+  }, []);
+
+  const removeMedia = (index) => {
+    setMediaFiles((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    addFiles(e.dataTransfer.files);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +60,6 @@ export default function AddPage() {
     setLoading(true);
     setError('');
 
-    // Build payload — only include relevant subtype fields
     const base = {
       item_type: itemType,
       item_name: form.item_name.trim(),
@@ -53,10 +80,51 @@ export default function AddPage() {
         : { category: form.category || null };
 
     try {
-      await client.post('/api/items', { ...base, ...subtypeFields });
+      // 1. Create the item
+      const itemRes = await client.post('/api/items', { ...base, ...subtypeFields });
+      const itemId = itemRes.data.id;
+
+      // 2. Upload media files if any
+      if (mediaFiles.length > 0) {
+        const formData = new FormData();
+        mediaFiles.forEach((m) => formData.append('files', m.file));
+
+        const uploadRes = await client.post(`/api/items/${itemId}/files`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        const taskIds = uploadRes.data.task_ids || [];
+        
+        // 3. Polling mechanism
+        if (taskIds.length > 0) {
+          const pendingTasks = new Set(taskIds);
+
+          while (pendingTasks.size > 0) {
+            // Wait 1.5 seconds before polling again
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            for (const taskId of pendingTasks) {
+              try {
+                const statusRes = await client.get(`/api/items/${itemId}/tasks/${taskId}`);
+                const { status } = statusRes.data;
+                
+                if (status === 'completed' || status === 'failed') {
+                  pendingTasks.delete(taskId);
+                }
+              } catch (err) {
+                // If it returns 404, it might have been already cleared or failed, so we evict it
+                if (err.response?.status === 404) {
+                  pendingTasks.delete(taskId);
+                }
+              }
+            }
+          }
+        }
+      }
+
       navigate('/');
     } catch {
-      setError('Thêm mục thất bại. Vui lòng thử lại.');
+      setError('Thêm mục hoặc tải lên thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -170,6 +238,58 @@ export default function AddPage() {
                 value={form.category} onChange={set('category')} />
             </div>
           )}
+
+          {/* ── Media Upload ── */}
+          <div className="field-group">
+            <label className="field-label">Ảnh &amp; Video</label>
+
+            <div
+              className={`media-drop-zone ${dragging ? 'dragging' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+            >
+              <span className="media-drop-icon">📎</span>
+              <span className="media-drop-text">
+                Kéo thả hoặc <strong>bấm để chọn</strong>
+              </span>
+              <span className="media-drop-hint">Hỗ trợ: JPG, PNG, GIF, MP4, MOV…</span>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => addFiles(e.target.files)}
+            />
+
+            {/* Previews */}
+            {mediaFiles.length > 0 && (
+              <div className="media-preview-grid">
+                {mediaFiles.map((m, i) => (
+                  <div key={i} className="media-preview-item">
+                    {m.type === 'image' ? (
+                      <img src={m.preview} alt={`preview-${i}`} className="media-thumb" />
+                    ) : (
+                      <video src={m.preview} className="media-thumb" controls={false} muted />
+                    )}
+                    <button
+                      type="button"
+                      className="media-remove-btn"
+                      onClick={(e) => { e.stopPropagation(); removeMedia(i); }}
+                      title="Xóa"
+                    >
+                      ×
+                    </button>
+                    {m.type === 'video' && <span className="media-video-badge">▶</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {error && <p className="error-msg">{error}</p>}
 

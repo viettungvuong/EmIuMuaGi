@@ -5,14 +5,16 @@ import (
 )
 
 type Item struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ItemName  string    `gorm:"size:255;not null" json:"item_name"`
-	Quantity  int       `gorm:"default:1;not null" json:"quantity"`
-	BuyURL    *string   `gorm:"size:2048" json:"buy_url"`
-	ShopName  *string   `gorm:"size:255" json:"shop_name"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	ItemType  string    `gorm:"size:50;not null" json:"item_type"`
-	Bought    bool      `gorm:"default:false;not null" json:"bought"`
+	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	ItemName        string    `gorm:"size:255;not null" json:"item_name"`
+	Quantity        int       `gorm:"default:1;not null" json:"quantity"`
+	BuyURL          *string   `gorm:"size:2048" json:"buy_url"`
+	ShopName        *string   `gorm:"size:255" json:"shop_name"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ItemType        string    `gorm:"size:50;not null" json:"item_type"`
+	Bought          bool      `gorm:"default:false;not null" json:"bought"`
+	ItemMediaFolder *string   `gorm:"size:4096" json:"item_media_folder"`
+	Owner           string    `gorm:"size:255" json:"owner"`
 }
 
 type Clothes struct {
@@ -36,8 +38,8 @@ type Others struct {
 	Notes    *string `gorm:"size:500" json:"notes"`
 }
 
-// AnyItemResponse is used to serialize and deserialize the mixed responses
-type AnyItemResponse struct {
+// AnyItem is used to serialize and deserialize the any item
+type AnyItem struct {
 	Item
 	Size       *string        `json:"size,omitempty"`
 	Color      *string        `json:"color,omitempty"`

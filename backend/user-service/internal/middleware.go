@@ -28,7 +28,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set user identification in context for downstream handlers
+		// Set user identification for requests
 		c.Set("username", claims.Username)
 		c.Next()
 	}

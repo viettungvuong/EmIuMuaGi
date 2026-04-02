@@ -17,6 +17,7 @@ import (
 	"github.com/viettungvuong/emiumuagi-user-service/database"
 	_ "github.com/viettungvuong/emiumuagi-user-service/docs"
 	"github.com/viettungvuong/emiumuagi-user-service/handlers"
+	"github.com/viettungvuong/emiumuagi-user-service/internal"
 )
 
 func main() {
@@ -40,10 +41,11 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
-			auth.GET("/refresh", handlers.RefreshToken)
+			auth.GET("/refresh", handlers.RefreshToken) // get Refresh Token directly from the token
 		}
 
 		partner := api.Group("/partner")
+		partner.Use(internal.AuthMiddleware())
 		{
 			partner.POST("/add/:inviteID", handlers.AddPartner)
 		}

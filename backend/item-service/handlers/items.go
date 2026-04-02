@@ -176,10 +176,16 @@ func CreateItem(c *gin.Context) {
 
 func DeleteItem(c *gin.Context) {
 	id := c.Param("item_id")
+	currentUser := c.GetString("username")
 	var item models.Item
 
 	if err := database.DB.First(&item, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	if item.Owner != currentUser {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not allowed to delete this item"})
 		return
 	}
 

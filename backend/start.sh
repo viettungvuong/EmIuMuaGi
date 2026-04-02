@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Kill all background jobs if script is terminated
 trap 'echo "Stopping all services..."; kill $(jobs -p); exit' SIGINT SIGTERM EXIT
 

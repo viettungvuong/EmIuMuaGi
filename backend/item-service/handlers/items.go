@@ -131,6 +131,9 @@ func CreateItem(c *gin.Context) {
 	tx := database.DB.Begin()
 
 	item := input.Item
+	// Automatically assign the authenticated user's username as the owner
+	item.Owner = c.GetString("username")
+	
 	if err := tx.Create(&item).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create base item"})

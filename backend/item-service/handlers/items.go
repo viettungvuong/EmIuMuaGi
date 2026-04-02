@@ -61,10 +61,12 @@ func GetItems(c *gin.Context) {
 		ONotes   *string `gorm:"column:o_notes"`
 	}
 
+	owner := c.GetString("username")
+
 	var results []PolledItem
 
 	err := database.DB.Raw(`
-		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought,
+		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes
@@ -72,8 +74,9 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
+		WHERE i.owner = ?
 		ORDER BY i.created_at DESC
-	`).Scan(&results).Error
+	`, owner).Scan(&results).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve items"})
@@ -133,7 +136,7 @@ func CreateItem(c *gin.Context) {
 	item := input.Item
 	// Automatically assign the authenticated user's username as the owner
 	item.Owner = c.GetString("username")
-	
+
 	if err := tx.Create(&item).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create base item"})

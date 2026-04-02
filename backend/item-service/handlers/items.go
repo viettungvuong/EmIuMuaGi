@@ -66,7 +66,7 @@ func GetItems(c *gin.Context) {
 	var results []PolledItem
 
 	err := database.DB.Raw(`
-		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner
+		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes

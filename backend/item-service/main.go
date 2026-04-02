@@ -21,6 +21,7 @@ import (
 	"github.com/viettungvuong/emiumuagi-backend/database"
 	_ "github.com/viettungvuong/emiumuagi-backend/docs"
 	"github.com/viettungvuong/emiumuagi-backend/handlers"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
 )
 
 func main() {
@@ -38,6 +39,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
+	api.Use(internal.AuthMiddleware())
 	{
 		items := api.Group("/items")
 		{

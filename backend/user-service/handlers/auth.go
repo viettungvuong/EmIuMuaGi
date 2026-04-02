@@ -101,7 +101,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly cookies for both tokens
-	c.SetCookie("access_token", accessToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("access_token", accessToken, 30*24*7, "/", "", false, true)
 	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{

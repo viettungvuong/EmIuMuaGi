@@ -2,19 +2,18 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       # 1. Build Frontend
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - name: Build Frontend
         working-directory: ./frontend
         run: |
@@ -27,7 +26,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
       - name: Build Backend Services
         working-directory: ./backend
         run: |
@@ -55,21 +54,21 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           script: |
             cd ~/emiumuagi
-            
+
             # Setup Folder Structure (if it doesn't exist)
             mkdir -p backend/services/item-service backend/services/user-service backend/services/api-gateway
-            
+
             # Move binaries to their specific service folders
             mv -f backend/bin/item-service backend/services/item-service/ || true
             mv -f backend/bin/user-service backend/services/user-service/ || true
             mv -f backend/bin/api-gateway backend/services/api-gateway/ || true
-            
+
             # Ensure the binaries are executable
             chmod +x backend/services/*-service/* backend/services/api-gateway/*
-            
+
             # Restart Go microservices using PM2
             pm2 delete gateway user-service item-service || true
-            
+
             # Start each service from its respective folder (so it picks up its own .env)
             cd backend/services/api-gateway && pm2 start api-gateway --name gateway
             cd ../user-service && pm2 start user-service --name user-service

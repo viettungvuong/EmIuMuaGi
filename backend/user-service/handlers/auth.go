@@ -136,6 +136,18 @@ func RefreshToken(c *gin.Context) {
 
 	c.SetCookie("access_token", accessToken, 30*60, "/", "", false, true) // 30 min access token cookie
 
+	// Add new token to database
+	newToken := models.Token{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		AccessExpiresAt:  accessExp,
+		RefreshExpiresAt: claims.ExpiresAt.Time,
+	}
+	if err := database.DB.Create(&newToken).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save token to database"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,
 		"expires_at":   accessExp,

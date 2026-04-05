@@ -176,11 +176,6 @@ export default function MainPage() {
             <div className="loading-spinner" />
             <p>Đang tải…</p>
           </div>
-        ) : items.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-icon">🧐</span>
-            <p className="empty-text">Bà xã chưa mún mua gì hỏooooo</p>
-          </div>
         ) : (
           <div className="items-content">
             <div className="partner-section">
@@ -215,7 +210,14 @@ export default function MainPage() {
               )}
             </div>
 
-            <div className="controls-section">
+            {items.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">🧐</span>
+                <p className="empty-text">Bà xã chưa mún mua gì hỏooooo</p>
+              </div>
+            ) : (
+              <>
+                <div className="controls-section">
               <input
                 type="text"
                 className="search-bar"
@@ -349,9 +351,11 @@ export default function MainPage() {
                   ))}
               </ul>
             )}
-          </div>
+          </>
         )}
       </div>
+    )}
+  </div>
 
       <button
         className="fab"

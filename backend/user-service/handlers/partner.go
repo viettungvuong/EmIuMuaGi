@@ -44,6 +44,12 @@ func AddPartner(c *gin.Context) {
 		return
 	}
 
+	// Update partner's partner ID
+	if err := database.DB.Model(&models.User{}).Where("id = ?", partner.ID).Update("partner_id", username).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update partner's ID"})
+		return
+	}
+
 	// reupdate invite link of that partner
 	partner.InviteLink = uuid.New().String()
 

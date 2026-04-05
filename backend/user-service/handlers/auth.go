@@ -94,20 +94,19 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := internal.GenerateTokens(user.ID)
+	tokens, err := internal.GenerateTokens(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
 
 	// Set HttpOnly cookies for both tokens
-	c.SetCookie("access_token", accessToken, 30*60, "/", "", false, true)
-	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
+	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "Login successful",
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"message": "Login successful",
+		"token":   tokens,
 	})
 }
 
@@ -128,7 +127,7 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := internal.GenerateAccessToken(claims.Username)
+	accessToken, accessExp, err := internal.GenerateAccessToken(claims.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
 		return
@@ -138,6 +137,7 @@ func RefreshToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,
+		"expires_at":   accessExp,
 	})
 }
 

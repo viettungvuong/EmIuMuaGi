@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/viettungvuong/emiumuagi-user-service/models"
 )
 
 type Claims struct {
@@ -15,39 +16,47 @@ type Claims struct {
 const EXPIRY_MINUTES_ACCESS = 30
 const EXPIRY_DAY_REFRESH = 7
 
-func GenerateAccessToken(username string) (string, error) {
+func GenerateAccessToken(username string) (string, time.Time, error) {
 	accessSecret := []byte(os.Getenv("JWT_SECRET"))
+	expiresAt := time.Now().Add(EXPIRY_MINUTES_ACCESS * time.Minute)
 	accessClaims := &Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_MINUTES_ACCESS * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	return accessToken.SignedString(accessSecret)
+	tokenString, err := accessToken.SignedString(accessSecret)
+	return tokenString, expiresAt, err
 }
 
-func GenerateTokens(username string) (string, string, error) {
+func GenerateTokens(username string) (models.Token, error) {
 	refreshSecret := []byte(os.Getenv("JWT_REFRESH_SECRET"))
 
 	// Access Token
-	accessString, err := GenerateAccessToken(username)
+	accessString, accessExp, err := GenerateAccessToken(username)
 	if err != nil {
-		return "", "", err
+		return models.Token{}, err
 	}
 
 	// Refresh Token
+	refreshExp := time.Now().Add(EXPIRY_DAY_REFRESH * 24 * time.Hour)
 	refreshClaims := &Claims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(EXPIRY_DAY_REFRESH * 24 * time.Hour)), // Usually refresh tokens are valid for days
+			ExpiresAt: jwt.NewNumericDate(refreshExp),
 		},
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	refreshString, err := refreshToken.SignedString(refreshSecret)
 	if err != nil {
-		return "", "", err
+		return models.Token{}, err
 	}
 
-	return accessString, refreshString, nil
+	return models.Token{
+		AccessToken:      accessString,
+		RefreshToken:     refreshString,
+		AccessExpiresAt:  accessExp,
+		RefreshExpiresAt: refreshExp,
+	}, nil
 }

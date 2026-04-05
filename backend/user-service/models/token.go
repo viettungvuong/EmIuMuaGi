@@ -3,8 +3,8 @@ package models
 import "time"
 
 type Token struct {
-	AccessToken      string    `json:"access_token"`
-	RefreshToken     string    `json:"refresh_token"`
-	AccessExpiresAt  time.Time `json:"access_expires_at"`
-	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+	AccessToken      string    `gorm:"primaryKey" json:"access_token"`
+	RefreshToken     string    `gorm:"not null" json:"refresh_token"`
+	AccessExpiresAt  time.Time `gorm:"not null" json:"access_expires_at"`
+	RefreshExpiresAt time.Time `gorm:"not null" json:"refresh_expires_at"`
 }

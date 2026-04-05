@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"os"
 
@@ -147,6 +148,11 @@ func CheckSignedIn(c *gin.Context) {
 }
 
 func SignOut(c *gin.Context) {
+	accessToken, _ := c.Cookie("access_token")
+	if accessToken != "" {
+		invalidateToken(accessToken)
+	}
+
 	// Clear the cookies by setting MaxAge to -1
 	// Clear tokens => prevent username in c from being set too
 	c.SetCookie("access_token", "", -1, "/", "", false, true)
@@ -154,5 +160,13 @@ func SignOut(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Signed out successfully",
+	})
+}
+
+// make token expire
+func invalidateToken(accessToken string) {
+	database.DB.Model(&models.Token{}).Where("access_token = ?", accessToken).Updates(map[string]interface{}{
+		"access_expires_at":  time.Now(),
+		"refresh_expires_at": time.Now(),
 	})
 }

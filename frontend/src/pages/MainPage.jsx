@@ -37,7 +37,7 @@ function ItemSubInfo({ item }) {
   return null;
 }
 
-export default function MainPage() {
+export default function MainPage({ setIsAuth }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("all");
@@ -103,9 +103,16 @@ export default function MainPage() {
     setConfirmModal({ isOpen: false, itemId: null });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("authenticated");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await client.post("/api/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.removeItem("username");
+      if (setIsAuth) setIsAuth(false);
+      navigate("/login");
+    }
   };
 
   const filteredItems = items.filter((item) => {

@@ -140,3 +140,18 @@ func RefreshToken(c *gin.Context) {
 		"access_token": accessToken,
 	})
 }
+
+func CheckSignedIn(c *gin.Context) {
+	// TODO
+	// check if access token is not null and still valid
+}
+
+func SignOut(c *gin.Context) {
+	// Clear the cookies by setting MaxAge to -1
+	c.SetCookie("access_token", "", -1, "/", "", false, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Signed out successfully",
+	})
+}

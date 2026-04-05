@@ -47,7 +47,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
-              <MainPage />
+              <MainPage setIsAuth={setIsAuth} />
             </ProtectedRoute>
           }
         />

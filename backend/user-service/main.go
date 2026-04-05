@@ -41,7 +41,8 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
-			auth.GET("/refresh", handlers.RefreshToken) // get Refresh Token directly from the token
+			auth.GET("/refresh", handlers.RefreshToken)  // get Refresh Token directly from the token
+			auth.POST("/logout", handlers.SignOut)      // clear tokens and session
 		}
 
 		partner := api.Group("/partner")

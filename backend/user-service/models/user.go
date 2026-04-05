@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/google/uuid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +15,14 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	u.InviteLink = uuid.New().String()
+	// Custom NanoID: No dashes, only alphanumeric, 12 characters long
+	alphabet := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	id, err := gonanoid.Generate(alphabet, 12)
+
+	if err != nil {
+		return err
+	}
+
+	u.InviteLink = id
 	return
 }

@@ -148,6 +148,7 @@ func CheckSignedIn(c *gin.Context) {
 
 func SignOut(c *gin.Context) {
 	// Clear the cookies by setting MaxAge to -1
+	// Clear tokens => prevent username in c from being set too
 	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 

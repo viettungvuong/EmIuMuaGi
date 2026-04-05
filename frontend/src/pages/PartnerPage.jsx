@@ -4,15 +4,23 @@ import client from "../api/client";
 import "../styles/PartnerPage.css";
 import "../styles/MainPage.css"; // Reuse header styles
 
-export default function PartnerPage() {
+export default function PartnerPage({ setIsAuth }) {
   const { inviteID } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("loading"); // loading, success, already_has_partner, error
   const [partnerEmail, setPartnerEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("authenticated");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await client.post("/api/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.removeItem("username");
+      if (setIsAuth) setIsAuth(false);
+      navigate("/login");
+    }
   };
 
   useEffect(() => {

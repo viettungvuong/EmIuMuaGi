@@ -79,7 +79,7 @@ export default function App() {
           path="/partner/:inviteID"
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
-              <PartnerPage />
+              <PartnerPage setIsAuth={setIsAuth} />
             </ProtectedRoute>
           }
         />

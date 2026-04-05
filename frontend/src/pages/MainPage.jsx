@@ -43,6 +43,8 @@ export default function MainPage() {
   const [filterType, setFilterType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [hideBought, setHideBought] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   const navigate = useNavigate();
 
@@ -57,8 +59,18 @@ export default function MainPage() {
     }
   };
 
+  const fetchUserData = async () => {
+    try {
+      const { data } = await client.get("/api/me");
+      setUserData(data);
+    } catch (err) {
+      console.error("Failed to fetch user data:", err);
+    }
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchUserData();
   }, []);
 
   const handleDelete = async (id) => {
@@ -105,6 +117,39 @@ export default function MainPage() {
     return matchesFilter && matchesSearch && matchesHide;
   });
 
+  const copyInviteLink = () => {
+    if (!userData?.invite_link) return;
+    const link = `${window.location.origin}/partner/${userData.invite_link}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link)
+        .then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        })
+        .catch(() => {
+          fallbackCopy(link);
+        });
+    } else {
+      fallbackCopy(link);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand("copy");
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Fallback copy failed", err);
+    }
+    document.body.removeChild(textArea);
+  };
+
   return (
     <div className="main-page">
       <header className="main-header">
@@ -138,6 +183,38 @@ export default function MainPage() {
           </div>
         ) : (
           <div className="items-content">
+            <div className="partner-section">
+              {userData?.partner ? (
+                <div className="partner-info-card">
+                  <div className="partner-avatar">🤝</div>
+                  <div className="partner-details">
+                    <span className="partner-label">Người ấy của bạn:</span>
+                    <span className="partner-name">{userData.partner.id}</span>
+                    <span className="partner-email">{userData.partner.email}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="invite-link-card">
+                  <div className="invite-icon">🔗</div>
+                  <div className="invite-details">
+                    <span className="invite-label">Chưa có người ấy? Gửi link này nha:</span>
+                    <div className="invite-input-wrapper">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        className="invite-url-display" 
+                        value={`${window.location.origin}/partner/${userData?.invite_link || ''}`}
+                        onClick={(e) => e.target.select()}
+                      />
+                      <button className="copy-btn" onClick={copyInviteLink}>
+                        {copySuccess ? "✓ Đã copy" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="controls-section">
               <input
                 type="text"

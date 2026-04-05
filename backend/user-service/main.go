@@ -50,6 +50,11 @@ func main() {
 			partner.POST("/add/:inviteID", handlers.AddPartner)
 		}
 
+		user := api.Group("/")
+		user.Use(internal.AuthMiddleware())
+		{
+			user.GET("/me", handlers.GetMe)
+		}
 	}
 
 	port := os.Getenv("PORT")

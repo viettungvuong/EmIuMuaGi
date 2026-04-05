@@ -7,9 +7,11 @@ import AddPage from './pages/AddPage';
 import QuestionPage from './pages/QuestionPage';
 import HistoryPage from './pages/HistoryPage';
 
+import PartnerPage from './pages/PartnerPage';
+
 function ProtectedRoute({ isAuth, loading, children }) {
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#fff5f7' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d0f1a' }}>
       <div className="loading-spinner">🎀 Checking...</div>
     </div>
   );
@@ -21,14 +23,26 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simply set loading to false as the /api/me check was removed.
-    setLoading(false);
+    const verifySession = async () => {
+      try {
+        await client.get("/api/me");
+        setIsAuth(true);
+      } catch (err) {
+        setIsAuth(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    verifySession();
   }, []);
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
-        <Route path="/login" element={<AuthPage setIsAuth={setIsAuth} />} />
+        <Route 
+          path="/login" 
+          element={isAuth ? <Navigate to="/" replace /> : <AuthPage setIsAuth={setIsAuth} />} 
+        />
         <Route
           path="/"
           element={
@@ -58,6 +72,14 @@ export default function App() {
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
               <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/partner/:inviteID"
+          element={
+            <ProtectedRoute isAuth={isAuth} loading={loading}>
+              <PartnerPage />
             </ProtectedRoute>
           }
         />

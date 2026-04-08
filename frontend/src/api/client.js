@@ -20,7 +20,7 @@ client.interceptors.response.use(
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.includes("/api/auth/login") &&
-      error.response?.data?.error === "Invalid or expired token"
+      !originalRequest.url.includes("/api/auth/refresh")
     ) {
       originalRequest._retry = true;
 

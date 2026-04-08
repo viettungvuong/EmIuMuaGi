@@ -102,8 +102,8 @@ func Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly cookies for both tokens
-	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
-	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", true, true)
+	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",

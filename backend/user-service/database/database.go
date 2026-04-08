@@ -20,7 +20,7 @@ func InitDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	err = DB.AutoMigrate(&models.User{})
+	err = DB.AutoMigrate(&models.User{}, &models.Token{})
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

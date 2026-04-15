@@ -154,9 +154,24 @@ func RefreshToken(c *gin.Context) {
 	})
 }
 
+// CheckSignedIn returns 200 OK if the user is authenticated
+// @Summary Check if user is signed in
+// @Description Verify status of access token from cookie
+// @Tags auth
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Router /auth/check [get]
 func CheckSignedIn(c *gin.Context) {
-	// TODO
-	// check if access token is not null and still valid
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Not signed in"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"authenticated": true,
+		"username":      username,
+	})
 }
 
 func SignOut(c *gin.Context) {

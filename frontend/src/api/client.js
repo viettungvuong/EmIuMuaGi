@@ -32,7 +32,10 @@ client.interceptors.response.use(
         return client(originalRequest);
       } catch (refreshError) {
         // If refresh fails (e.g., refresh token also expired), redirect to login
-        window.location.href = "/login";
+        // Only redirect if we're not already heading to the login page
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login?expired=true";
+        }
         return Promise.reject(refreshError);
       }
     }

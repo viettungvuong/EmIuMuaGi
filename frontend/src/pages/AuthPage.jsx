@@ -12,6 +12,14 @@ export default function AuthPage({ setIsAuth }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Check if redirected due to expired session
+  useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('expired') === 'true') {
+      setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+    }
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

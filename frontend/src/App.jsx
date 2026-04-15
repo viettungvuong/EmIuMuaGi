@@ -24,6 +24,11 @@ export default function App() {
 
   useEffect(() => {
     const verifySession = async () => {
+      // If we already know the session is expired from the URL, don't ping the backend
+      if (window.location.search.includes('expired=true')) {
+        setLoading(false);
+        return;
+      }
       try {
         await client.get("/api/me");
         setIsAuth(true);
@@ -41,7 +46,17 @@ export default function App() {
       <Routes>
         <Route 
           path="/login" 
-          element={isAuth ? <Navigate to="/" replace /> : <AuthPage setIsAuth={setIsAuth} />} 
+          element={
+            loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d0f1a' }}>
+                <div className="loading-spinner">🎀 Checking...</div>
+              </div>
+            ) : isAuth ? (
+              <Navigate to="/" replace />
+            ) : (
+              <AuthPage setIsAuth={setIsAuth} />
+            )
+          } 
         />
         <Route
           path="/"

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/AuthPage.css';
 
@@ -11,14 +11,17 @@ export default function AuthPage({ setIsAuth }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check if redirected due to expired session
-  useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('expired') === 'true') {
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') !== null) {
       setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      // Remove the query parameter from the address bar
+      navigate(location.pathname, { replace: true });
     }
-  });
+  }, [location, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

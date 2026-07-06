@@ -23,3 +23,6 @@ frontend/.env.local
 *.jpeg
 *.png
 **/deploy.sh
+**/item-service
+**/api-gateway
+**/user-service

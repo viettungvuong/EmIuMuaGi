@@ -9,6 +9,7 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,8 +21,23 @@ import (
 	"github.com/viettungvuong/emiumuagi-user-service/internal"
 )
 
+func loadEnv() {
+	_ = godotenv.Load(".env")
+
+	executable, err := os.Executable()
+	if err != nil {
+		log.Printf("Could not locate executable while loading .env: %v", err)
+		return
+	}
+
+	executableEnv := filepath.Join(filepath.Dir(executable), ".env")
+	if err := godotenv.Load(executableEnv); err != nil && os.Getenv("DATABASE_URL") == "" {
+		log.Printf("Could not load .env from %s: %v", executableEnv, err)
+	}
+}
+
 func main() {
-	godotenv.Load(".env")
+	loadEnv()
 
 	database.InitDB()
 
@@ -41,7 +57,7 @@ func main() {
 		{
 			auth.POST("/login", handlers.Login)
 			auth.POST("/signup", handlers.SignUp)
-			auth.GET("/refresh", handlers.RefreshToken)  // get Refresh Token directly from the token
+			auth.GET("/refresh", handlers.RefreshToken) // get Refresh Token directly from the token
 			auth.POST("/logout", handlers.SignOut)      // clear tokens and session
 		}
 

@@ -3,6 +3,7 @@ package database
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/viettungvuong/emiumuagi-user-service/models"
 	"gorm.io/driver/postgres"
@@ -12,7 +13,10 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := os.Getenv("DATABASE_URL")
+	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	if dsn == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})

@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/viettungvuong/emiumuagi-backend/database"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
 )
 
 func GetHistories(c *gin.Context) {
@@ -22,13 +24,19 @@ func GetHistories(c *gin.Context) {
 
 	res := []HistoryResult{}
 
-	err := database.DB.Raw(`
+	owners, err := internal.OwnerScope(c)
+	if err != nil {
+		log.Printf("Could not resolve partner, showing own history only: %v", err)
+	}
+
+	err = database.DB.Raw(`
 		SELECT h.id, h.item_id, i.item_name, h.time, r.score, r.content
 		FROM histories h
-		LEFT JOIN items i ON h.item_id = i.id
+		JOIN items i ON h.item_id = i.id
 		LEFT JOIN reviews r ON h.id = r.history_id
+		WHERE i.owner IN ?
 		ORDER BY h.time DESC
-	`).Scan(&res).Error
+	`, owners).Scan(&res).Error
 
 	if err != nil {
 		fmt.Printf("Error fetching histories: %v\n", err)

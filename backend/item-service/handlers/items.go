@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/viettungvuong/emiumuagi-backend/database"
+	"github.com/viettungvuong/emiumuagi-backend/internal"
 	"github.com/viettungvuong/emiumuagi-backend/models"
 )
 
@@ -61,11 +62,14 @@ func GetItems(c *gin.Context) {
 		ONotes   *string `gorm:"column:o_notes"`
 	}
 
-	owner := c.GetString("username")
+	owners, err := internal.OwnerScope(c)
+	if err != nil {
+		log.Printf("Could not resolve partner, showing own items only: %v", err)
+	}
 
 	var results []PolledItem
 
-	err := database.DB.Raw(`
+	err = database.DB.Raw(`
 		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
@@ -74,9 +78,9 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
-		WHERE i.owner = ?
+		WHERE i.owner IN ?
 		ORDER BY i.created_at DESC
-	`, owner).Scan(&results).Error
+	`, owners).Scan(&results).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve items"})
@@ -179,11 +183,12 @@ func DeleteItem(c *gin.Context) {
 	currentUser := c.GetString("username")
 	var item models.Item
 
-	if err := database.DB.First(&item, id).Error; err != nil {
+	if err := database.DB.Where("id = ?", id).First(&item).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return
 	}
 
+	// Only the person whose list it is can remove an item
 	if item.Owner != currentUser {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not allowed to delete this item"})
 		return
@@ -193,14 +198,14 @@ func DeleteItem(c *gin.Context) {
 
 	switch item.ItemType {
 	case "clothes":
-		tx.Delete(&models.Clothes{}, id)
+		tx.Where("id = ?", id).Delete(&models.Clothes{})
 	case "food_and_drink":
-		tx.Delete(&models.FoodAndDrink{}, id)
+		tx.Where("id = ?", id).Delete(&models.FoodAndDrink{})
 	case "others":
-		tx.Delete(&models.Others{}, id)
+		tx.Where("id = ?", id).Delete(&models.Others{})
 	}
 
-	tx.Delete(&models.Item{}, id)
+	tx.Where("id = ?", id).Delete(&models.Item{})
 	tx.Commit()
 
 	log.Printf("Deleted %s\n", item.ItemName)
@@ -228,10 +233,9 @@ func addHistory(ctx context.Context, item_id uint) uuid.UUID {
 
 func MarkItemAsBought(c *gin.Context) {
 	id := c.Param("item_id")
-	var item models.Item
 
-	if err := database.DB.First(&item, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+	item, ok := loadItemInScope(c, id)
+	if !ok {
 		return
 	}
 
@@ -255,7 +259,7 @@ func MarkItemAsBought(c *gin.Context) {
 	}
 
 	database.DB.Raw(`
-		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought,
+		SELECT i.id, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes

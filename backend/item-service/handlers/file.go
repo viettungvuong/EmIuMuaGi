@@ -35,6 +35,12 @@ type filePayload struct {
 func UploadItemFiles(c *gin.Context) {
 	itemID := c.Param("item_id") // files (images, videos for an item)
 
+	// Uploads land in a folder named after the item, so make sure it exists and
+	// belongs to the caller or their partner before touching the disk
+	if _, ok := loadItemInScope(c, itemID); !ok {
+		return
+	}
+
 	// Parse the form first
 	form, err := c.MultipartForm()
 	if err != nil {

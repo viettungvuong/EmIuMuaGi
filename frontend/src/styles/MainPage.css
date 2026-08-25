@@ -207,6 +207,13 @@
   font-weight: 600;
 }
 
+/* Marks a wish that belongs to your other half */
+.item-owner {
+  font-size: 0.78rem;
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
 .item-link {
   display: inline-block;
   margin-top: 6px;

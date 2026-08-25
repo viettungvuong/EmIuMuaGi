@@ -26,6 +26,11 @@ func AddReview(c *gin.Context) {
 		return
 	}
 
+	// Only the couple the item belongs to can review it
+	if _, ok := loadItemInScope(c, history.ItemID); !ok {
+		return
+	}
+
 	var reqBody struct {
 		Score   int    `json:"score" binding:"required"`
 		Content string `json:"content"`

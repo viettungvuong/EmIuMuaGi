@@ -34,6 +34,8 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("username", claims.Username)
+		// Kept so handlers can ask the user service who this user is linked with
+		c.Set("access_token", tokenString)
 		c.Next()
 	}
 }

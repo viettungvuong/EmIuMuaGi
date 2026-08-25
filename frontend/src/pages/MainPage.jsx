@@ -115,6 +115,8 @@ export default function MainPage({ setIsAuth }) {
     }
   };
 
+  const currentUser = userData?.id || localStorage.getItem("username");
+
   const filteredItems = items.filter((item) => {
     const matchesFilter = filterType === "all" || item.item_type === filterType;
     const matchesSearch = item.item_name
@@ -298,6 +300,11 @@ export default function MainPage({ setIsAuth }) {
                         </div>
                         <ItemSubInfo item={item} />
                         <div className="item-meta">
+                          {item.owner && item.owner !== currentUser && (
+                            <span className="item-owner">
+                              💌 {item.owner}
+                            </span>
+                          )}
                           {item.shop_name && (
                             <span className="item-shop">
                               🏪 {item.shop_name}
@@ -346,13 +353,15 @@ export default function MainPage({ setIsAuth }) {
                             ✓ Anh đã mua
                           </button>
                         )}
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleDelete(item.id)}
-                          aria-label="Xóa mục"
-                        >
-                          🗑
-                        </button>
+                        {item.owner === currentUser && (
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleDelete(item.id)}
+                            aria-label="Xóa mục"
+                          >
+                            🗑
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}

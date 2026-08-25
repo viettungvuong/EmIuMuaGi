@@ -48,5 +48,5 @@ type AnyItem struct {
 	Notes      *string        `json:"notes,omitempty"`
 	Toppings   []string       `json:"toppings,omitempty"`
 	Category   *string        `json:"category,omitempty"`
-	Additional map[string]any `json:"additional,omitempty`
+	Additional map[string]any `json:"additional,omitempty"`
 }

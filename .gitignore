@@ -23,6 +23,8 @@ frontend/.env.local
 *.jpeg
 *.png
 **/deploy.sh
-**/item-service
-**/api-gateway
-**/user-service
+
+# Compiled service binaries (named after their folder, so match the file not the dir)
+backend/item-service/item-service
+backend/api-gateway/api-gateway
+backend/user-service/user-service

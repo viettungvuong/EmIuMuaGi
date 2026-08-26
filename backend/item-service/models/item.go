@@ -15,6 +15,7 @@ type Item struct {
 	Bought          bool      `gorm:"default:false;not null" json:"bought"`
 	ItemMediaFolder *string   `gorm:"size:4096" json:"item_media_folder"`
 	Owner           string    `gorm:"size:255" json:"owner"`
+	DeletedAt 		time.Time `gorm:"autoCreateTime" json:"deleted_at"`
 }
 
 type Clothes struct {

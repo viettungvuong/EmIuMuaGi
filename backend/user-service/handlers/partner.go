@@ -18,7 +18,51 @@ var (
 	errSelfLink         = errors.New("self_link")
 	errAlreadyPartnered = errors.New("already_partnered")
 	errPartnerTaken     = errors.New("partner_taken")
+	errNotPartnered     = errors.New("not_partnered")
 )
+
+// This function removes whoever is the current Partner
+func RemovePartner(c *gin.Context) {
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User identity not found in token"})
+		return
+	}
+
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		var me models.User
+		if err := tx.Where("id = ?", username).First(&me).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errNoSuchUser
+			}
+			return err
+		}
+
+		if me.PartnerID == nil {
+			return errNotPartnered
+		}
+
+		// Clear both sides so neither is left pointing at someone who has moved on
+		return tx.Model(&models.User{}).
+			Where("id IN ?", []string{me.ID, *me.PartnerID}).
+			Update("partner_id", nil).Error
+	})
+
+	switch {
+	case err == nil:
+	case errors.Is(err, errNoSuchUser):
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Your account no longer exists", "code": "no_such_user"})
+		return
+	case errors.Is(err, errNotPartnered):
+		c.JSON(http.StatusConflict, gin.H{"error": "You do not have a partner", "code": "not_partnered"})
+		return
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not remove your partner"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Partner removed successfully"})
+}
 
 func AddPartner(c *gin.Context) {
 	// Extract the user identity from the JWT claims already set by the middleware

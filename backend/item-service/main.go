@@ -45,6 +45,9 @@ func main() {
 
 	database.InitDB()
 
+	// Clears out items that have sat soft deleted past the retention window
+	internal.StartPurgeJob()
+
 	r := gin.Default()
 
 	// Root path

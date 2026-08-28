@@ -78,7 +78,7 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
-		WHERE i.owner IN ?
+		WHERE i.owner IN ? AND i.deleted_at IS NULL
 		ORDER BY i.created_at DESC
 	`, owners).Scan(&results).Error
 
@@ -183,7 +183,7 @@ func DeleteItem(c *gin.Context) {
 	currentUser := c.GetString("username")
 	var item models.Item
 
-	if err := database.DB.Where("id = ?", id).First(&item).Error; err != nil {
+	if err := database.DB.Where("id = ? AND deleted_at IS NULL", id).First(&item).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return
 	}
@@ -194,19 +194,13 @@ func DeleteItem(c *gin.Context) {
 		return
 	}
 
-	tx := database.DB.Begin()
-
-	switch item.ItemType {
-	case "clothes":
-		tx.Where("id = ?", id).Delete(&models.Clothes{})
-	case "food_and_drink":
-		tx.Where("id = ?", id).Delete(&models.FoodAndDrink{})
-	case "others":
-		tx.Where("id = ?", id).Delete(&models.Others{})
+	// Soft delete: stamps DeletedAt and leaves the type-specific row alone, so
+	// the nightly purge can clear both once the retention window has passed
+	now := time.Now()
+	if err := database.DB.Model(&item).Update("deleted_at", now).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
+		return
 	}
-
-	tx.Where("id = ?", id).Delete(&models.Item{})
-	tx.Commit()
 
 	log.Printf("Deleted %s\n", item.ItemName)
 
@@ -267,7 +261,7 @@ func MarkItemAsBought(c *gin.Context) {
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
-		WHERE i.id = ?
+		WHERE i.id = ? AND i.deleted_at IS NULL
 	`, id).Scan(&res)
 
 	resp := models.AnyItem{Item: res.Item, Additional: map[string]any{

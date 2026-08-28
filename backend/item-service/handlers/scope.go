@@ -16,7 +16,7 @@ import (
 // check ok.
 func loadItemInScope(c *gin.Context, itemID any) (models.Item, bool) {
 	var item models.Item
-	if err := database.DB.Where("id = ?", itemID).First(&item).Error; err != nil {
+	if err := database.DB.Where("id = ? AND deleted_at IS NULL", itemID).First(&item).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return item, false
 	}

@@ -34,7 +34,7 @@ func GetHistories(c *gin.Context) {
 		FROM histories h
 		JOIN items i ON h.item_id = i.id
 		LEFT JOIN reviews r ON h.id = r.history_id
-		WHERE i.owner IN ?
+		WHERE i.owner IN ? AND i.deleted_at IS NULL
 		ORDER BY h.time DESC
 	`, owners).Scan(&res).Error
 

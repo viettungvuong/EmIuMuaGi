@@ -65,6 +65,7 @@ func main() {
 		partner.Use(internal.AuthMiddleware())
 		{
 			partner.POST("/add/:inviteID", handlers.AddPartner)
+			partner.DELETE("", handlers.RemovePartner)
 		}
 
 		user := api.Group("/")

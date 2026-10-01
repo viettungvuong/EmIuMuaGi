@@ -40,15 +40,28 @@ type Others struct {
 	Notes    *string `gorm:"size:500" json:"notes"`
 }
 
+// Restaurant only needs a name up front; the rest can be filled in later
+type Restaurant struct {
+	ID          uint    `gorm:"primaryKey" json:"id"`
+	MainFood    *string `gorm:"size:255" json:"main_food"`
+	CuisineType *string `gorm:"size:100" json:"cuisine_type"`
+	Address     *string `gorm:"size:500" json:"address"`
+	TimeToEat   *string `gorm:"size:100" json:"time_to_eat"`
+}
+
 // AnyItem is used to serialize and deserialize the any item
 type AnyItem struct {
 	Item
-	Size       *string        `json:"size,omitempty"`
-	Color      *string        `json:"color,omitempty"`
-	Brand      *string        `json:"brand,omitempty"`
-	Sugar      *string        `json:"sugar,omitempty"`
-	Notes      *string        `json:"notes,omitempty"`
-	Toppings   []string       `json:"toppings,omitempty"`
-	Category   *string        `json:"category,omitempty"`
-	Additional map[string]any `json:"additional,omitempty"`
+	Size        *string        `json:"size,omitempty"`
+	Color       *string        `json:"color,omitempty"`
+	Brand       *string        `json:"brand,omitempty"`
+	Sugar       *string        `json:"sugar,omitempty"`
+	Notes       *string        `json:"notes,omitempty"`
+	Toppings    []string       `json:"toppings,omitempty"`
+	Category    *string        `json:"category,omitempty"`
+	MainFood    *string        `json:"main_food,omitempty"`
+	CuisineType *string        `json:"cuisine_type,omitempty"`
+	Address     *string        `json:"address,omitempty"`
+	TimeToEat   *string        `json:"time_to_eat,omitempty"`
+	Additional  map[string]any `json:"additional,omitempty"`
 }

@@ -22,7 +22,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a list of all items including clothes, food_and_drink, and others",
+                "description": "Get a list of all items including clothes, food_and_drink, others, and restaurant",
                 "produces": [
                     "application/json"
                 ],
@@ -36,7 +36,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AnyItemResponse"
+                                "$ref": "#/definitions/models.AnyItem"
                             }
                         }
                     }
@@ -48,7 +48,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new item (clothes, food_and_drink, or others)",
+                "description": "Create a new item (clothes, food_and_drink, others, or restaurant)",
                 "consumes": [
                     "application/json"
                 ],
@@ -66,7 +66,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.AnyItemResponse"
+                            "$ref": "#/definitions/models.AnyItem"
                         }
                     }
                 ],
@@ -74,7 +74,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.AnyItemResponse"
+                            "$ref": "#/definitions/models.AnyItem"
                         }
                     }
                 }
@@ -82,12 +82,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.AnyItemResponse": {
+        "models.AnyItem": {
             "type": "object",
             "properties": {
                 "additional": {
                     "type": "object",
                     "additionalProperties": {}
+                },
+                "address": {
+                    "type": "string"
                 },
                 "bought": {
                     "type": "boolean"
@@ -107,8 +110,17 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "cuisine_type": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "item_media_folder": {
+                    "type": "string"
                 },
                 "item_name": {
                     "type": "string"
@@ -116,7 +128,17 @@ const docTemplate = `{
                 "item_type": {
                     "type": "string"
                 },
+                "main_food": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "notes": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "quantity": {
@@ -129,6 +151,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sugar": {
+                    "type": "string"
+                },
+                "time_to_eat": {
                     "type": "string"
                 },
                 "toppings": {

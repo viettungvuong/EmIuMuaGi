@@ -6,6 +6,7 @@ import '../styles/AddPage.css';
 const ITEM_TYPES = [
   { value: 'clothes',       label: '👕 Quần Áo' },
   { value: 'food_and_drink', label: '🧋 Đồ Ăn & Uống' },
+  { value: 'restaurant',    label: '🍜 Nhà Hàng' },
   { value: 'others',        label: '📦 Khác' },
 ];
 
@@ -17,6 +18,8 @@ export default function AddPage() {
     size: '', color: '', brand: '',
     // food_and_drink
     sugar: '', notes: '', toppings: '',
+    // restaurant
+    main_food: '', cuisine_type: '', address: '', time_to_eat: '',
     // others
     category: '',
   });
@@ -76,6 +79,13 @@ export default function AddPage() {
             sugar: form.sugar || null,
             notes: form.notes || null,
             toppings: form.toppings ? form.toppings.split(',').map((t) => t.trim()).filter(Boolean) : null,
+          }
+        : itemType === 'restaurant'
+        ? {
+            main_food: form.main_food || null,
+            cuisine_type: form.cuisine_type || null,
+            address: form.address || null,
+            time_to_eat: form.time_to_eat || null,
           }
         : { category: form.category || null };
 
@@ -155,31 +165,36 @@ export default function AddPage() {
             ))}
           </div>
 
-          {/* Common fields */}
+          {/* Common fields — link first so details can be parsed from it */}
+          <div className="field-group">
+            <label className="field-label" htmlFor="item-url">Link</label>
+            <input id="item-url" type="url" className="field-input"
+              placeholder={itemType === 'restaurant' ? 'Link Google Maps, Facebook…' : 'https://…'}
+              value={form.buy_url} onChange={set('buy_url')} autoFocus />
+          </div>
+
           <div className="field-group">
             <label className="field-label" htmlFor="item-name">Tên *</label>
             <input id="item-name" type="text" className={`field-input ${error && !form.item_name.trim() ? 'input-error' : ''}`}
-              placeholder="Tên mục…" value={form.item_name} onChange={set('item_name')} autoFocus />
+              placeholder={itemType === 'restaurant' ? 'Tên nhà hàng…' : 'Tên mục…'}
+              value={form.item_name} onChange={set('item_name')} />
           </div>
 
-          <div className="field-row">
-            <div className="field-group">
-              <label className="field-label" htmlFor="item-qty">Số lượng</label>
-              <input id="item-qty" type="number" min="1" className="field-input"
-                value={form.quantity} onChange={set('quantity')} />
+          {/* Restaurants skip quantity / shop */}
+          {itemType !== 'restaurant' && (
+            <div className="field-row">
+              <div className="field-group">
+                <label className="field-label" htmlFor="item-qty">Số lượng</label>
+                <input id="item-qty" type="number" min="1" className="field-input"
+                  value={form.quantity} onChange={set('quantity')} />
+              </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="item-shop">Cửa hàng</label>
+                <input id="item-shop" type="text" className="field-input"
+                  placeholder="Tên cửa hàng…" value={form.shop_name} onChange={set('shop_name')} />
+              </div>
             </div>
-            <div className="field-group">
-              <label className="field-label" htmlFor="item-shop">Cửa hàng</label>
-              <input id="item-shop" type="text" className="field-input"
-                placeholder="Tên cửa hàng…" value={form.shop_name} onChange={set('shop_name')} />
-            </div>
-          </div>
-
-          <div className="field-group">
-            <label className="field-label" htmlFor="item-url">Link mua hàng</label>
-            <input id="item-url" type="url" className="field-input"
-              placeholder="https://…" value={form.buy_url} onChange={set('buy_url')} />
-          </div>
+          )}
 
           {/* Clothes fields */}
           {itemType === 'clothes' && (
@@ -226,6 +241,32 @@ export default function AddPage() {
                 <label className="field-label">Ghi chú</label>
                 <textarea className="field-input field-textarea" placeholder="Ít đá, không đường…"
                   value={form.notes} onChange={set('notes')} rows={3} />
+              </div>
+            </>
+          )}
+
+          {/* Restaurant fields */}
+          {itemType === 'restaurant' && (
+            <>
+              <div className="field-group">
+                <label className="field-label">Món chính</label>
+                <input type="text" className="field-input" placeholder="Phở, bún bò…"
+                  value={form.main_food} onChange={set('main_food')} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Loại ẩm thực</label>
+                <input type="text" className="field-input" placeholder="Việt, Nhật, Hàn…"
+                  value={form.cuisine_type} onChange={set('cuisine_type')} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Địa chỉ</label>
+                <input type="text" className="field-input" placeholder="Số nhà, đường, quận…"
+                  value={form.address} onChange={set('address')} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">Thời gian ăn</label>
+                <input type="text" className="field-input" placeholder="Trưa, tối thứ 6…"
+                  value={form.time_to_eat} onChange={set('time_to_eat')} />
               </div>
             </>
           )}

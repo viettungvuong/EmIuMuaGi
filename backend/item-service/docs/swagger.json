@@ -16,7 +16,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a list of all items including clothes, food_and_drink, and others",
+                "description": "Get a list of all items including clothes, food_and_drink, others, and restaurant",
                 "produces": [
                     "application/json"
                 ],
@@ -30,7 +30,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.AnyItemResponse"
+                                "$ref": "#/definitions/models.AnyItem"
                             }
                         }
                     }
@@ -42,7 +42,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new item (clothes, food_and_drink, or others)",
+                "description": "Create a new item (clothes, food_and_drink, others, or restaurant)",
                 "consumes": [
                     "application/json"
                 ],
@@ -60,7 +60,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.AnyItemResponse"
+                            "$ref": "#/definitions/models.AnyItem"
                         }
                     }
                 ],
@@ -68,7 +68,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.AnyItemResponse"
+                            "$ref": "#/definitions/models.AnyItem"
                         }
                     }
                 }
@@ -76,12 +76,15 @@
         }
     },
     "definitions": {
-        "models.AnyItemResponse": {
+        "models.AnyItem": {
             "type": "object",
             "properties": {
                 "additional": {
                     "type": "object",
                     "additionalProperties": {}
+                },
+                "address": {
+                    "type": "string"
                 },
                 "bought": {
                     "type": "boolean"
@@ -101,8 +104,17 @@
                 "created_at": {
                     "type": "string"
                 },
+                "cuisine_type": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "item_media_folder": {
+                    "type": "string"
                 },
                 "item_name": {
                     "type": "string"
@@ -110,7 +122,17 @@
                 "item_type": {
                     "type": "string"
                 },
+                "main_food": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "notes": {
+                    "type": "string"
+                },
+                "owner": {
                     "type": "string"
                 },
                 "quantity": {
@@ -123,6 +145,9 @@
                     "type": "string"
                 },
                 "sugar": {
+                    "type": "string"
+                },
+                "time_to_eat": {
                     "type": "string"
                 },
                 "toppings": {

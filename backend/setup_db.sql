@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS others (
     notes VARCHAR(500)
 );
 
+-- Create restaurants table
+CREATE TABLE IF NOT EXISTS restaurants (
+    id INTEGER PRIMARY KEY REFERENCES items(id) ON DELETE CASCADE,
+    main_food VARCHAR(255),
+    cuisine_type VARCHAR(100),
+    address VARCHAR(500),
+    time_to_eat VARCHAR(100)
+);
+
 -- Create histories table
 CREATE TABLE IF NOT EXISTS histories (
     id UUID PRIMARY KEY,

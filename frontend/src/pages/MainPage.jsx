@@ -6,6 +6,7 @@ import "../styles/MainPage.css";
 const TYPE_LABELS = {
   clothes: "Quần Áo",
   food_and_drink: "Đồ Ăn & Uống",
+  restaurant: "Nhà Hàng",
   others: "Khác",
 };
 
@@ -29,6 +30,17 @@ function ItemSubInfo({ item }) {
       <p className="item-subinfo">
         {[...parts, toppingStr].filter(Boolean).join(" · ")}
       </p>
+    ) : null;
+  }
+  if (item.item_type === "restaurant") {
+    const parts = [
+      item.main_food,
+      item.cuisine_type,
+      item.address,
+      item.time_to_eat,
+    ].filter(Boolean);
+    return parts.length ? (
+      <p className="item-subinfo">{parts.join(" · ")}</p>
     ) : null;
   }
   if (item.item_type === "others" && item.category) {

@@ -1,10 +1,12 @@
 basePath: /api
 definitions:
-  models.AnyItemResponse:
+  models.AnyItem:
     properties:
       additional:
         additionalProperties: {}
         type: object
+      address:
+        type: string
       bought:
         type: boolean
       brand:
@@ -17,13 +19,26 @@ definitions:
         type: string
       created_at:
         type: string
+      cuisine_type:
+        type: string
+      deleted_at:
+        type: string
       id:
         type: integer
+      item_media_folder:
+        type: string
       item_name:
         type: string
       item_type:
         type: string
+      main_food:
+        type: string
+      metadata:
+        additionalProperties: {}
+        type: object
       notes:
+        type: string
+      owner:
         type: string
       quantity:
         type: integer
@@ -32,6 +47,8 @@ definitions:
       size:
         type: string
       sugar:
+        type: string
+      time_to_eat:
         type: string
       toppings:
         items:
@@ -47,8 +64,8 @@ info:
 paths:
   /items:
     get:
-      description: Get a list of all items including clothes, food_and_drink, and
-        others
+      description: Get a list of all items including clothes, food_and_drink, others,
+        and restaurant
       produces:
       - application/json
       responses:
@@ -56,7 +73,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.AnyItemResponse'
+              $ref: '#/definitions/models.AnyItem'
             type: array
       security:
       - BearerAuth: []
@@ -66,21 +83,21 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new item (clothes, food_and_drink, or others)
+      description: Create a new item (clothes, food_and_drink, others, or restaurant)
       parameters:
       - description: Item to create
         in: body
         name: item
         required: true
         schema:
-          $ref: '#/definitions/models.AnyItemResponse'
+          $ref: '#/definitions/models.AnyItem'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.AnyItemResponse'
+            $ref: '#/definitions/models.AnyItem'
       security:
       - BearerAuth: []
       summary: Create an item

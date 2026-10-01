@@ -29,6 +29,7 @@ func InitDB() {
 		&models.Clothes{},
 		&models.FoodAndDrink{},
 		&models.Others{},
+		&models.Restaurant{},
 		&models.History{},
 		&models.Review{},
 	)

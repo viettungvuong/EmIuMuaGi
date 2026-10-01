@@ -96,6 +96,10 @@ func purgeItem(item models.Item) error {
 			if err := tx.Where("id = ?", item.ID).Delete(&models.Others{}).Error; err != nil {
 				return err
 			}
+		case "restaurant":
+			if err := tx.Where("id = ?", item.ID).Delete(&models.Restaurant{}).Error; err != nil {
+				return err
+			}
 		}
 
 		return tx.Where("id = ?", item.ID).Delete(&models.Item{}).Error

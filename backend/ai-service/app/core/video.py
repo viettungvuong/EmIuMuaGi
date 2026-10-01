@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 from yt_dlp import YoutubeDL
 from yt_dlp.networking.impersonate import ImpersonateTarget
 
+from app.core.address import extract_address
+
 SERVICE_ROOT = Path(__file__).resolve().parents[2]
 DOWNLOAD_DIR = SERVICE_ROOT / "downloads"
 
@@ -20,6 +22,7 @@ CLIP_SECONDS = 6
 class TikTokVideo:
     video_id: str
     caption: str | None  # the text the creator wrote under the video, hashtags included
+    address: str | None  # first "265/234 Trường Chinh"-style address in the caption
     uploader: str | None
     duration: float  # seconds, of the full video
     trimmed: bool  # True when video_path is only the last CLIP_SECONDS
@@ -90,9 +93,11 @@ def fetch_tiktok(url: str) -> TikTokVideo:
     if trimmed:
         filepath = _trim_to_last(filepath, CLIP_SECONDS)
 
+    caption = info.get("description") or None
     return TikTokVideo(
         video_id=info["id"],
-        caption=info.get("description") or None,
+        caption=caption,
+        address=extract_address(caption),
         uploader=info.get("uploader"),
         duration=duration,
         trimmed=trimmed,

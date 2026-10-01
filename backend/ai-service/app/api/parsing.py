@@ -3,10 +3,26 @@ from dataclasses import asdict
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
 
+from app.core.address import extract_address
 from app.core.parsing import parse_link
 
 router = APIRouter(prefix="/api/parse", tags=["parse"])
+
+
+class AddressRequest(BaseModel):
+    text: str = Field(max_length=10_000)  # TikTok captions top out around 4,000 chars
+
+
+class AddressResponse(BaseModel):
+    address: str | None
+
+
+@router.post("/address", response_model=AddressResponse)
+def address(req: AddressRequest):
+    """First "265/234 Trường Chinh"-style address in `text`, or null."""
+    return AddressResponse(address=extract_address(req.text))
 
 # One live socket per item being added, keyed by the uuid the frontend
 # generated for it (the same uuid the item is saved with)

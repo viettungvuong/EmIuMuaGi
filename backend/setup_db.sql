@@ -1,6 +1,7 @@
 -- Create items table
 CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
+    uuid UUID UNIQUE,
     item_name VARCHAR(255) NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     buy_url VARCHAR(2048),

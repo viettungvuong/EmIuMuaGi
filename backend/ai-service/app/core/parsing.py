@@ -54,7 +54,10 @@ def parse_generic(url: str) -> ParsedLink | None:
 
 def parse_link(url: str) -> ParsedLink | None:
     """Return what can be read from `url`, or None if nothing can."""
-    host = (urlparse(url).hostname or "").lower()
+    parts = urlparse(url.strip())
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    host = parts.hostname.lower()
 
     # shopee.vn, shopee.co.th, …
     if "shopee" in host.split("."):

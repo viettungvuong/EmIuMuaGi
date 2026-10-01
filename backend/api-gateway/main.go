@@ -55,6 +55,7 @@ func main() {
 	r.Any("/api/items/*path", proxy("http://localhost:8002"))
 	r.Any("/api/history", proxy("http://localhost:8002"))
 	r.Any("/api/history/*path", proxy("http://localhost:8002"))
+	r.Any("/api/parse/*path", proxy("http://localhost:8004")) // WebSocket, ReverseProxy passes the upgrade through
 
 	// Fallback custom matcher just in case
 	r.NoRoute(func(c *gin.Context) {
@@ -65,6 +66,10 @@ func main() {
 		}
 		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") {
 			proxy("http://localhost:8002")(c)
+			return
+		}
+		if strings.HasPrefix(path, "/api/parse") {
+			proxy("http://localhost:8004")(c)
 			return
 		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "API route not found on gateway"})

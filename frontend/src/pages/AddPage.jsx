@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/AddPage.css';
@@ -10,7 +10,27 @@ const ITEM_TYPES = [
   { value: 'others',        label: '📦 Khác' },
 ];
 
+// How long the link has to stay unchanged before it is sent to the parser
+const PARSE_DEBOUNCE_MS = 500;
+
+// crypto.randomUUID only exists on https/localhost, so fall back for LAN testing
+const newUuid = () =>
+  crypto.randomUUID?.() ??
+  '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
+    (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+
+// Same origin as the REST calls, just over ws(s)
+const parseSocketUrl = (uuid) =>
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/api/parse/ws/${uuid}`;
+
+function sendLink(ws, seqRef, url) {
+  seqRef.current += 1;
+  ws.send(JSON.stringify({ seq: seqRef.current, url }));
+}
+
 export default function AddPage() {
+  // Made up front: names the parser channel now, saved as the item's uuid later
+  const [itemUuid] = useState(newUuid);
   const [itemType, setItemType] = useState('clothes');
   const [form, setForm] = useState({
     item_name: '', quantity: 1, shop_name: '', buy_url: '',
@@ -29,6 +49,53 @@ export default function AddPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
+  const socketRef = useRef(null);
+  const seqRef = useRef(0);         // seq of the latest link sent, older answers are ignored
+  const latestUrlRef = useRef('');  // link waiting for the socket to open
+  const autoNameRef = useRef('');   // last name the parser filled in
+
+  // One long-lived parser channel for this item, closed when the page is left
+  useEffect(() => {
+    const ws = new WebSocket(parseSocketUrl(itemUuid));
+    socketRef.current = ws;
+
+    ws.onopen = () => {
+      if (latestUrlRef.current) sendLink(ws, seqRef, latestUrlRef.current);
+    };
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.seq !== seqRef.current) return;
+
+      const name = msg.result?.item_name;
+      if (!name) return;
+      setForm((f) => {
+        // Leave a name the user typed themselves alone
+        if (f.item_name && f.item_name !== autoNameRef.current) return f;
+        autoNameRef.current = name;
+        return { ...f, item_name: name };
+      });
+    };
+
+    return () => {
+      ws.close();
+      socketRef.current = null;
+    };
+  }, [itemUuid]);
+
+  // Once the user stops typing/pasting the link, send it down the channel
+  useEffect(() => {
+    const url = form.buy_url.trim();
+    if (!url) return;
+
+    const timer = setTimeout(() => {
+      latestUrlRef.current = url;
+      const ws = socketRef.current;
+      if (ws?.readyState === WebSocket.OPEN) sendLink(ws, seqRef, url);
+    }, PARSE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [form.buy_url]);
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -64,6 +131,7 @@ export default function AddPage() {
     setError('');
 
     const base = {
+      uuid: itemUuid,
       item_type: itemType,
       item_name: form.item_name.trim(),
       quantity: Number(form.quantity) || 1,
@@ -93,6 +161,9 @@ export default function AddPage() {
       // 1. Create the item
       const itemRes = await client.post('/api/items', { ...base, ...subtypeFields });
       const itemId = itemRes.data.id;
+
+      // The item exists now, so its parser channel is done
+      socketRef.current?.close();
 
       // 2. Upload media files if any
       if (mediaFiles.length > 0) {

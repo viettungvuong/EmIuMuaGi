@@ -1,35 +1,47 @@
-"""Open an item's link in a headless browser and capture how the page looks,
-so its details (name, price, address…) can be inferred from it later."""
+"""Pull item details straight out of a shop link, without opening the page."""
 
-from urllib.parse import urlparse
-
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
-from playwright.async_api import async_playwright
-
-# Desktop rather than mobile: on phones, Google Maps / Shopee / Facebook cover
-# the page with "open in app" popups that hide the content we want
-DEVICE = "Desktop Chrome"
+from dataclasses import dataclass
+from urllib.parse import unquote, urlparse
 
 
-async def take_screenshot(url: str, full_page: bool = False, timeout_ms: int = 20_000) -> bytes:
-    """Return a PNG screenshot of the page at `url`."""
-    if urlparse(url).scheme not in ("http", "https"):
-        raise ValueError(f"Only http(s) links can be opened: {url}")
+@dataclass
+class ParsedLink:
+    source: str
+    item_name: str | None = None
+    shop_id: str | None = None
+    item_id: str | None = None
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        try:
-            context = await browser.new_context(**p.devices[DEVICE], locale="vi-VN")
-            page = await context.new_page()
-            await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
 
-            # Give lazy-loaded images and prices a moment, without hanging on
-            # pages that keep polling and never go fully idle
-            try:
-                await page.wait_for_load_state("networkidle", timeout=5_000)
-            except PlaywrightTimeoutError:
-                pass
+def parse_shopee(url: str) -> ParsedLink | None:
+    """Shopee product links look like
+        https://shopee.vn/<title-slug>-i.<shop_id>.<item_id>?<tracking>
+    where the slug is the product title, percent-encoded as UTF-8 with
+    hyphens in place of spaces."""
+    last_segment = urlparse(url).path.rstrip("/").split("/")[-1]
 
-            return await page.screenshot(full_page=full_page, type="png")
-        finally:
-            await browser.close()
+    # Split on the last "-i." so a title that happens to contain it stays intact
+    slug, sep, ids = last_segment.rpartition("-i.")
+    if not sep:
+        return None
+
+    shop_id, _, item_id = ids.partition(".")
+    # Hyphens in the real title are lost here, they come back as spaces
+    name = " ".join(unquote(slug).replace("-", " ").split())
+
+    return ParsedLink(
+        source="shopee",
+        item_name=name or None,
+        shop_id=shop_id or None,
+        item_id=item_id or None,
+    )
+
+
+def parse_link(url: str) -> ParsedLink | None:
+    """Return what can be read from `url`, or None if the site isn't supported yet."""
+    host = (urlparse(url).hostname or "").lower()
+
+    # shopee.vn, shopee.co.th, …
+    if "shopee" in host.split("."):
+        return parse_shopee(url)
+
+    return None

@@ -392,8 +392,11 @@ export default function AddPage() {
               </div>
               <div className="field-group">
                 <label className="field-label">Thời gian ăn</label>
-                <input type="text" className="field-input" placeholder="Trưa, tối thứ 6…"
-                  value={form.time_to_eat} onChange={set('time_to_eat')} />
+                <select className="field-input" value={form.time_to_eat} onChange={set('time_to_eat')}>
+                  <option value="">Chọn cách hẹn giờ…</option>
+                  <option value="pick_date">Chọn ngày</option>
+                  <option value="auto_schedule">Tự động lên lịch</option>
+                </select>
               </div>
             </>
           )}

@@ -144,6 +144,9 @@ const docTemplate = `{
                 "quantity": {
                     "type": "integer"
                 },
+                "schedule": {
+                    "type": "string"
+                },
                 "shop_name": {
                     "type": "string"
                 },

@@ -52,6 +52,8 @@ type Restaurant struct {
 	CuisineType *string `gorm:"size:100" json:"cuisine_type"`
 	Address     *string `gorm:"size:500" json:"address"`
 	TimeToEat   *string `gorm:"size:100" json:"time_to_eat"`
+	// When to go eat there. Null until picked or scheduled.
+	Schedule *time.Time `json:"schedule"`
 }
 
 // AnyItem is used to serialize and deserialize the any item
@@ -68,5 +70,6 @@ type AnyItem struct {
 	CuisineType *string        `json:"cuisine_type,omitempty"`
 	Address     *string        `json:"address,omitempty"`
 	TimeToEat   *string        `json:"time_to_eat,omitempty"`
+	Schedule    *time.Time     `json:"schedule,omitempty"`
 	Additional  map[string]any `json:"additional,omitempty"`
 }

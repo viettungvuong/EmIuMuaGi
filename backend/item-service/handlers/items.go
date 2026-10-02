@@ -51,19 +51,20 @@ func sendPushNotification(title string, message string) {
 func GetItems(c *gin.Context) {
 	type PolledItem struct {
 		models.Item
-		CSize       *string `gorm:"column:c_size"`
-		Color       *string `gorm:"column:color"`
-		Brand       *string `gorm:"column:brand"`
-		Sugar       *string `gorm:"column:sugar"`
-		FSize       *string `gorm:"column:f_size"`
-		FNotes      *string `gorm:"column:f_notes"`
-		Toppings    *string `gorm:"column:toppings"`
-		Category    *string `gorm:"column:category"`
-		ONotes      *string `gorm:"column:o_notes"`
-		MainFood    *string `gorm:"column:main_food"`
-		CuisineType *string `gorm:"column:cuisine_type"`
-		Address     *string `gorm:"column:address"`
-		TimeToEat   *string `gorm:"column:time_to_eat"`
+		CSize       *string    `gorm:"column:c_size"`
+		Color       *string    `gorm:"column:color"`
+		Brand       *string    `gorm:"column:brand"`
+		Sugar       *string    `gorm:"column:sugar"`
+		FSize       *string    `gorm:"column:f_size"`
+		FNotes      *string    `gorm:"column:f_notes"`
+		Toppings    *string    `gorm:"column:toppings"`
+		Category    *string    `gorm:"column:category"`
+		ONotes      *string    `gorm:"column:o_notes"`
+		MainFood    *string    `gorm:"column:main_food"`
+		CuisineType *string    `gorm:"column:cuisine_type"`
+		Address     *string    `gorm:"column:address"`
+		TimeToEat   *string    `gorm:"column:time_to_eat"`
+		Schedule    *time.Time `gorm:"column:schedule"`
 	}
 
 	owners, err := internal.OwnerScope(c)
@@ -78,7 +79,7 @@ func GetItems(c *gin.Context) {
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
-			r.main_food, r.cuisine_type, r.address, r.time_to_eat
+			r.main_food, r.cuisine_type, r.address, r.time_to_eat, r.schedule
 		FROM items i
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
@@ -118,6 +119,7 @@ func GetItems(c *gin.Context) {
 			resp.CuisineType = res.CuisineType
 			resp.Address = res.Address
 			resp.TimeToEat = res.TimeToEat
+			resp.Schedule = res.Schedule
 		}
 		responses = append(responses, resp)
 	}
@@ -184,7 +186,7 @@ func CreateItem(c *gin.Context) {
 			return
 		}
 	} else if item.ItemType == "restaurant" {
-		rItem := models.Restaurant{ID: item.ID, MainFood: input.MainFood, CuisineType: input.CuisineType, Address: input.Address, TimeToEat: input.TimeToEat}
+		rItem := models.Restaurant{ID: item.ID, MainFood: input.MainFood, CuisineType: input.CuisineType, Address: input.Address, TimeToEat: input.TimeToEat, Schedule: input.Schedule}
 		if err := tx.Create(&rItem).Error; err != nil {
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create restaurant item"})
@@ -263,19 +265,20 @@ func MarkItemAsBought(c *gin.Context) {
 
 	var res struct {
 		models.Item
-		CSize       *string `gorm:"column:c_size"`
-		Color       *string `gorm:"column:color"`
-		Brand       *string `gorm:"column:brand"`
-		Sugar       *string `gorm:"column:sugar"`
-		FSize       *string `gorm:"column:f_size"`
-		FNotes      *string `gorm:"column:f_notes"`
-		Toppings    *string `gorm:"column:toppings"`
-		Category    *string `gorm:"column:category"`
-		ONotes      *string `gorm:"column:o_notes"`
-		MainFood    *string `gorm:"column:main_food"`
-		CuisineType *string `gorm:"column:cuisine_type"`
-		Address     *string `gorm:"column:address"`
-		TimeToEat   *string `gorm:"column:time_to_eat"`
+		CSize       *string    `gorm:"column:c_size"`
+		Color       *string    `gorm:"column:color"`
+		Brand       *string    `gorm:"column:brand"`
+		Sugar       *string    `gorm:"column:sugar"`
+		FSize       *string    `gorm:"column:f_size"`
+		FNotes      *string    `gorm:"column:f_notes"`
+		Toppings    *string    `gorm:"column:toppings"`
+		Category    *string    `gorm:"column:category"`
+		ONotes      *string    `gorm:"column:o_notes"`
+		MainFood    *string    `gorm:"column:main_food"`
+		CuisineType *string    `gorm:"column:cuisine_type"`
+		Address     *string    `gorm:"column:address"`
+		TimeToEat   *string    `gorm:"column:time_to_eat"`
+		Schedule    *time.Time `gorm:"column:schedule"`
 	}
 
 	database.DB.Raw(`
@@ -283,7 +286,7 @@ func MarkItemAsBought(c *gin.Context) {
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
-			r.main_food, r.cuisine_type, r.address, r.time_to_eat
+			r.main_food, r.cuisine_type, r.address, r.time_to_eat, r.schedule
 		FROM items i
 		LEFT JOIN clothes c ON i.id = c.id
 		LEFT JOIN food_and_drinks f ON i.id = f.id
@@ -319,6 +322,7 @@ func MarkItemAsBought(c *gin.Context) {
 		resp.CuisineType = res.CuisineType
 		resp.Address = res.Address
 		resp.TimeToEat = res.TimeToEat
+		resp.Schedule = res.Schedule
 	}
 
 	c.JSON(http.StatusOK, resp)

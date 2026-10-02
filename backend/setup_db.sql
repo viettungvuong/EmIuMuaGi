@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS restaurants (
     main_food VARCHAR(255),
     cuisine_type VARCHAR(100),
     address VARCHAR(500),
-    time_to_eat VARCHAR(100)
+    time_to_eat VARCHAR(100),
+    schedule TIMESTAMP WITH TIME ZONE
 );
 
 -- Create histories table

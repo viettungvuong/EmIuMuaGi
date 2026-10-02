@@ -23,6 +23,18 @@ const newUuid = () =>
 const parseSocketUrl = (uuid) =>
   `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/api/parse/ws/${uuid}`;
 
+// A TikTok video or share link: the server looks up where it was filmed
+const isTikTokLink = (url) => {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const host = hostname.toLowerCase();
+    if (host === 'vt.tiktok.com' || host === 'vm.tiktok.com') return pathname.length > 1;
+    return (host === 'tiktok.com' || host.endsWith('.tiktok.com')) && /\/video\/\d+|^\/t\/\w/.test(pathname);
+  } catch {
+    return false;
+  }
+};
+
 function sendLink(ws, seqRef, url) {
   seqRef.current += 1;
   ws.send(JSON.stringify({ seq: seqRef.current, url }));
@@ -53,7 +65,35 @@ export default function AddPage() {
   const socketRef = useRef(null);
   const seqRef = useRef(0);         // seq of the latest link sent, older answers are ignored
   const latestUrlRef = useRef('');  // link waiting for the socket to open
-  const autoNameRef = useRef('');   // last name the parser filled in
+  const lastSentRef = useRef('');   // so a pasted link isn't sent again by the debounce
+  const autoRef = useRef({});       // field -> value the parser last filled in
+  const [lookingUp, setLookingUp] = useState(false); // a TikTok lookup is on its way
+
+  // Fill fields from a parser answer, leaving alone anything the user typed themselves
+  const autofill = useCallback((values) => {
+    // Snapshot taken outside the updater, which React may run twice
+    const filledBefore = { ...autoRef.current };
+    setForm((f) => {
+      const next = { ...f };
+      for (const [field, value] of Object.entries(values)) {
+        if (value && (!f[field] || f[field] === filledBefore[field])) next[field] = value;
+      }
+      return next;
+    });
+    for (const [field, value] of Object.entries(values)) {
+      if (value) autoRef.current[field] = value;
+    }
+  }, []);
+
+  const queueLink = useCallback((url) => {
+    if (url === lastSentRef.current) return;
+    latestUrlRef.current = url;
+    const ws = socketRef.current;
+    if (ws?.readyState !== WebSocket.OPEN) return; // onopen sends it
+    lastSentRef.current = url;
+    setLookingUp(isTikTokLink(url));
+    sendLink(ws, seqRef, url);
+  }, []);
 
   // One long-lived parser channel for this item, closed when the page is left
   useEffect(() => {
@@ -61,20 +101,21 @@ export default function AddPage() {
     socketRef.current = ws;
 
     ws.onopen = () => {
-      if (latestUrlRef.current) sendLink(ws, seqRef, latestUrlRef.current);
+      if (latestUrlRef.current) queueLink(latestUrlRef.current);
     };
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.seq !== seqRef.current) return;
+      setLookingUp(false);
 
-      const name = msg.result?.item_name;
-      if (!name) return;
-      setForm((f) => {
-        // Leave a name the user typed themselves alone
-        if (f.item_name && f.item_name !== autoNameRef.current) return f;
-        autoNameRef.current = name;
-        return { ...f, item_name: name };
+      const r = msg.result;
+      if (!r) return;
+      // "link" answers carry item_name, "tiktok" ones a place
+      autofill({
+        item_name: r.item_name ?? r.place_name,
+        address: r.address,
+        cuisine_type: r.place_type,
       });
     };
 
@@ -82,20 +123,33 @@ export default function AddPage() {
       ws.close();
       socketRef.current = null;
     };
-  }, [itemUuid]);
+  }, [itemUuid, queueLink, autofill]);
 
-  // Once the user stops typing/pasting the link, send it down the channel
+  // Once the user stops typing the link, send it down the channel
   useEffect(() => {
     const url = form.buy_url.trim();
     if (!url) return;
 
-    const timer = setTimeout(() => {
-      latestUrlRef.current = url;
-      const ws = socketRef.current;
-      if (ws?.readyState === WebSocket.OPEN) sendLink(ws, seqRef, url);
-    }, PARSE_DEBOUNCE_MS);
+    const timer = setTimeout(() => queueLink(url), PARSE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [form.buy_url]);
+  }, [form.buy_url, queueLink]);
+
+  const onLinkChange = (e) => {
+    setForm((f) => ({ ...f, buy_url: e.target.value }));
+    if (!e.target.value.trim()) {
+      // Link cleared: ignore whatever answer is still on its way
+      seqRef.current += 1;
+      latestUrlRef.current = '';
+      lastSentRef.current = '';
+      setLookingUp(false);
+    }
+  };
+
+  // A TikTok link pasted into the empty field goes out at once, no debounce
+  const onLinkPaste = (e) => {
+    const pasted = e.clipboardData.getData('text').trim();
+    if (!form.buy_url.trim() && isTikTokLink(pasted)) queueLink(pasted);
+  };
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -238,10 +292,12 @@ export default function AddPage() {
 
           {/* Common fields — link first so details can be parsed from it */}
           <div className="field-group">
-            <label className="field-label" htmlFor="item-url">Link</label>
+            <label className="field-label" htmlFor="item-url">
+              Link {lookingUp && <span className="field-hint">(đang lấy địa chỉ từ TikTok…)</span>}
+            </label>
             <input id="item-url" type="url" className="field-input"
-              placeholder={itemType === 'restaurant' ? 'Link Google Maps, Facebook…' : 'https://…'}
-              value={form.buy_url} onChange={set('buy_url')} autoFocus />
+              placeholder={itemType === 'restaurant' ? 'Link TikTok, Google Maps…' : 'https://…'}
+              value={form.buy_url} onChange={onLinkChange} onPaste={onLinkPaste} autoFocus />
           </div>
 
           <div className="field-group">

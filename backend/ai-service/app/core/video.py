@@ -17,6 +17,15 @@ DOWNLOAD_DIR = SERVICE_ROOT / "downloads"
 # Videos longer than this are cut down to their last CLIP_SECONDS
 CLIP_SECONDS = 6
 
+# Shared by every TikTok request
+TIKTOK_OPTS = {
+    "quiet": True,
+    "no_warnings": True,
+    "noplaylist": True,
+    # TikTok rejects yt-dlp's own requests and only answers ones that look like Chrome
+    "impersonate": ImpersonateTarget("chrome"),
+}
+
 
 @dataclass
 class TikTokVideo:
@@ -73,11 +82,7 @@ def fetch_tiktok(url: str) -> TikTokVideo:
         raise ValueError("Only TikTok links are supported")
 
     opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "noplaylist": True,
-        # TikTok rejects yt-dlp's own requests and only answers ones that look like Chrome
-        "impersonate": ImpersonateTarget("chrome"),
+        **TIKTOK_OPTS,
         # One file with sound so nothing needs merging, h264 so it plays anywhere
         "format": "best[vcodec^=h264]/best",
         "outtmpl": str(DOWNLOAD_DIR / "%(id)s.%(ext)s"),

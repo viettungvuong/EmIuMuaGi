@@ -1,5 +1,6 @@
 """Where a TikTok video was filmed, from the creator's location tag (the green
-📍 one) or, failing that, an address written in the caption."""
+📍 one), an address written in the caption, or a place named in the caption
+looked up on Google Maps."""
 
 from dataclasses import dataclass
 
@@ -7,6 +8,8 @@ from yt_dlp import YoutubeDL
 from yt_dlp.utils import ExtractorError
 
 from app.core.address import extract_address
+from app.core.maps import find_on_maps
+from app.core.names import extract_place_names
 from app.core.video import TIKTOK_OPTS, is_tiktok
 
 # Tags in this category are whole areas ("District 1", "Ho Chi Minh City"), not a place
@@ -17,6 +20,7 @@ _AREA_CATEGORY = "Place and Address"
 class TikTokLocation:
     # "poi"      the location tag names a specific place
     # "caption"  an address found in the caption
+    # "maps"     a place named in the caption, looked up on Google Maps
     # "poi_area" the location tag only names an area, e.g. "District 1"
     # None       nothing found
     source: str | None
@@ -52,13 +56,15 @@ def _tiktok_video_data(url: str) -> dict:
 
 
 def get_tiktok_location(url: str) -> TikTokLocation:
-    """A tag naming a specific place wins, then an address in the caption, then
-    a tag that only names an area. Raises ValueError for non-TikTok links and
-    yt_dlp ExtractorError/DownloadError when TikTok refuses."""
+    """In order: a tag naming a specific place, an address in the caption, a
+    place named in the caption found on Google Maps, a tag that only names an
+    area. Raises ValueError for non-TikTok links and yt_dlp
+    ExtractorError/DownloadError when TikTok refuses."""
     if not is_tiktok(url):
         raise ValueError("Only TikTok links are supported")
 
     data = _tiktok_video_data(url)
+    caption = data.get("desc")
     poi = data.get("poi") or {}
     is_area = poi.get("category") == _AREA_CATEGORY
 
@@ -70,13 +76,20 @@ def get_tiktok_location(url: str) -> TikTokLocation:
             place_type=poi.get("ttTypeNameTiny") or None,
         )
 
-    address = extract_address(data.get("desc"))
+    address = extract_address(caption)
     if address:
         return TikTokLocation(source="caption", address=address)
 
-    if poi:
-        # "District 1" + "Ho Chi Minh City, Vietnam"
-        area = ", ".join(filter(None, [poi.get("name"), poi.get("address")]))
-        return TikTokLocation(source="poi_area", address=area or None)
+    # "District 1" + "Ho Chi Minh City, Vietnam"
+    area = ", ".join(filter(None, [poi.get("name"), poi.get("address")])) or None
+
+    place = find_on_maps(extract_place_names(caption), area)
+    if place:
+        return TikTokLocation(
+            source="maps", address=place.address, place_name=place.name, place_type=place.category,
+        )
+
+    if area:
+        return TikTokLocation(source="poi_area", address=area)
 
     return TikTokLocation(source=None)

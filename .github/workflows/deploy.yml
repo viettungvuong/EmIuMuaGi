@@ -42,7 +42,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
-          source: "frontend/dist/*,backend/bin/*"
+          source: "frontend/dist/*,backend/bin/*,backend/migrations/*"
           target: "~/emiumuagi"
 
       # 4. Restart Services
@@ -57,6 +57,10 @@ jobs:
 
             # Setup Folder Structure (if it doesn't exist)
             mkdir -p backend/services/item-service backend/services/user-service backend/services/api-gateway
+
+            # Apply new backend/migrations/<YYYYMMDD>_*.sql files before the new binaries
+            # go live. If one fails, the deploy stops here and the old services keep running.
+            bash backend/migrations/migrate.sh backend/migrations backend/services/item-service/.env || exit 1
 
             # Move binaries to their specific service folders
             mv -f backend/bin/item-service backend/services/item-service/ || true

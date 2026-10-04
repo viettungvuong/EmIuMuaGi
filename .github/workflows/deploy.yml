@@ -70,7 +70,7 @@ jobs:
             # go live. If one fails, the deploy stops here and the old services keep running.
             bash backend/migrations/migrate.sh backend/migrations backend/services/item-service/.env || exit 1
 
-            # AI service: replace its code (keeping .venv and downloads/), then
+            # AI service: replace its code (keeping .venv), then
             # update its packages. A failure stops the deploy like a migration does.
             rm -rf backend/services/ai-service/app
             tar -xzf ai-service.tgz -C backend/services/ai-service && rm ai-service.tgz

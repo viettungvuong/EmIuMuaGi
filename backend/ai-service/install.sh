@@ -37,10 +37,6 @@ fi
 # Debian/Ubuntu ship venv's pip bootstrap (ensurepip) as a separate package
 python3 -c "import ensurepip" 2>/dev/null || apt_install python3-venv
 
-# Only /api/video/tiktok needs it (to trim clips), so carry on without it
-command -v ffmpeg >/dev/null || apt_install ffmpeg \
-    || echo "ai-service: no ffmpeg, /api/video/tiktok can't trim videos" >&2
-
 [[ -x .venv/bin/python ]] || { step "creating .venv"; python3 -m venv .venv; }
 step "installing Python packages"
 .venv/bin/pip install -q --upgrade pip

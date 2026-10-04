@@ -57,6 +57,9 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
+          # Default is 10m; the first deploy with the AI service downloads Chromium
+          # and its system libraries, which can take longer. Later deploys skip that.
+          command_timeout: 30m
           script: |
             cd ~/emiumuagi
 

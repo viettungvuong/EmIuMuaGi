@@ -6,15 +6,26 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Never wait for an answer: nobody is there to give one during a deploy
+export DEBIAN_FRONTEND=noninteractive
+
+# Progress with elapsed time, so a slow deploy's log shows which step was slow
+step() { echo "ai-service [${SECONDS}s]: $*"; }
+
 is_root() { [[ "$(id -u)" == 0 ]]; }
+
+# Finish an install a timed-out deploy cut short; apt won't run until that's done
+fix_apt() { dpkg --configure -a; }
 
 apt_install() {
     if ! is_root; then
         echo "ai-service: not root, so can't install $* – install it by hand" >&2
         return 1
     fi
-    DEBIAN_FRONTEND=noninteractive apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$@"
+    step "installing $* (apt)"
+    fix_apt
+    apt-get update -qq
+    apt-get install -y -qq "$@"
 }
 
 # The code uses `str | None` hints, which need Python 3.10+
@@ -30,21 +41,25 @@ python3 -c "import ensurepip" 2>/dev/null || apt_install python3-venv
 command -v ffmpeg >/dev/null || apt_install ffmpeg \
     || echo "ai-service: no ffmpeg, /api/video/tiktok can't trim videos" >&2
 
-[[ -x .venv/bin/python ]] || python3 -m venv .venv
+[[ -x .venv/bin/python ]] || { step "creating .venv"; python3 -m venv .venv; }
+step "installing Python packages"
 .venv/bin/pip install -q --upgrade pip
 .venv/bin/pip install -q -r requirements.txt
 
 # Downloads only when this Playwright version's Chromium isn't there yet
+step "checking Chromium (~280 MB download the first time)"
 .venv/bin/playwright install chromium
 
 # Chromium's system libraries (needs root, uses apt): once per Playwright version
 marker=".chromium-deps-$(.venv/bin/python -c 'from importlib.metadata import version; print(version("playwright"))')"
 if [[ ! -e "$marker" ]]; then
     if is_root; then
+        step "installing Chromium's system libraries (apt)"
+        fix_apt
         .venv/bin/playwright install-deps chromium && touch "$marker"
     else
         echo "ai-service: not root, skipping Chromium's system libraries – Google Maps lookups may fail" >&2
     fi
 fi
 
-echo "ai-service: ready"
+step "ready"

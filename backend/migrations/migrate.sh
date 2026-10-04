@@ -23,6 +23,22 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     DATABASE_URL="$DEFAULT_DATABASE_URL"
     echo "migrate: no DATABASE_URL set or in '${env_file}', using $DATABASE_URL" >&2
 fi
+
+# GORM-style DSNs often carry TimeZone=Asia/…, which the Go driver passes to the
+# server but psql rejects as an "invalid connection option". psql takes the
+# time zone from PGTZ instead, so move it there.
+if [[ "$DATABASE_URL" =~ (^|[[:space:]?&])[Tt]ime[Zz]one=([^[:space:]&]+) ]]; then
+    tz="${BASH_REMATCH[2]//\'/}"            # key=value form may quote it
+    PGTZ="$(printf '%b' "${tz//%/\\x}")"    # URL form may encode / as %2F
+    export PGTZ
+    # Cut the match out, keeping the separator before it. Not ${var/pat/rep}:
+    # since bash 5.2 an "&" in rep stands for the match, and the separator can be "&"
+    before="${DATABASE_URL%%"${BASH_REMATCH[0]}"*}"
+    after="${DATABASE_URL#*"${BASH_REMATCH[0]}"}"
+    DATABASE_URL="${before}${BASH_REMATCH[1]}${after}"
+    # Tidy what removing it from a URL's query string can leave behind
+    DATABASE_URL="$(sed -E 's/\?&/?/; s/&&/\&/; s/[?&[:space:]]+$//' <<<"$DATABASE_URL")"
+fi
 if ! command -v psql >/dev/null; then
     echo "migrate: psql is not installed (apt install postgresql-client)" >&2
     exit 1

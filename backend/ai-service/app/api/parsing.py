@@ -6,11 +6,13 @@ from dataclasses import asdict
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from playwright.sync_api import Error as PlaywrightError
 from pydantic import BaseModel, Field
 from yt_dlp.utils import DownloadError, ExtractorError
 
 from app.core.address import extract_address
 from app.core.location import get_tiktok_location
+from app.core.maps import is_maps_link, read_maps_link
 from app.core.parsing import parse_link
 from app.core.video import is_tiktok
 
@@ -36,12 +38,24 @@ def address(req: AddressRequest):
 # generated for it (the same uuid the item is saved with)
 channels: dict[UUID, WebSocket] = {}
 
-# A TikTok lookup blocks for seconds (yt-dlp, maybe a headless browser for
-# Google Maps), so each runs on a pool thread and answers when it's done while
-# the socket keeps reading. Capped because every Maps lookup starts a Chromium.
-_tiktok_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="tiktok-lookup")
+# TikTok and Google Maps lookups block for seconds (yt-dlp, a headless
+# browser), so each runs on a pool thread and answers when it's done while the
+# socket keeps reading. Capped because every Maps page starts a Chromium.
+_lookup_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="slow-lookup")
 # Running lookups, held so they aren't garbage-collected before they answer
 _lookups: set[asyncio.Task] = set()
+
+
+def _tiktok_lookup(url: str) -> dict:
+    return asdict(get_tiktok_location(url))
+
+
+def _maps_lookup(url: str) -> dict | None:
+    place = read_maps_link(url)
+    if not place:
+        return None
+    # Same shape as a TikTok answer, so the page fills the same fields
+    return {"source": "maps_link", "address": place.address, "place_name": place.name, "place_type": place.category}
 
 
 async def _send(item_uuid: UUID, payload: dict) -> None:
@@ -55,15 +69,15 @@ async def _send(item_uuid: UUID, payload: dict) -> None:
         await ws.send_json(payload)
 
 
-async def _answer_tiktok(item_uuid: UUID, seq, url: str) -> None:
-    reply = {"seq": seq, "url": url, "type": "tiktok", "result": None}
+async def _answer_later(item_uuid: UUID, seq, url: str, kind: str, lookup) -> None:
+    reply = {"seq": seq, "url": url, "type": kind, "result": None}
     try:
-        location = await asyncio.get_running_loop().run_in_executor(_tiktok_pool, get_tiktok_location, url)
-        reply["result"] = asdict(location)
-    except (ValueError, ExtractorError, DownloadError) as e:
-        reply["error"] = str(e).removeprefix("ERROR: ")  # not a video, private, blocked…
+        reply["result"] = await asyncio.get_running_loop().run_in_executor(_lookup_pool, lookup, url)
+    except (ValueError, ExtractorError, DownloadError, PlaywrightError) as e:
+        # Not a video, private, blocked, page didn't load…
+        reply["error"] = str(e).removeprefix("ERROR: ").splitlines()[0]
     except Exception:
-        log.exception("TikTok lookup failed for %s", url)
+        log.exception("%s lookup failed for %s", kind, url)
         reply["error"] = "Lookup failed"
     await _send(item_uuid, reply)
 
@@ -71,11 +85,14 @@ async def _answer_tiktok(item_uuid: UUID, seq, url: str) -> None:
 @router.websocket("/ws/{item_uuid}")
 async def parse_channel(ws: WebSocket, item_uuid: UUID):
     """Client sends {"seq": n, "url": "..."}; server answers
-    {"seq": n, "url": "...", "type": "link" | "tiktok", "result": {...} | null}.
+    {"seq": n, "url": "...", "type": "link" | "tiktok" | "maps", "result": {...} | null}.
 
     - "link":   instant, read from the URL itself (parse_link)
     - "tiktok": a few seconds later, where the video was filmed
-                (get_tiktok_location); may carry "error" instead of a result
+                (get_tiktok_location)
+    - "maps":   a few seconds later, the place a Google Maps link points to
+                (read_maps_link), with the same fields as "tiktok"
+    The slow two may carry "error" instead of a result.
 
     `seq` is echoed back so the client can ignore answers to links it has since
     replaced, which matters now that TikTok answers arrive out of order."""
@@ -99,7 +116,13 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
 
             seq = msg.get("seq")
             if is_tiktok(url):
-                task = asyncio.create_task(_answer_tiktok(item_uuid, seq, url))
+                slow = ("tiktok", _tiktok_lookup)
+            elif is_maps_link(url):
+                slow = ("maps", _maps_lookup)
+            else:
+                slow = None
+            if slow:
+                task = asyncio.create_task(_answer_later(item_uuid, seq, url, *slow))
                 _lookups.add(task)
                 task.add_done_callback(_lookups.discard)
                 continue

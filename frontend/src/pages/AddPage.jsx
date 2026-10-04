@@ -35,6 +35,25 @@ const isTikTokLink = (url) => {
   }
 };
 
+// A Google Maps place or share link: the server reads the address off the page
+// (mirrors is_maps_link in the ai-service)
+const isMapsLink = (url) => {
+  try {
+    const { protocol, hostname, pathname } = new URL(url);
+    const host = hostname.toLowerCase();
+    if (protocol !== 'http:' && protocol !== 'https:') return false;
+    if (host === 'maps.app.goo.gl') return pathname.length > 1;
+    if (host === 'goo.gl') return pathname.startsWith('/maps');
+    if (!/^(www\.|maps\.)?google\.[a-z]{2,3}(\.[a-z]{2})?$/.test(host)) return false;
+    return host.startsWith('maps.') || pathname.startsWith('/maps');
+  } catch {
+    return false;
+  }
+};
+
+// Links the server takes a few seconds to answer for: where the answer comes from
+const slowLinkSource = (url) => (isTikTokLink(url) ? 'TikTok' : isMapsLink(url) ? 'Google Maps' : null);
+
 function sendLink(ws, seqRef, url) {
   seqRef.current += 1;
   ws.send(JSON.stringify({ seq: seqRef.current, url }));
@@ -67,7 +86,7 @@ export default function AddPage() {
   const latestUrlRef = useRef('');  // link waiting for the socket to open
   const lastSentRef = useRef('');   // so a pasted link isn't sent again by the debounce
   const autoRef = useRef({});       // field -> value the parser last filled in
-  const [lookingUp, setLookingUp] = useState(false); // a TikTok lookup is on its way
+  const [lookingUp, setLookingUp] = useState(null); // "TikTok" / "Google Maps" while a slow lookup is on its way
 
   // Fill fields from a parser answer, leaving alone anything the user typed themselves
   const autofill = useCallback((values) => {
@@ -91,7 +110,7 @@ export default function AddPage() {
     const ws = socketRef.current;
     if (ws?.readyState !== WebSocket.OPEN) return; // onopen sends it
     lastSentRef.current = url;
-    setLookingUp(isTikTokLink(url));
+    setLookingUp(slowLinkSource(url));
     sendLink(ws, seqRef, url);
   }, []);
 
@@ -107,7 +126,7 @@ export default function AddPage() {
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.seq !== seqRef.current) return;
-      setLookingUp(false);
+      setLookingUp(null);
 
       const r = msg.result;
       if (!r) return;
@@ -141,14 +160,14 @@ export default function AddPage() {
       seqRef.current += 1;
       latestUrlRef.current = '';
       lastSentRef.current = '';
-      setLookingUp(false);
+      setLookingUp(null);
     }
   };
 
-  // A TikTok link pasted into the empty field goes out at once, no debounce
+  // A TikTok or Google Maps link pasted into the empty field goes out at once, no debounce
   const onLinkPaste = (e) => {
     const pasted = e.clipboardData.getData('text').trim();
-    if (!form.buy_url.trim() && isTikTokLink(pasted)) queueLink(pasted);
+    if (!form.buy_url.trim() && slowLinkSource(pasted)) queueLink(pasted);
   };
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -293,7 +312,7 @@ export default function AddPage() {
           {/* Common fields — link first so details can be parsed from it */}
           <div className="field-group">
             <label className="field-label" htmlFor="item-url">
-              Link {lookingUp && <span className="field-hint">(đang lấy địa chỉ từ TikTok…)</span>}
+              Link {lookingUp && <span className="field-hint">(đang lấy địa chỉ từ {lookingUp}…)</span>}
             </label>
             <input id="item-url" type="url" className="field-input"
               placeholder={itemType === 'restaurant' ? 'Link TikTok, Google Maps…' : 'https://…'}

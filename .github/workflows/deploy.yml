@@ -35,6 +35,11 @@ jobs:
           cd user-service && GOOS=linux GOARCH=amd64 go build -o ../bin/user-service . && cd ..
           cd item-service && GOOS=linux GOARCH=amd64 go build -o ../bin/item-service . && cd ..
 
+      # Python needs no build: ship just the code (not the venv/ committed in the
+      # repo); install.sh sets up a fresh .venv on the VPS
+      - name: Package AI Service
+        run: tar -czf ai-service.tgz --exclude=__pycache__ -C backend/ai-service main.py requirements.txt install.sh app
+
       # 3. Upload to VPS
       - name: Copy Files to VPS
         uses: appleboy/scp-action@master
@@ -42,7 +47,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
-          source: "frontend/dist/*,backend/bin/*,backend/migrations/*"
+          source: "frontend/dist/*,backend/bin/*,backend/migrations/*,ai-service.tgz"
           target: "~/emiumuagi"
 
       # 4. Restart Services
@@ -56,11 +61,17 @@ jobs:
             cd ~/emiumuagi
 
             # Setup Folder Structure (if it doesn't exist)
-            mkdir -p backend/services/item-service backend/services/user-service backend/services/api-gateway
+            mkdir -p backend/services/item-service backend/services/user-service backend/services/api-gateway backend/services/ai-service
 
             # Apply new backend/migrations/<YYYYMMDD>_*.sql files before the new binaries
             # go live. If one fails, the deploy stops here and the old services keep running.
             bash backend/migrations/migrate.sh backend/migrations backend/services/item-service/.env || exit 1
+
+            # AI service: replace its code (keeping .venv and downloads/), then
+            # update its packages. A failure stops the deploy like a migration does.
+            rm -rf backend/services/ai-service/app
+            tar -xzf ai-service.tgz -C backend/services/ai-service && rm ai-service.tgz
+            bash backend/services/ai-service/install.sh || exit 1
 
             # Move binaries to their specific service folders
             mv -f backend/bin/item-service backend/services/item-service/ || true
@@ -70,10 +81,12 @@ jobs:
             # Ensure the binaries are executable
             chmod +x backend/services/*-service/* backend/services/api-gateway/*
 
-            # Restart Go microservices using PM2
-            pm2 delete gateway user-service item-service || true
+            # Restart all services using PM2
+            pm2 delete gateway user-service item-service ai-service || true
 
             # Start each service from its respective folder (so it picks up its own .env)
             cd backend/services/api-gateway && pm2 start api-gateway --name gateway
             cd ../user-service && pm2 start user-service --name user-service
             cd ../item-service && pm2 start item-service --name item-service
+            # Only the gateway on this machine talks to it, so listen on localhost only
+            cd ../ai-service && pm2 start .venv/bin/uvicorn --name ai-service --interpreter none -- main:app --host 127.0.0.1 --port 8004

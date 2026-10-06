@@ -9,7 +9,17 @@ npm install
 npx expo start
 ```
 
-Scan the QR code with Expo Go (or press `i` / `a` for a simulator). Start the backend first (`../backend/start.sh` and the AI service on port 8004).
+Scan the QR code with Expo Go (or press `i` / `a` for a simulator). Start the backend first (`cd ../backend && bash start.sh`, which also starts the AI service on port 8004).
+
+### On the iOS simulator
+
+```sh
+./simulator-test.sh              # the booted simulator, else the first iPhone
+./simulator-test.sh "iPhone 15"  # a specific one
+# or: npm run simulator-test
+```
+
+It boots the simulator if needed, warns if the backend isn't up, starts Metro on the first free port from 8081 and opens the app in Expo Go (installing Expo Go the first time).
 
 ## Which server it talks to
 

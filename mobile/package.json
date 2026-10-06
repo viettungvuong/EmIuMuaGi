@@ -28,7 +28,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "simulator-test": "bash simulator-test.sh"
   },
   "private": true,
   "devDependencies": {

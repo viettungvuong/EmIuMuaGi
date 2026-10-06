@@ -93,3 +93,18 @@ jobs:
             cd ../item-service && pm2 start item-service --name item-service
             # Only the gateway on this machine talks to it, so listen on localhost only
             cd ../ai-service && pm2 start .venv/bin/uvicorn --name ai-service --interpreter none -- main:app --host 127.0.0.1 --port 8004
+
+            # pm2 reports success even when the process crashes right after starting,
+            # so wait for the AI service to answer; if it never does, show why and fail
+            for i in $(seq 1 30); do
+              curl -sf -o /dev/null http://127.0.0.1:8004/ && break
+              sleep 1
+            done
+            if curl -sf -o /dev/null http://127.0.0.1:8004/; then
+              echo "ai-service is up on port 8004"
+            else
+              echo "ai-service did not start. Its pm2 status and last log lines:"
+              pm2 describe ai-service | grep -E "status|restarts|script path|exec cwd|error log path" || true
+              pm2 logs ai-service --lines 40 --nostream || true
+              exit 1
+            fi

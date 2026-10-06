@@ -1,5 +1,6 @@
 # Python
-backend/venv/
+venv/
+.venv/
 backend/ai-service/downloads/
 __pycache__/
 *.pyc

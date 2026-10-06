@@ -1,0 +1,32 @@
+# EmIuMuaGi mobile
+
+The web frontend (`../frontend`) as an Expo / React Native app: same screens, same look, same API calls.
+
+## Run it
+
+```sh
+npm install
+npx expo start
+```
+
+Scan the QR code with Expo Go (or press `i` / `a` for a simulator). Start the backend first (`../backend/start.sh` and the AI service on port 8004).
+
+## Which server it talks to
+
+In development it uses the API gateway on port 8000 of the computer running `npx expo start`, so a phone on the same Wi-Fi reaches it. For a real server, copy `.env.example` to `.env.local` and set `EXPO_PUBLIC_API_URL` (and `EXPO_PUBLIC_WEB_URL` if the web app lives elsewhere; partner invite links point there).
+
+Login works through the same `access_token` / `refresh_token` cookies as the web app; React Native stores and resends them itself.
+
+## Layout
+
+| Web (`frontend/src`) | Mobile (`src`) |
+| --- | --- |
+| `App.jsx` (routes, session check) | `app/_layout.js`, `auth.js` |
+| `pages/AuthPage.jsx` | `app/login.js` |
+| `pages/MainPage.jsx` | `app/index.js` |
+| `pages/AddPage.jsx` | `app/add.js` |
+| `pages/HistoryPage.jsx` | `app/history.js` |
+| `pages/PartnerPage.jsx` | `app/partner/[inviteID].js` (also opens from `emiumuagi://partner/<id>`) |
+| `pages/QuestionPage.jsx` | `app/question.js` |
+| `api/client.js` | `api/client.js`, `api/config.js` |
+| `index.css` variables | `theme.js` |

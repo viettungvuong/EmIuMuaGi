@@ -11,6 +11,11 @@ cd user-service
 go run main.go &
 cd ..
 
+echo "Starting AI Service (Port 8004)..."
+# install.sh sets up/refreshes ai-service/.venv (slow only the first time).
+# exec makes uvicorn the background job itself, so the trap above stops it too.
+(cd ai-service && bash install.sh && exec .venv/bin/uvicorn main:app --port 8004) &
+
 # Quick delay to let the inner microservices initialize their database connections
 sleep 2
 

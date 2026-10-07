@@ -30,7 +30,13 @@ name=$(xcrun simctl list devices | grep "$udid" | sed -E "s/ \($udid\).*//; s/^ 
 # 2. Boot it and bring the Simulator window up
 echo "simulator-test: using $name ($udid)"
 xcrun simctl boot "$udid" 2>/dev/null || true # fine if it's already booted
-open -a Simulator --args -CurrentDeviceUDID "$udid"
+# Xcode 27 renamed the Simulator app to "Device Hub"; use whichever is installed
+for app in "Device Hub" "Simulator"; do
+    if open -Ra "$app" 2>/dev/null; then
+        open -a "$app" --args -CurrentDeviceUDID "$udid"
+        break
+    fi
+done
 xcrun simctl bootstatus "$udid" -b >/dev/null
 
 # 3. The app talks to the gateway on this Mac; say so if it isn't up

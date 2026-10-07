@@ -2,4 +2,5 @@ fastapi
 uvicorn[standard]
 yt-dlp[default,curl-cffi]
 regex
-playwright
+beautifulsoup4
+curl_cffi

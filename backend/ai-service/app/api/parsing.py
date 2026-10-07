@@ -6,13 +6,12 @@ from dataclasses import asdict
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from playwright.sync_api import Error as PlaywrightError
 from pydantic import BaseModel, Field
 from yt_dlp.utils import DownloadError, ExtractorError
 
 from app.core.address import extract_address
 from app.core.location import get_tiktok_location
-from app.core.maps import is_maps_link, read_maps_link
+from app.core.maps import MapsLookupError, is_maps_link, read_maps_link
 from app.core.parsing import parse_link
 from app.core.video import is_tiktok
 
@@ -38,9 +37,9 @@ def address(req: AddressRequest):
 # generated for it (the same uuid the item is saved with)
 channels: dict[UUID, WebSocket] = {}
 
-# TikTok and Google Maps lookups block for seconds (yt-dlp, a headless
-# browser), so each runs on a pool thread and answers when it's done while the
-# socket keeps reading. Capped because every Maps page starts a Chromium.
+# TikTok and Google Maps lookups block for seconds (yt-dlp, requests to Google),
+# so each runs on a pool thread and answers when it's done while the socket
+# keeps reading.
 _lookup_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="slow-lookup")
 # Running lookups, held so they aren't garbage-collected before they answer
 _lookups: set[asyncio.Task] = set()
@@ -73,7 +72,7 @@ async def _answer_later(item_uuid: UUID, seq, url: str, kind: str, lookup) -> No
     reply = {"seq": seq, "url": url, "type": kind, "result": None}
     try:
         reply["result"] = await asyncio.get_running_loop().run_in_executor(_lookup_pool, lookup, url)
-    except (ValueError, ExtractorError, DownloadError, PlaywrightError) as e:
+    except (ValueError, ExtractorError, DownloadError, MapsLookupError) as e:
         # Not a video, private, blocked, page didn't load…
         reply["error"] = str(e).removeprefix("ERROR: ").splitlines()[0]
     except Exception:

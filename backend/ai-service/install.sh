@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Sets up the AI service on the VPS, inside its own folder: a .venv with the
-# Python packages, Playwright's Chromium (Google Maps lookups) and, when run as
-# root, the system packages these need. Run on every deploy; anything already
-# installed is skipped.
+# Python packages and, when run as root, the system package that needs.
+# Run on every deploy; anything already installed is skipped.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -41,21 +40,5 @@ python3 -c "import ensurepip" 2>/dev/null || apt_install python3-venv
 step "installing Python packages"
 .venv/bin/pip install -q --upgrade pip
 .venv/bin/pip install -q -r requirements.txt
-
-# Downloads only when this Playwright version's Chromium isn't there yet
-step "checking Chromium (~280 MB download the first time)"
-.venv/bin/playwright install chromium
-
-# Chromium's system libraries (needs root, uses apt): once per Playwright version
-marker=".chromium-deps-$(.venv/bin/python -c 'from importlib.metadata import version; print(version("playwright"))')"
-if [[ ! -e "$marker" ]]; then
-    if is_root; then
-        step "installing Chromium's system libraries (apt)"
-        fix_apt
-        .venv/bin/playwright install-deps chromium && touch "$marker"
-    else
-        echo "ai-service: not root, skipping Chromium's system libraries – Google Maps lookups may fail" >&2
-    fi
-fi
 
 step "ready"

@@ -23,7 +23,7 @@ It boots the simulator if needed, warns if the backend isn't up, starts Metro on
 
 ## Which server it talks to
 
-In development it uses the API gateway on port 8000 of the computer running `npx expo start`, so a phone on the same Wi-Fi reaches it. For a real server, copy `.env.example` to `.env.local` and set `EXPO_PUBLIC_API_URL` (and `EXPO_PUBLIC_WEB_URL` if the web app lives elsewhere; partner invite links point there).
+Set by `EXPO_PUBLIC_API_URL` in `.env`, which git ignores: start from `cp .env.example .env`, which points the app at the VPS (`http://103.126.162.123`); partner invite links use the same address. With the value empty, the app uses the gateway on port 8000 of the computer running `npx expo start`, so a phone on the same Wi-Fi reaches it. After changing it, restart with `npx expo start --clear` (the simulator script does this).
 
 Login works through the same `access_token` / `refresh_token` cookies as the web app; React Native stores and resends them itself.
 

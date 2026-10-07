@@ -39,9 +39,29 @@ for app in "Device Hub" "Simulator"; do
 done
 xcrun simctl bootstatus "$udid" -b >/dev/null
 
-# 3. The app talks to the gateway on this Mac; say so if it isn't up
-if ! curl -s -o /dev/null --max-time 2 http://localhost:8000/; then
-    echo "simulator-test: the backend isn't running on port 8000 – start it with: cd ../backend && bash start.sh" >&2
+# 3. The backend the app will use, as Expo resolves it: the shell first, then
+#    .env.local, then .env; empty or unset means the gateway on this Mac
+api_url=""
+if [[ -n "${EXPO_PUBLIC_API_URL+set}" ]]; then
+    api_url="$EXPO_PUBLIC_API_URL"
+else
+    for f in .env.local .env; do
+        if [[ -f "$f" ]] && grep -qE '^EXPO_PUBLIC_API_URL=' "$f"; then
+            api_url=$(sed -nE "s/^EXPO_PUBLIC_API_URL=[\"']?([^\"']*)[\"']?[[:space:]]*$/\1/p" "$f" | head -n1)
+            break
+        fi
+    done
+fi
+api_url="${api_url:-http://localhost:8000}"
+echo "simulator-test: the app will use the backend at $api_url"
+
+# Any HTTP answer (a 401 included) means it's up
+if [[ "$(curl -s -o /dev/null --max-time 5 -w '%{http_code}' "$api_url/api/me" || true)" == "000" ]]; then
+    if [[ "$api_url" == "http://localhost:8000" ]]; then
+        echo "simulator-test: the backend isn't running on port 8000 – start it with: cd ../backend && bash start.sh" >&2
+    else
+        echo "simulator-test: the backend at $api_url isn't answering" >&2
+    fi
 fi
 
 # 4. Packages, on a fresh checkout
@@ -53,6 +73,8 @@ while lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; do
     port=$((port + 1))
 done
 
-# --ios installs Expo Go on the booted simulator if needed and opens the app
+# --ios installs Expo Go on the booted simulator if needed and opens the app.
+# --clear rebuilds from scratch, so a changed backend address in .env is picked up
+# (Metro would otherwise reuse files built with the old one).
 echo "simulator-test: starting Metro on port $port"
-exec npx expo start --ios --port "$port"
+exec npx expo start --ios --clear --port "$port"

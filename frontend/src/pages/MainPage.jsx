@@ -348,7 +348,7 @@ export default function MainPage({ setIsAuth }) {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            🔗 Xem sản phẩm
+                            🔗 {item.item_type === "restaurant" ? "Xem nhà hàng" : "Xem sản phẩm"}
                           </a>
                         )}
                       </div>

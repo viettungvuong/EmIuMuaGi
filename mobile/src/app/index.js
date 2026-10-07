@@ -269,7 +269,7 @@ function ItemCard({ item, currentUser, onBuy, onDelete }) {
 
       {!!item.buy_url && (
         <Text style={styles.itemLink} onPress={() => Linking.openURL(item.buy_url)}>
-          🔗 Xem sản phẩm
+          🔗 {item.item_type === 'restaurant' ? 'Xem nhà hàng' : 'Xem sản phẩm'}
         </Text>
       )}
 

@@ -1,5 +1,6 @@
 // Building blocks shared by several screens, styled after the web app's CSS
 import { LinearGradient } from 'expo-linear-gradient';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius } from '../theme';
@@ -100,12 +101,21 @@ export function AppHeader({ username, count, onTitlePress, onHistory, onLogout }
         <Text style={styles.welcome} numberOfLines={1}>
           Chào, {username || 'bạn'} 👋
         </Text>
+        {/* Icons on the phone; the labels are still what VoiceOver/TalkBack read */}
         <View style={styles.headerButtons}>
-          <Pressable style={styles.historyBtn} onPress={onHistory}>
-            <Text style={styles.historyBtnText}>Lịch Sử</Text>
+          <Pressable style={[styles.iconBtn, styles.historyBtn]} onPress={onHistory} accessibilityRole="button" accessibilityLabel="Lịch Sử" hitSlop={4}>
+            <SymbolView
+              name={{ ios: 'clock.arrow.circlepath', android: 'history', web: 'history' }}
+              size={20}
+              tintColor={colors.accent}
+            />
           </Pressable>
-          <Pressable style={styles.logoutBtn} onPress={onLogout}>
-            <Text style={styles.logoutBtnText}>Đăng Xuất</Text>
+          <Pressable style={[styles.iconBtn, styles.logoutBtn]} onPress={onLogout} accessibilityRole="button" accessibilityLabel="Đăng Xuất" hitSlop={4}>
+            <SymbolView
+              name={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
+              size={20}
+              tintColor={colors.textMuted}
+            />
           </Pressable>
         </View>
       </View>
@@ -161,15 +171,8 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   welcome: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.textMuted },
   headerButtons: { flexDirection: 'row', gap: 8 },
-  historyBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(236, 72, 153, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.2)',
-    borderRadius: radius.sm,
-  },
-  historyBtnText: { fontFamily: fonts.semibold, fontSize: 13.6, color: colors.accent },
-  logoutBtn: { paddingVertical: 8, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm },
-  logoutBtnText: { fontFamily: fonts.regular, fontSize: 13.6, color: colors.textMuted },
+  // Same colours as the web's text buttons, as square icon buttons
+  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: radius.sm },
+  historyBtn: { backgroundColor: 'rgba(236, 72, 153, 0.1)', borderColor: 'rgba(236, 72, 153, 0.2)' },
+  logoutBtn: { borderColor: colors.border },
 });

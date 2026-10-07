@@ -1,10 +1,11 @@
 // frontend/src/pages/HistoryPage.jsx
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
-import { EmptyState, LoadingState, ModalCard } from '../components/ui';
+import RatingModal from '../components/RatingModal';
+import { EmptyState, LoadingState } from '../components/ui';
 import { colors, fonts, formatDate, radius } from '../theme';
 
 export default function HistoryScreen() {
@@ -13,7 +14,6 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [reviewModal, setReviewModal] = useState({ isOpen: false, historyId: null, itemName: '' });
-  const [reviewForm, setReviewForm] = useState({ score: 5, content: '' });
 
   const fetchHistories = async () => {
     try {
@@ -41,12 +41,11 @@ export default function HistoryScreen() {
 
   const openReview = (historyId, itemName) => {
     setReviewModal({ isOpen: true, historyId, itemName });
-    setReviewForm({ score: 5, content: '' });
   };
 
   const closeReview = () => setReviewModal({ isOpen: false, historyId: null, itemName: '' });
 
-  const submitReview = async () => {
+  const submitReview = async (reviewForm) => {
     const { historyId } = reviewModal;
     closeReview();
     if (!historyId) return;
@@ -106,47 +105,9 @@ export default function HistoryScreen() {
         )}
       </ScrollView>
 
-      <ModalCard visible={reviewModal.isOpen} onRequestClose={closeReview} width={400}>
-        <Text style={styles.modalTitle}>Em iu đánh giáaa</Text>
-        <Text style={styles.modalText}>
-          Viết vài dòng cảm nhận về <Text style={{ fontFamily: fonts.bold }}>{reviewModal.itemName}</Text> luôn để em biết
-          nhaaa!
-        </Text>
-
-        <View style={styles.reviewForm}>
-          <View style={styles.formField}>
-            <Text style={styles.formLabel}>Chấm điểm (1-5 sao):</Text>
-            {/* The web takes a typed 1-5; on a phone the stars are tapped */}
-            <View style={styles.starPicker}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <Pressable key={n} onPress={() => setReviewForm((f) => ({ ...f, score: n }))} hitSlop={6}>
-                  <Text style={styles.starPick}>{n <= reviewForm.score ? '★' : '☆'}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-          <View style={styles.formField}>
-            <Text style={styles.formLabel}>Cảm nhận của em:</Text>
-            <TextInput
-              style={[styles.formInput, { minHeight: 80, textAlignVertical: 'top' }]}
-              value={reviewForm.content}
-              onChangeText={(content) => setReviewForm((f) => ({ ...f, content }))}
-              placeholder="Quá chuẩn lun..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-            />
-          </View>
-        </View>
-
-        <View style={styles.modalActions}>
-          <Pressable style={[styles.modalBtn, styles.modalCancel]} onPress={closeReview}>
-            <Text style={[styles.modalBtnText, { color: colors.text }]}>Hủy</Text>
-          </Pressable>
-          <Pressable style={[styles.modalBtn, styles.modalConfirm]} onPress={submitReview}>
-            <Text style={[styles.modalBtnText, { color: '#fff' }]}>Gửi Đánh Giá</Text>
-          </Pressable>
-        </View>
-      </ModalCard>
+      {reviewModal.isOpen && (
+        <RatingModal itemName={reviewModal.itemName} onCancel={closeReview} onSubmit={submitReview} />
+      )}
     </SafeAreaView>
   );
 }
@@ -203,27 +164,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   addReviewText: { fontFamily: fonts.semibold, fontSize: 14.4, color: colors.accent },
-
-  modalTitle: { fontFamily: fonts.bold, fontSize: 22.4, color: colors.text, textAlign: 'center', marginBottom: 12 },
-  modalText: { fontFamily: fonts.regular, fontSize: 16, color: colors.textMuted, textAlign: 'center', marginBottom: 24 },
-  reviewForm: { gap: 20, marginBottom: 24 },
-  formField: { gap: 8 },
-  formLabel: { fontFamily: fonts.semibold, fontSize: 14.4, color: colors.text },
-  starPicker: { flexDirection: 'row', gap: 8 },
-  starPick: { fontSize: 30, color: '#fbbf24' },
-  formInput: {
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 12,
-    color: colors.text,
-    fontFamily: fonts.regular,
-    fontSize: 16,
-  },
-  modalActions: { flexDirection: 'row', gap: 12 },
-  modalBtn: { flex: 1, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center' },
-  modalCancel: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border },
-  modalConfirm: { backgroundColor: colors.accent },
-  modalBtnText: { fontFamily: fonts.bold, fontSize: 15 },
 });

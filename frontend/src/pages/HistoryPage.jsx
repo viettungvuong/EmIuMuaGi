@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
+import RatingModal from "../components/RatingModal";
 import "../styles/HistoryPage.css";
 
 export default function HistoryPage() {
@@ -11,7 +12,6 @@ export default function HistoryPage() {
     historyId: null,
     itemName: "",
   });
-  const [reviewForm, setReviewForm] = useState({ score: 5, content: "" });
   const navigate = useNavigate();
 
   const fetchHistories = async () => {
@@ -32,10 +32,9 @@ export default function HistoryPage() {
 
   const handleReview = (historyId, itemName) => {
     setReviewModal({ isOpen: true, historyId, itemName });
-    setReviewForm({ score: 5, content: "" });
   };
 
-  const submitReview = async () => {
+  const submitReview = async (reviewForm) => {
     const { historyId } = reviewModal;
     setReviewModal({ isOpen: false, historyId: null, itemName: "" });
     if (!historyId) return;
@@ -121,53 +120,7 @@ export default function HistoryPage() {
       </div>
 
       {reviewModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2 className="modal-title">Em iu đánh giáaa</h2>
-            <p className="modal-text">
-              Viết vài dòng cảm nhận về{" "}
-              <strong>{reviewModal.itemName}</strong> luôn để em biết nhaaa!
-            </p>
-
-            <div className="review-form">
-              <label>
-                Chấm điểm (1-5 sao):
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={reviewForm.score}
-                  onChange={(e) =>
-                    setReviewForm({
-                      ...reviewForm,
-                      score: parseInt(e.target.value) || 5,
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Cảm nhận của em:
-                <textarea
-                  value={reviewForm.content}
-                  onChange={(e) =>
-                    setReviewForm({ ...reviewForm, content: e.target.value })
-                  }
-                  rows={3}
-                  placeholder="Quá chuẩn lun..."
-                />
-              </label>
-            </div>
-
-            <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={cancelReview}>
-                Hủy
-              </button>
-              <button className="modal-btn confirm" onClick={submitReview}>
-                Gửi Đánh Giá
-              </button>
-            </div>
-          </div>
-        </div>
+        <RatingModal itemName={reviewModal.itemName} onCancel={cancelReview} onSubmit={submitReview} />
       )}
     </div>
   );

@@ -9,6 +9,8 @@ import (
 	"github.com/viettungvuong/emiumuagi-backend/models"
 )
 
+// AddReview rates one purchase (a history entry). Ratings belong to history,
+// not to items: an item bought twice has two purchases to rate.
 func AddReview(c *gin.Context) {
 	historyId := c.Param("history_id")
 
@@ -38,6 +40,17 @@ func AddReview(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// A purchase is rated once; a second rating would list it twice in history
+	var existing int64
+	if err := database.DB.Model(&models.Review{}).Where("history_id = ?", hUUID).Count(&existing).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if existing > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "This purchase has already been rated"})
 		return
 	}
 

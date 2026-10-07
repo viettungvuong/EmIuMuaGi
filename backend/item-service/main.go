@@ -66,7 +66,6 @@ func main() {
 			items.POST("", handlers.CreateItem)
 			items.DELETE("/:item_id", handlers.DeleteItem)
 			items.PATCH("/:item_id/bought", handlers.MarkItemAsBought)
-			items.POST("/:item_id/review", handlers.AddReview)
 			items.POST("/:item_id/files", handlers.UploadItemFiles)
 			items.GET("/:item_id/tasks/:task_id", handlers.TaskStatus)
 		}

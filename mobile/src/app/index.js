@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WEB_URL } from '../api/config';
 import { useAuth } from '../auth';
+import { RatingForm } from '../components/RatingModal';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
 import { colors, fonts, formatDate, radius } from '../theme';
 
@@ -18,6 +19,9 @@ const TYPE_LABELS = {
 };
 
 const TYPE_COLOR = '#cb1d7a';
+
+// What the backend sends as the history ID when it couldn't record the purchase
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
 function subInfo(item) {
   if (item.item_type === 'clothes') {
@@ -48,6 +52,9 @@ export default function MainScreen() {
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmItemId, setConfirmItemId] = useState(null);
+  const [buying, setBuying] = useState(false);
+  // The purchase just made, while its rating form is open: { historyId, name }
+  const [ratingPurchase, setRatingPurchase] = useState(null);
 
   const fetchItems = async () => {
     try {
@@ -94,14 +101,35 @@ export default function MainScreen() {
 
   const confirmBuy = async () => {
     const id = confirmItemId;
-    setConfirmItemId(null);
-    if (!id) return;
+    if (!id || buying) return;
+    setBuying(true);
 
     try {
       const { data } = await client.patch(`/api/items/${id}/bought`);
       setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+      // The dialog stays open and turns into the rating form. Ratings belong to
+      // the purchase (its history entry), which the backend just created;
+      // "Để sau" leaves it for the history screen.
+      const historyId = data.additional?.HistoryID;
+      if (historyId && historyId !== NIL_UUID) {
+        setRatingPurchase({ historyId, name: data.item_name });
+      }
     } catch (err) {
       console.error('Failed to mark item as bought:', err);
+    } finally {
+      setConfirmItemId(null);
+      setBuying(false);
+    }
+  };
+
+  const submitRating = async (form) => {
+    const { historyId } = ratingPurchase;
+    setRatingPurchase(null);
+
+    try {
+      await client.post(`/api/history/${historyId}/review`, form);
+    } catch (err) {
+      console.error('Failed to rate purchase:', err);
     }
   };
 
@@ -231,16 +259,32 @@ export default function MainScreen() {
         <Text style={styles.fabText}>+</Text>
       </Pressable>
 
-      <ModalCard visible={confirmItemId !== null} onRequestClose={() => setConfirmItemId(null)}>
-        <Text style={styles.modalText}>Có chắc anh đã mua chưaaaaaa 🧐</Text>
-        <View style={styles.modalActions}>
-          <Pressable style={[styles.modalBtn, styles.modalCancel]} onPress={() => setConfirmItemId(null)}>
-            <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>Chưa nha</Text>
-          </Pressable>
-          <Pressable style={[styles.modalBtn, styles.modalConfirm]} onPress={confirmBuy}>
-            <Text style={[styles.modalBtnText, { color: colors.success }]}>Đã mua rùii</Text>
-          </Pressable>
-        </View>
+      {/* One dialog: "did you buy it?", then the rating form */}
+      <ModalCard
+        visible={confirmItemId !== null || ratingPurchase !== null}
+        onRequestClose={() => (ratingPurchase ? setRatingPurchase(null) : setConfirmItemId(null))}
+        width={ratingPurchase ? 400 : 340}
+      >
+        {ratingPurchase ? (
+          <RatingForm
+            itemName={ratingPurchase.name}
+            cancelLabel="Để sau"
+            onCancel={() => setRatingPurchase(null)}
+            onSubmit={submitRating}
+          />
+        ) : (
+          <>
+            <Text style={styles.modalText}>Có chắc anh đã mua chưaaaaaa 🧐</Text>
+            <View style={styles.modalActions}>
+              <Pressable style={[styles.modalBtn, styles.modalCancel]} onPress={() => setConfirmItemId(null)}>
+                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>Chưa nha</Text>
+              </Pressable>
+              <Pressable style={[styles.modalBtn, styles.modalConfirm, buying && { opacity: 0.6 }]} onPress={confirmBuy} disabled={buying}>
+                <Text style={[styles.modalBtnText, { color: colors.success }]}>Đã mua rùii</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </ModalCard>
     </SafeAreaView>
   );

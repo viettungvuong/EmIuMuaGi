@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
+import RatingModal from "../components/RatingModal";
 import "../styles/MainPage.css";
 
 const TYPE_LABELS = {
@@ -11,6 +12,9 @@ const TYPE_LABELS = {
 };
 
 const TYPE_COLOR = "#cb1d7aff";
+
+// What the backend sends as the history ID when it couldn't record the purchase
+const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
 function ItemSubInfo({ item }) {
   if (item.item_type === "clothes") {
@@ -58,6 +62,8 @@ export default function MainPage({ setIsAuth }) {
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
+  // The purchase just made, while its rating form is open: { historyId, name }
+  const [ratingPurchase, setRatingPurchase] = useState(null);
   const navigate = useNavigate();
 
   const fetchItems = async () => {
@@ -106,8 +112,26 @@ export default function MainPage({ setIsAuth }) {
     try {
       const { data } = await client.patch(`/api/items/${id}/bought`);
       setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+      // Ask for a rating while it's fresh. Ratings belong to the purchase (its
+      // history entry), which the backend just created; "Để sau" leaves it for
+      // the history page.
+      const historyId = data.additional?.HistoryID;
+      if (historyId && historyId !== NIL_UUID) {
+        setRatingPurchase({ historyId, name: data.item_name });
+      }
     } catch (err) {
       console.error("Failed to mark item as bought:", err);
+    }
+  };
+
+  const submitRating = async (form) => {
+    const { historyId } = ratingPurchase;
+    setRatingPurchase(null);
+
+    try {
+      await client.post(`/api/history/${historyId}/review`, form);
+    } catch (err) {
+      console.error("Failed to rate purchase:", err);
     }
   };
 
@@ -403,6 +427,15 @@ export default function MainPage({ setIsAuth }) {
             </div>
           </div>
         </div>
+      )}
+
+      {ratingPurchase && (
+        <RatingModal
+          itemName={ratingPurchase.name}
+          cancelLabel="Để sau"
+          onCancel={() => setRatingPurchase(null)}
+          onSubmit={submitRating}
+        />
       )}
     </div>
   );

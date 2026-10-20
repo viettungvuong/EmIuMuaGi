@@ -30,7 +30,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "simulator-test": "bash simulator-test.sh"
+    "simulator-test": "bash simulator-test.sh",
+    "emulator-test": "bash emulator-test.sh"
   },
   "private": true,
   "devDependencies": {

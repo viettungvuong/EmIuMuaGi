@@ -1,0 +1,41 @@
+.lang-island {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.12);
+}
+
+.lang-island-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lang-island-btn:hover:not(.active) {
+  background: var(--surface-2);
+}
+
+.lang-island-btn.active {
+  background: var(--accent);
+  color: #fff;
+  cursor: default;
+}
+
+.lang-island-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}

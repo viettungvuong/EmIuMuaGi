@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import client from './api/client';
+import { t } from './i18n';
 import AuthPage from './pages/AuthPage';
 import MainPage from './pages/MainPage';
 import AddPage from './pages/AddPage';
 import QuestionPage from './pages/QuestionPage';
 import HistoryPage from './pages/HistoryPage';
 import SearchPage from './pages/SearchPage';
+import SettingsPage from './pages/SettingsPage';
 
 import PartnerPage from './pages/PartnerPage';
 
 function ProtectedRoute({ isAuth, loading, children }) {
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d0f1a' }}>
-      <div className="loading-spinner">🎀 Checking...</div>
+      <div className="loading-spinner">{t('common.appChecking')}</div>
     </div>
   );
   return isAuth ? children : <Navigate to="/login" replace />;
@@ -50,7 +52,7 @@ export default function App() {
           element={
             loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d0f1a' }}>
-                <div className="loading-spinner">🎀 Checking...</div>
+                <div className="loading-spinner">{t('common.appChecking')}</div>
               </div>
             ) : isAuth ? (
               <Navigate to="/" replace />
@@ -88,6 +90,14 @@ export default function App() {
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
               <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute isAuth={isAuth} loading={loading}>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

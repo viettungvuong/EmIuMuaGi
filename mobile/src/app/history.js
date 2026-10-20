@@ -6,9 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import RatingModal from '../components/RatingModal';
 import { EmptyState, LoadingState } from '../components/ui';
+import { t, useLanguage } from '../i18n';
 import { colors, fonts, formatDate, radius } from '../theme';
 
 export default function HistoryScreen() {
+  useLanguage(); // redraw in a newly picked language
   const router = useRouter();
   const [histories, setHistories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function HistoryScreen() {
         <Pressable style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={styles.backBtnText}>←</Text>
         </Pressable>
-        <Text style={styles.title}>Lịch Sử Mua Đồ</Text>
+        <Text style={styles.title}>{t('history.title')}</Text>
       </View>
 
       <ScrollView
@@ -74,7 +76,7 @@ export default function HistoryScreen() {
         {loading ? (
           <LoadingState />
         ) : histories.length === 0 ? (
-          <EmptyState icon="📭" text="Chưa có lịch sử mua đồ nàooo" />
+          <EmptyState icon="📭" text={t('history.empty')} />
         ) : (
           <View style={styles.list}>
             {histories.map((history) => (
@@ -83,7 +85,7 @@ export default function HistoryScreen() {
                 <View style={styles.stripe} />
                 <View style={styles.cardHeader}>
                   <Text style={styles.itemName}>{history.item_name}</Text>
-                  <Text style={styles.date}>{history.time ? formatDate(history.time) : 'Không xác định'}</Text>
+                  <Text style={styles.date}>{history.time ? formatDate(history.time) : t('common.unknown')}</Text>
                 </View>
 
                 {history.score !== null ? (
@@ -96,7 +98,7 @@ export default function HistoryScreen() {
                   </View>
                 ) : (
                   <Pressable style={styles.addReviewBtn} onPress={() => openReview(history.id, history.item_name)}>
-                    <Text style={styles.addReviewText}>⭐ Đánh giá ngay</Text>
+                    <Text style={styles.addReviewText}>{t('history.rateNow')}</Text>
                   </Pressable>
                 )}
               </View>

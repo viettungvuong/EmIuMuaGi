@@ -7,56 +7,38 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../../api/client';
 import { useAuth } from '../../auth';
 import { AppHeader, LoadingState } from '../../components/ui';
+import { serverText, t, useLanguage } from '../../i18n';
 import { colors, fonts } from '../../theme';
 
 const Bold = ({ children }) => <Text style={{ fontFamily: fonts.bold, color: colors.text }}>{children}</Text>;
 
-// Every way a link can fail, keyed by the code the user service sends back
+// Every way a link can fail, keyed by the code the user service sends back.
+// title/text/cta are keys into locales/*.json; {email} in the text shows in bold.
 const OUTCOMES = {
-  success: {
-    variant: 'success',
-    icon: '👫',
-    title: 'Bạn là người ấy của đây hãaaa',
-    subtext: (email) => (
-      <>
-        Giờ thì bạn đã có thể xem và mua đồ cùng với <Bold>{email}</Bold> rồi nhaa!
-      </>
-    ),
-    cta: 'Bắt đầu mua sắm thôii',
-  },
-  already_linked: {
-    variant: 'success',
-    icon: '💕',
-    title: 'Hai bạn là người ấy của nhau rùi mà',
-    subtext: (email) => (
-      <>
-        Người ấy của bạn vẫn là <Bold>{email}</Bold> nhaa
-      </>
-    ),
-    cta: 'Về Trang Chủ',
-  },
+  success: { variant: 'success', icon: '👫', title: 'partner.successTitle', text: 'partner.successText', cta: 'partner.successCta' },
+  already_linked: { variant: 'success', icon: '💕', title: 'partner.linkedTitle', text: 'partner.linkedText', cta: 'common.home' },
   already_partnered: {
     variant: 'already-partner',
     icon: '💔',
-    title: 'Bạn có người ấy rùi nha',
-    subtext: (email) =>
-      email ? (
-        <>
-          Mỗi người chỉ có một người ấy thui, của bạn là <Bold>{email}</Bold> đó
-        </>
-      ) : (
-        'Mỗi người chỉ có một người ấy thui'
-      ),
-    cta: 'Quay Về Trang Chủ',
+    title: 'partner.partneredTitle',
+    text: 'partner.partneredText',
+    textNoEmail: 'partner.partneredTextNoEmail',
+    cta: 'common.goHome',
   },
-  partner_taken: { variant: 'already-partner', icon: '🥀', title: 'Ôi hoa có chủ rùiii', cta: 'Quay Về Trang Chủ' },
-  self_link: { variant: 'already-partner', icon: '🪞', title: 'Hong tự làm người ấy của mình được đâuu', cta: 'Quay Về Trang Chủ' },
-  invite_not_found: { variant: 'error', icon: '🔗', title: 'Link này hong còn dùng được nữa rùi', cta: 'Quay Về Trang Chủ' },
+  partner_taken: { variant: 'already-partner', icon: '🥀', title: 'partner.takenTitle', cta: 'common.goHome' },
+  self_link: { variant: 'already-partner', icon: '🪞', title: 'partner.selfTitle', cta: 'common.goHome' },
+  invite_not_found: { variant: 'error', icon: '🔗', title: 'partner.inviteGoneTitle', cta: 'common.goHome' },
 };
+
+function subtext(outcome, email) {
+  if (!email && outcome.textNoEmail) return t(outcome.textNoEmail);
+  return t(outcome.text, { email: <Bold>{email}</Bold> });
+}
 
 const CARD_BORDER = { success: colors.accent, 'already-partner': '#555', error: 'rgba(255, 77, 109, 0.3)' };
 
 export default function PartnerScreen() {
+  useLanguage(); // redraw in a newly picked language
   const { inviteID } = useLocalSearchParams();
   const router = useRouter();
   const { username, signOut } = useAuth();
@@ -89,7 +71,7 @@ export default function PartnerScreen() {
           setStatus(code);
         } else {
           setStatus('error');
-          setMessage(err.response?.data?.error || 'Có lỗi xảy ra rùiii');
+          setMessage(serverText(err.response?.data?.error) || t('common.somethingWrong'));
         }
       }
     };
@@ -106,17 +88,17 @@ export default function PartnerScreen() {
 
       <ScrollView contentContainerStyle={styles.container}>
         {status === 'loading' ? (
-          <LoadingState text="Đang kiểm tra..." />
+          <LoadingState text={t('common.checking')} />
         ) : (
           <View style={[styles.card, { borderColor: CARD_BORDER[outcome?.variant ?? 'error'] }]}>
-            {status === 'success' && <Text style={styles.banner}>🎊 Chào mừng 🎊</Text>}
+            {status === 'success' && <Text style={styles.banner}>{t('partner.welcome')}</Text>}
             <Text style={styles.icon}>{outcome?.icon ?? '⚠️'}</Text>
             <Text style={[styles.message, outcome?.variant === 'already-partner' && { color: '#aaa' }]}>
-              {outcome?.title ?? message}
+              {outcome ? t(outcome.title) : message}
             </Text>
-            {outcome?.subtext && <Text style={styles.subtext}>{outcome.subtext(partnerEmail)}</Text>}
+            {outcome?.text && <Text style={styles.subtext}>{subtext(outcome, partnerEmail)}</Text>}
             <Pressable style={styles.homeBtn} onPress={goHome}>
-              <Text style={styles.homeBtnText}>{outcome?.cta ?? 'Quay Về Trang Chủ'}</Text>
+              <Text style={styles.homeBtnText}>{t(outcome?.cta ?? 'common.goHome')}</Text>
             </Pressable>
           </View>
         )}

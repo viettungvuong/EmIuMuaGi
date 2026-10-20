@@ -18,18 +18,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WS_URL } from '../api/config';
 import { GradientButton, Select } from '../components/ui';
+import { t, useLanguage } from '../i18n';
 import { colors, fonts, radius } from '../theme';
 
 const ITEM_TYPES = [
-  { value: 'clothes', label: '👕 Quần Áo' },
-  { value: 'food_and_drink', label: '🧋 Đồ Ăn & Uống' },
-  { value: 'restaurant', label: '🍜 Nhà Hàng' },
-  { value: 'others', label: '📦 Khác' },
+  { value: 'clothes', icon: '👕' },
+  { value: 'food_and_drink', icon: '🧋' },
+  { value: 'restaurant', icon: '🍜' },
+  { value: 'others', icon: '📦' },
 ];
 
-const TIME_TO_EAT_OPTIONS = [
-  { value: 'pick_date', label: 'Chọn ngày' },
-  { value: 'auto_schedule', label: 'Tự động lên lịch' },
+// Labels are looked up when drawn, once the saved language has loaded
+const timeToEatOptions = () => [
+  { value: 'pick_date', label: t('add.pickDate') },
+  { value: 'auto_schedule', label: t('add.autoSchedule') },
 ];
 
 // How long the link has to stay unchanged before it is sent to the parser
@@ -72,6 +74,7 @@ function sendLink(ws, seqRef, url) {
 }
 
 export default function AddScreen() {
+  useLanguage(); // redraw in a newly picked language
   const router = useRouter();
   // Made up front: names the parser channel now, saved as the item's uuid later
   const [itemUuid] = useState(() => Crypto.randomUUID());
@@ -208,7 +211,7 @@ export default function AddScreen() {
 
   const handleSubmit = async () => {
     if (!form.item_name.trim()) {
-      setError('Vui lòng nhập tên.');
+      setError(t('add.nameRequired'));
       return;
     }
     setLoading(true);
@@ -288,7 +291,7 @@ export default function AddScreen() {
 
       goHome();
     } catch {
-      setError('Thêm mục hoặc tải lên thất bại. Vui lòng thử lại.');
+      setError(t('add.failed'));
     } finally {
       setLoading(false);
     }
@@ -316,24 +319,26 @@ export default function AddScreen() {
           <View style={styles.card}>
             <View style={styles.topRow}>
               <Pressable style={styles.backBtn} onPress={goHome}>
-                <Text style={styles.backBtnText}>← Quay Lại</Text>
+                <Text style={styles.backBtnText}>{t('common.back')}</Text>
               </Pressable>
               <Pressable style={styles.backBtn} onPress={() => router.push('/question')}>
-                <Text style={[styles.backBtnText, { color: colors.accent }]}>Hỏi Đáp →</Text>
+                <Text style={[styles.backBtnText, { color: colors.accent }]}>{t('add.question')}</Text>
               </Pressable>
             </View>
-            <Text style={styles.title}>Thêm Mục Mới</Text>
+            <Text style={styles.title}>{t('add.title')}</Text>
 
             <View style={styles.form}>
               <View style={styles.typeTabs}>
-                {ITEM_TYPES.map((t) => (
+                {ITEM_TYPES.map((type) => (
                   <Pressable
-                    key={t.value}
-                    style={[styles.typeTab, itemType === t.value && styles.typeTabActive]}
-                    onPress={() => setItemType(t.value)}
+                    key={type.value}
+                    style={[styles.typeTab, itemType === type.value && styles.typeTabActive]}
+                    onPress={() => setItemType(type.value)}
                   >
                     {/* White when picked: the web's dark text vanishes on the dark tinted tab */}
-                    <Text style={[styles.typeTabText, itemType === t.value && { color: '#fff' }]}>{t.label}</Text>
+                    <Text style={[styles.typeTabText, itemType === type.value && { color: '#fff' }]}>
+                      {type.icon} {t(`types.${type.value}`)}
+                    </Text>
                   </Pressable>
                 ))}
               </View>
@@ -341,11 +346,11 @@ export default function AddScreen() {
               {/* Link first so details can be parsed from it */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>
-                  Link {lookingUp && <Text style={styles.hint}>(đang lấy địa chỉ từ {lookingUp}…)</Text>}
+                  {t('add.link')} {lookingUp && <Text style={styles.hint}>{t('add.lookingUp', { source: lookingUp })}</Text>}
                 </Text>
                 <TextInput
                   style={styles.input}
-                  placeholder={itemType === 'restaurant' ? 'Link TikTok, Google Maps…' : 'https://…'}
+                  placeholder={itemType === 'restaurant' ? t('add.linkPlaceholderRestaurant') : 'https://…'}
                   placeholderTextColor={colors.textMuted}
                   value={form.buy_url}
                   onChangeText={onLinkChange}
@@ -357,10 +362,10 @@ export default function AddScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Tên *</Text>
+                <Text style={styles.label}>{t('add.name')}</Text>
                 <TextInput
                   style={[styles.input, error && !form.item_name.trim() && styles.inputError]}
-                  placeholder={itemType === 'restaurant' ? 'Tên nhà hàng…' : 'Tên mục…'}
+                  placeholder={itemType === 'restaurant' ? t('add.namePlaceholderRestaurant') : t('add.namePlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={form.item_name}
                   onChangeText={set('item_name')}
@@ -370,39 +375,39 @@ export default function AddScreen() {
               {/* Restaurants skip quantity / shop */}
               {itemType !== 'restaurant' && (
                 <>
-                  {field('Số lượng', 'quantity', { keyboardType: 'number-pad' })}
-                  {field('Cửa hàng', 'shop_name', { placeholder: 'Tên cửa hàng…' })}
+                  {field(t('add.quantity'), 'quantity', { keyboardType: 'number-pad' })}
+                  {field(t('add.shop'), 'shop_name', { placeholder: t('add.shopPlaceholder') })}
                 </>
               )}
 
               {itemType === 'clothes' && (
                 <>
-                  {field('Size', 'size', { placeholder: 'S, M, L…' })}
-                  {field('Màu sắc', 'color', { placeholder: 'Xanh, Đỏ…' })}
-                  {field('Thương hiệu', 'brand', { placeholder: 'Nike, Zara…' })}
+                  {field(t('add.size'), 'size', { placeholder: t('add.sizePlaceholder') })}
+                  {field(t('add.color'), 'color', { placeholder: t('add.colorPlaceholder') })}
+                  {field(t('add.brand'), 'brand', { placeholder: t('add.brandPlaceholder') })}
                 </>
               )}
 
               {itemType === 'food_and_drink' && (
                 <>
-                  {field('Size', 'size', { placeholder: 'S, M, L…' })}
-                  {field('Đường', 'sugar', { placeholder: '50%, 100%…' })}
-                  {field('Topping', 'toppings', { placeholder: 'boba, thạch, kem…' }, '(phân cách bằng dấu phẩy)')}
-                  {field('Ghi chú', 'notes', { placeholder: 'Ít đá, không đường…', multiline: true })}
+                  {field(t('add.size'), 'size', { placeholder: t('add.sizePlaceholder') })}
+                  {field(t('add.sugar'), 'sugar', { placeholder: t('add.sugarPlaceholder') })}
+                  {field(t('add.toppings'), 'toppings', { placeholder: t('add.toppingsPlaceholder') }, t('add.toppingsHint'))}
+                  {field(t('add.notes'), 'notes', { placeholder: t('add.notesPlaceholder'), multiline: true })}
                 </>
               )}
 
               {itemType === 'restaurant' && (
                 <>
-                  {field('Món chính', 'main_food', { placeholder: 'Phở, bún bò…' })}
-                  {field('Loại ẩm thực', 'cuisine_type', { placeholder: 'Việt, Nhật, Hàn…' })}
-                  {field('Địa chỉ', 'address', { placeholder: 'Số nhà, đường, quận…' })}
+                  {field(t('add.mainFood'), 'main_food', { placeholder: t('add.mainFoodPlaceholder') })}
+                  {field(t('add.cuisine'), 'cuisine_type', { placeholder: t('add.cuisinePlaceholder') })}
+                  {field(t('add.address'), 'address', { placeholder: t('add.addressPlaceholder') })}
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Thời gian ăn</Text>
+                    <Text style={styles.label}>{t('add.timeToEat')}</Text>
                     <Select
                       value={form.time_to_eat}
-                      options={TIME_TO_EAT_OPTIONS}
-                      placeholder="Chọn cách hẹn giờ…"
+                      options={timeToEatOptions()}
+                      placeholder={t('add.timeToEatPlaceholder')}
                       onChange={set('time_to_eat')}
                       style={styles.input}
                       textStyle={styles.inputText}
@@ -411,16 +416,16 @@ export default function AddScreen() {
                 </>
               )}
 
-              {itemType === 'others' && field('Danh mục', 'category', { placeholder: 'Nhập danh mục…' })}
+              {itemType === 'others' && field(t('add.category'), 'category', { placeholder: t('add.categoryPlaceholder') })}
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Ảnh & Video</Text>
+                <Text style={styles.label}>{t('add.media')}</Text>
                 <Pressable style={styles.dropZone} onPress={pickMedia}>
                   <Text style={styles.dropIcon}>📎</Text>
                   <Text style={styles.dropText}>
-                    <Text style={{ color: colors.accent, fontFamily: fonts.bold }}>Bấm để chọn</Text> từ thư viện
+                    {t('add.pickText', { action: <Text style={{ color: colors.accent, fontFamily: fonts.bold }}>{t('add.pickAction')}</Text> })}
                   </Text>
-                  <Text style={styles.dropHint}>Hỗ trợ: JPG, PNG, GIF, MP4, MOV…</Text>
+                  <Text style={styles.dropHint}>{t('add.dropHint')}</Text>
                 </Pressable>
 
                 {mediaFiles.length > 0 && (
@@ -434,7 +439,7 @@ export default function AddScreen() {
                             <Text style={styles.videoIcon}>🎬</Text>
                           </View>
                         )}
-                        <Pressable style={styles.removeBtn} onPress={() => removeMedia(i)} accessibilityLabel="Xóa">
+                        <Pressable style={styles.removeBtn} onPress={() => removeMedia(i)} accessibilityLabel={t('common.remove')}>
                           <Text style={styles.removeBtnText}>×</Text>
                         </Pressable>
                         {m.type === 'video' && <Text style={styles.videoBadge}>▶</Text>}
@@ -446,7 +451,7 @@ export default function AddScreen() {
 
               {!!error && <Text style={styles.error}>{error}</Text>}
 
-              <GradientButton title="✓ Thêm Mục" onPress={handleSubmit} loading={loading} style={{ marginTop: 8 }} />
+              <GradientButton title={t('add.submit')} onPress={handleSubmit} loading={loading} style={{ marginTop: 8 }} />
             </View>
           </View>
         </ScrollView>

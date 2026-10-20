@@ -1,54 +1,45 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import client from "../api/client";
+import { serverText, t } from "../i18n";
 import "../styles/PartnerPage.css";
 import "../styles/MainPage.css"; // Reuse header styles
 
-// Every way a link can fail, keyed by the code the user service sends back
+// Every way a link can fail, keyed by the code the user service sends back.
+// title/text/cta are keys into locales/*.json; {email} in the text shows in bold.
 const OUTCOMES = {
   success: {
     variant: "success",
     icon: "👫",
-    title: "Bạn là người ấy của đây hãaaa",
-    subtext: (email) => (
-      <>Giờ thì bạn đã có thể xem và mua đồ cùng với <strong>{email}</strong> rồi nhaa!</>
-    ),
-    cta: "Bắt đầu mua sắm thôii",
+    title: "partner.successTitle",
+    text: "partner.successText",
+    cta: "partner.successCta",
   },
   already_linked: {
     variant: "success",
     icon: "💕",
-    title: "Hai bạn là người ấy của nhau rùi mà",
-    subtext: (email) => <>Người ấy của bạn vẫn là <strong>{email}</strong> nhaa</>,
-    cta: "Về Trang Chủ",
+    title: "partner.linkedTitle",
+    text: "partner.linkedText",
+    cta: "common.home",
   },
   already_partnered: {
     variant: "already-partner",
     icon: "💔",
-    title: "Bạn có người ấy rùi nha",
-    subtext: (email) =>
-      email ? <>Mỗi người chỉ có một người ấy thui, của bạn là <strong>{email}</strong> đó</> : "Mỗi người chỉ có một người ấy thui",
-    cta: "Quay Về Trang Chủ",
+    title: "partner.partneredTitle",
+    text: "partner.partneredText",
+    textNoEmail: "partner.partneredTextNoEmail",
+    cta: "common.goHome",
   },
-  partner_taken: {
-    variant: "already-partner",
-    icon: "🥀",
-    title: "Ôi hoa có chủ rùiii",
-    cta: "Quay Về Trang Chủ",
-  },
-  self_link: {
-    variant: "already-partner",
-    icon: "🪞",
-    title: "Hong tự làm người ấy của mình được đâuu",
-    cta: "Quay Về Trang Chủ",
-  },
-  invite_not_found: {
-    variant: "error",
-    icon: "🔗",
-    title: "Link này hong còn dùng được nữa rùi",
-    cta: "Quay Về Trang Chủ",
-  },
+  partner_taken: { variant: "already-partner", icon: "🥀", title: "partner.takenTitle", cta: "common.goHome" },
+  self_link: { variant: "already-partner", icon: "🪞", title: "partner.selfTitle", cta: "common.goHome" },
+  invite_not_found: { variant: "error", icon: "🔗", title: "partner.inviteGoneTitle", cta: "common.goHome" },
 };
+
+function subtext(outcome, email) {
+  if (!outcome.text) return null;
+  if (!email && outcome.textNoEmail) return t(outcome.textNoEmail);
+  return t(outcome.text, { email: <strong>{email}</strong> });
+}
 
 export default function PartnerPage({ setIsAuth }) {
   const { inviteID } = useParams();
@@ -101,7 +92,7 @@ export default function PartnerPage({ setIsAuth }) {
           setStatus(code);
         } else {
           setStatus("error");
-          setMessage(err.response?.data?.error || "Có lỗi xảy ra rùiii");
+          setMessage(serverText(err.response?.data?.error) || t("common.somethingWrong"));
         }
       }
     };
@@ -116,7 +107,7 @@ export default function PartnerPage({ setIsAuth }) {
       return (
         <div className="loading-state">
           <div className="loading-spinner" />
-          <p>Đang kiểm tra...</p>
+          <p>{t("common.checking")}</p>
         </div>
       );
     }
@@ -128,7 +119,7 @@ export default function PartnerPage({ setIsAuth }) {
           <div className="status-icon">⚠️</div>
           <h2 className="status-message">{message}</h2>
           <button className="home-btn" onClick={() => navigate("/")}>
-            Quay Về Trang Chủ
+            {t("common.goHome")}
           </button>
         </div>
       );
@@ -137,16 +128,16 @@ export default function PartnerPage({ setIsAuth }) {
     return (
       <div className={`status-card ${outcome.variant}`}>
         {status === "success" && (
-          <div className="welcome-banner">🎊 Chào mừng 🎊</div>
+          <div className="welcome-banner">{t("partner.welcome")}</div>
         )}
         <div className="status-icon">{outcome.icon}</div>
-        <h2 className="status-message">{outcome.title}</h2>
-        {outcome.subtext && (
-          <p className="welcome-subtext">{outcome.subtext(partnerEmail)}</p>
+        <h2 className="status-message">{t(outcome.title)}</h2>
+        {outcome.text && (
+          <p className="welcome-subtext">{subtext(outcome, partnerEmail)}</p>
         )}
         <div className="action-group">
           <button className="home-btn" onClick={() => navigate("/")}>
-            {outcome.cta}
+            {t(outcome.cta)}
           </button>
         </div>
       </div>
@@ -158,16 +149,18 @@ export default function PartnerPage({ setIsAuth }) {
       <header className="main-header">
         <div className="header-left">
           <h1 className="main-title" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
-            Em Iu<span className="accent"> Muốn Gìiiiii</span>
+            {t("common.titleStart")}<span className="accent">{t("common.titleAccent")}</span>
           </h1>
         </div>
         <div className="header-right">
-          <span className="user-welcome">Chào, {localStorage.getItem("username") || "bạn"} 👋</span>
+          <span className="user-welcome">
+            {t("common.hello", { name: localStorage.getItem("username") || t("common.you") })}
+          </span>
           <button className="history-link-btn" onClick={() => navigate("/history")}>
-            Lịch Sử
+            {t("common.history")}
           </button>
           <button className="logout-btn" onClick={handleLogout}>
-            Đăng Xuất
+            {t("common.logout")}
           </button>
         </div>
       </header>

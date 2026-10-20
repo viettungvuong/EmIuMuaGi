@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import client from '../api/client';
+import LanguageIsland from '../components/LanguageIsland';
+import { serverText, t, useLanguage } from '../i18n';
 import '../styles/AuthPage.css';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
-// or email), shown larger so they aren't missed
+// or email), shown larger so they aren't missed. As the server words them.
 const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
 
 export default function AuthPage({ setIsAuth }) {
+  useLanguage(); // redraw when the island switches language
   const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -22,7 +25,7 @@ export default function AuthPage({ setIsAuth }) {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('expired') !== null) {
-      setError('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      setError(t('auth.sessionExpired'));
       // Remove the query parameter from the address bar
       navigate(location.pathname, { replace: true });
     }
@@ -52,7 +55,7 @@ export default function AuthPage({ setIsAuth }) {
         const response = await client.post('/api/auth/signup/verify', { username, email, password, otp });
         if (response.status === 201 || response.data.success) {
           setMode('login');
-          setError('Đăng ký thành công! Hãy đăng nhập.');
+          setError(t('auth.signupSuccess'));
           // Clear sensitive fields
           setPassword('');
           setOtp('');
@@ -60,13 +63,13 @@ export default function AuthPage({ setIsAuth }) {
       }
     } catch (err) {
       if (err.response?.data?.error) {
-        setError(err.response.data.error);
+        setError(serverText(err.response.data.error));
       } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
+        setError(serverText(err.response.data.message));
       } else if (mode === 'verify') {
-        setError('Xác thực thất bại. Vui lòng thử lại.');
+        setError(t('auth.verifyFailed'));
       } else {
-        setError(mode === 'login' ? 'Đăng nhập thất bại. Kiểm tra lại tài khoản.' : 'Đăng ký thất bại. Vui lòng thử lại.');
+        setError(mode === 'login' ? t('auth.loginFailed') : t('auth.signupFailed'));
       }
     } finally {
       setLoading(false);
@@ -89,9 +92,9 @@ export default function AuthPage({ setIsAuth }) {
     try {
       await client.post('/api/auth/signup', { username, email, password });
       setOtp('');
-      setError('Đã gửi lại mã thành công! Kiểm tra email nhé.');
+      setError(t('auth.codeResent'));
     } catch (err) {
-      setError(err.response?.data?.error || 'Không gửi lại được mã. Vui lòng thử lại.');
+      setError(serverText(err.response?.data?.error) || t('auth.resendFailed'));
     } finally {
       setLoading(false);
     }
@@ -104,16 +107,21 @@ export default function AuthPage({ setIsAuth }) {
     setOtp('');
   };
 
+  // Success notes share the error line, in green
+  const success = error === t('auth.signupSuccess') || error === t('auth.codeResent');
+  const big = BIG_ERRORS.some((message) => error === serverText(message));
+
   return (
     <div className="auth-page">
+      <LanguageIsland />
       <div className="auth-card">
         <div className="auth-header">
           <div className="brand-icon">🎀</div>
           <h1 className="auth-title">EmIuMuaGi</h1>
           <p className="auth-subtitle">
             {mode === 'verify' ? (
-              <>Nhập mã 6 số vừa được gửi tới <strong>{email}</strong></>
-            ) : mode === 'login' ? 'Em ấy bắt mua đồ hỏoo' : 'Tạo tài khoản mới để bắt đầu.'}
+              t('auth.verifySubtitle', { email: <strong>{email}</strong> })
+            ) : mode === 'login' ? t('auth.loginSubtitle') : t('auth.signupSubtitle')}
           </p>
         </div>
 
@@ -123,13 +131,13 @@ export default function AuthPage({ setIsAuth }) {
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
               onClick={() => setMode('login')}
             >
-              Đăng Nhập
+              {t('auth.login')}
             </button>
             <button
               className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
               onClick={() => setMode('signup')}
             >
-              Đăng Ký
+              {t('auth.signup')}
             </button>
           </div>
         )}
@@ -137,7 +145,7 @@ export default function AuthPage({ setIsAuth }) {
         <form onSubmit={handleSubmit} className="auth-form">
           {mode === 'verify' ? (
             <div className="input-group">
-              <span className="input-label">Mã xác thực</span>
+              <span className="input-label">{t('auth.otp')}</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -145,7 +153,7 @@ export default function AuthPage({ setIsAuth }) {
                 className="auth-input otp-input"
                 placeholder="••••••"
                 pattern="[0-9]{6}"
-                title="Mã gồm 6 chữ số"
+                title={t('auth.otpTitle')}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 autoFocus
@@ -155,11 +163,11 @@ export default function AuthPage({ setIsAuth }) {
           ) : (
             <>
               <div className="input-group">
-                <span className="input-label">Tên đăng nhập</span>
+                <span className="input-label">{t('auth.username')}</span>
                 <input
                   type="text"
                   className={`auth-input ${error && !username ? 'input-error' : ''}`}
-                  placeholder="Username…"
+                  placeholder={t('auth.usernamePlaceholder')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -168,7 +176,7 @@ export default function AuthPage({ setIsAuth }) {
 
               {mode === 'signup' && (
                 <div className="input-group">
-                  <span className="input-label">Email</span>
+                  <span className="input-label">{t('auth.email')}</span>
                   <input
                     type="email"
                     className={`auth-input ${error && !email ? 'input-error' : ''}`}
@@ -181,7 +189,7 @@ export default function AuthPage({ setIsAuth }) {
               )}
 
               <div className="input-group">
-                <span className="input-label">Mật khẩu</span>
+                <span className="input-label">{t('auth.password')}</span>
                 <input
                   type="password"
                   className={`auth-input ${error && !password ? 'input-error' : ''}`}
@@ -194,16 +202,16 @@ export default function AuthPage({ setIsAuth }) {
             </>
           )}
 
-          {error && <p className={`error-msg ${error.includes('thành công') ? 'success-msg' : ''} ${BIG_ERRORS.includes(error) ? 'error-msg-big' : ''}`} style={error.includes('thành công') ? {color: '#10b981'} : {}}>{error}</p>}
+          {error && <p className={`error-msg ${success ? 'success-msg' : ''} ${big ? 'error-msg-big' : ''}`} style={success ? {color: '#10b981'} : {}}>{error}</p>}
 
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? (
               <>
                 <span className="spinner" />
-                Đang xử lý...
+                {t('auth.processing')}
               </>
             ) : (
-              mode === 'login' ? 'Đăng Nhập' : mode === 'signup' ? 'Đăng Ký' : 'Xác Nhận'
+              mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.confirm')
             )}
           </button>
         </form>
@@ -211,13 +219,13 @@ export default function AuthPage({ setIsAuth }) {
         <div className="auth-footer">
           {mode === 'verify' ? (
             <>
-              <p>Không nhận được mã? <span className="auth-link" onClick={resendOtp}>Gửi lại</span></p>
-              <p>Sai email? <span className="auth-link" onClick={backToSignup}>Quay lại</span></p>
+              <p>{t('auth.noCode')} <span className="auth-link" onClick={resendOtp}>{t('auth.resend')}</span></p>
+              <p>{t('auth.wrongEmail')} <span className="auth-link" onClick={backToSignup}>{t('auth.goBack')}</span></p>
             </>
           ) : mode === 'login' ? (
-            <p>Chưa có tài khoản? <span className="auth-link" onClick={toggleMode}>Đăng ký ngay</span></p>
+            <p>{t('auth.noAccount')} <span className="auth-link" onClick={toggleMode}>{t('auth.signupNow')}</span></p>
           ) : (
-            <p>Đã có tài khoản? <span className="auth-link" onClick={toggleMode}>Đăng nhập</span></p>
+            <p>{t('auth.haveAccount')} <span className="auth-link" onClick={toggleMode}>{t('auth.loginLink')}</span></p>
           )}
         </div>
       </div>

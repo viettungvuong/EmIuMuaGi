@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
+import { serverText, t } from "../i18n";
 import "../styles/SearchPage.css";
 
 // Expects GET /api/search?q=... to answer with a list of
@@ -25,7 +26,7 @@ export default function SearchPage() {
       setSearched(q);
     } catch (err) {
       setResults([]);
-      setError(err.response?.data?.error || "Không tìm được. Vui lòng thử lại.");
+      setError(serverText(err.response?.data?.error) || t("search.failed"));
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export default function SearchPage() {
         <button className="back-btn" onClick={() => navigate("/")}>
           ←
         </button>
-        <h1 className="search-title">Tìm Đồ Online</h1>
+        <h1 className="search-title">{t("search.title")}</h1>
       </header>
 
       <div className="search-container">
@@ -48,13 +49,13 @@ export default function SearchPage() {
           <input
             className="search-input"
             type="search"
-            placeholder="Tìm sản phẩm, ví dụ: son kem lì…"
+            placeholder={t("search.placeholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
           <button className="search-btn" type="submit" disabled={loading || !query.trim()}>
-            {loading ? <span className="spinner" /> : "Tìm"}
+            {loading ? <span className="spinner" /> : t("search.button")}
           </button>
         </form>
 
@@ -63,14 +64,14 @@ export default function SearchPage() {
         {!loading && !error && searched && results.length === 0 && (
           <div className="search-empty">
             <span>🔍</span>
-            <p>Không có kết quả cho "{searched}"</p>
+            <p>{t("search.noResults", { query: searched })}</p>
           </div>
         )}
 
         {!searched && !loading && !error && (
           <div className="search-empty">
             <span>🛍️</span>
-            <p>Nhập tên món đồ để tìm trên mạng</p>
+            <p>{t("search.start")}</p>
           </div>
         )}
 
@@ -89,7 +90,7 @@ export default function SearchPage() {
               </div>
               {r.url && (
                 <a className="result-link" href={r.url} target="_blank" rel="noopener noreferrer">
-                  Xem
+                  {t("search.view")}
                 </a>
               )}
             </li>

@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
+import { t } from '../i18n';
 import '../styles/AddPage.css';
 
 const ITEM_TYPES = [
-  { value: 'clothes',       label: '👕 Quần Áo' },
-  { value: 'food_and_drink', label: '🧋 Đồ Ăn & Uống' },
-  { value: 'restaurant',    label: '🍜 Nhà Hàng' },
-  { value: 'others',        label: '📦 Khác' },
+  { value: 'clothes',        icon: '👕' },
+  { value: 'food_and_drink', icon: '🧋' },
+  { value: 'restaurant',     icon: '🍜' },
+  { value: 'others',         icon: '📦' },
 ];
 
 // How long the link has to stay unchanged before it is sent to the parser
@@ -199,7 +200,7 @@ export default function AddPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.item_name.trim()) { setError('Vui lòng nhập tên.'); return; }
+    if (!form.item_name.trim()) { setError(t('add.nameRequired')); return; }
     setLoading(true);
     setError('');
 
@@ -278,7 +279,7 @@ export default function AddPage() {
 
       navigate('/');
     } catch {
-      setError('Thêm mục hoặc tải lên thất bại. Vui lòng thử lại.');
+      setError(t('add.failed'));
     } finally {
       setLoading(false);
     }
@@ -288,23 +289,23 @@ export default function AddPage() {
     <div className="add-page">
       <div className="add-card">
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <button className="back-btn" onClick={() => navigate('/')}>← Quay Lại</button>
-          <button className="back-btn" style={{ color: 'var(--accent)' }} onClick={() => navigate('/question')}>Hỏi Đáp →</button>
+          <button className="back-btn" onClick={() => navigate('/')}>{t('common.back')}</button>
+          <button className="back-btn" style={{ color: 'var(--accent)' }} onClick={() => navigate('/question')}>{t('add.question')}</button>
         </div>
-        <h1 className="add-title">Thêm Mục Mới</h1>
+        <h1 className="add-title">{t('add.title')}</h1>
 
         <form onSubmit={handleSubmit} className="add-form">
 
           {/* Type selector */}
           <div className="type-tabs">
-            {ITEM_TYPES.map((t) => (
+            {ITEM_TYPES.map((type) => (
               <button
-                key={t.value}
+                key={type.value}
                 type="button"
-                className={`type-tab ${itemType === t.value ? 'active' : ''}`}
-                onClick={() => setItemType(t.value)}
+                className={`type-tab ${itemType === type.value ? 'active' : ''}`}
+                onClick={() => setItemType(type.value)}
               >
-                {t.label}
+                {type.icon} {t(`types.${type.value}`)}
               </button>
             ))}
           </div>
@@ -312,17 +313,17 @@ export default function AddPage() {
           {/* Common fields — link first so details can be parsed from it */}
           <div className="field-group">
             <label className="field-label" htmlFor="item-url">
-              Link {lookingUp && <span className="field-hint">(đang lấy địa chỉ từ {lookingUp}…)</span>}
+              {t('add.link')} {lookingUp && <span className="field-hint">{t('add.lookingUp', { source: lookingUp })}</span>}
             </label>
             <input id="item-url" type="url" className="field-input"
-              placeholder={itemType === 'restaurant' ? 'Link TikTok, Google Maps…' : 'https://…'}
+              placeholder={itemType === 'restaurant' ? t('add.linkPlaceholderRestaurant') : 'https://…'}
               value={form.buy_url} onChange={onLinkChange} onPaste={onLinkPaste} autoFocus />
           </div>
 
           <div className="field-group">
-            <label className="field-label" htmlFor="item-name">Tên *</label>
+            <label className="field-label" htmlFor="item-name">{t('add.name')}</label>
             <input id="item-name" type="text" className={`field-input ${error && !form.item_name.trim() ? 'input-error' : ''}`}
-              placeholder={itemType === 'restaurant' ? 'Tên nhà hàng…' : 'Tên mục…'}
+              placeholder={itemType === 'restaurant' ? t('add.namePlaceholderRestaurant') : t('add.namePlaceholder')}
               value={form.item_name} onChange={set('item_name')} />
           </div>
 
@@ -330,14 +331,14 @@ export default function AddPage() {
           {itemType !== 'restaurant' && (
             <div className="field-row">
               <div className="field-group">
-                <label className="field-label" htmlFor="item-qty">Số lượng</label>
+                <label className="field-label" htmlFor="item-qty">{t('add.quantity')}</label>
                 <input id="item-qty" type="number" min="1" className="field-input"
                   value={form.quantity} onChange={set('quantity')} />
               </div>
               <div className="field-group">
-                <label className="field-label" htmlFor="item-shop">Cửa hàng</label>
+                <label className="field-label" htmlFor="item-shop">{t('add.shop')}</label>
                 <input id="item-shop" type="text" className="field-input"
-                  placeholder="Tên cửa hàng…" value={form.shop_name} onChange={set('shop_name')} />
+                  placeholder={t('add.shopPlaceholder')} value={form.shop_name} onChange={set('shop_name')} />
               </div>
             </div>
           )}
@@ -346,18 +347,18 @@ export default function AddPage() {
           {itemType === 'clothes' && (
             <div className="field-row">
               <div className="field-group">
-                <label className="field-label">Size</label>
-                <input type="text" className="field-input" placeholder="S, M, L…"
+                <label className="field-label">{t('add.size')}</label>
+                <input type="text" className="field-input" placeholder={t('add.sizePlaceholder')}
                   value={form.size} onChange={set('size')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Màu sắc</label>
-                <input type="text" className="field-input" placeholder="Xanh, Đỏ…"
+                <label className="field-label">{t('add.color')}</label>
+                <input type="text" className="field-input" placeholder={t('add.colorPlaceholder')}
                   value={form.color} onChange={set('color')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Thương hiệu</label>
-                <input type="text" className="field-input" placeholder="Nike, Zara…"
+                <label className="field-label">{t('add.brand')}</label>
+                <input type="text" className="field-input" placeholder={t('add.brandPlaceholder')}
                   value={form.brand} onChange={set('brand')} />
               </div>
             </div>
@@ -368,24 +369,24 @@ export default function AddPage() {
             <>
               <div className="field-row">
                 <div className="field-group">
-                  <label className="field-label">Size</label>
-                  <input type="text" className="field-input" placeholder="S, M, L…"
+                  <label className="field-label">{t('add.size')}</label>
+                  <input type="text" className="field-input" placeholder={t('add.sizePlaceholder')}
                     value={form.size} onChange={set('size')} />
                 </div>
                 <div className="field-group">
-                  <label className="field-label">Đường</label>
-                  <input type="text" className="field-input" placeholder="50%, 100%…"
+                  <label className="field-label">{t('add.sugar')}</label>
+                  <input type="text" className="field-input" placeholder={t('add.sugarPlaceholder')}
                     value={form.sugar} onChange={set('sugar')} />
                 </div>
               </div>
               <div className="field-group">
-                <label className="field-label">Topping <span className="field-hint">(phân cách bằng dấu phẩy)</span></label>
-                <input type="text" className="field-input" placeholder="boba, thạch, kem…"
+                <label className="field-label">{t('add.toppings')} <span className="field-hint">{t('add.toppingsHint')}</span></label>
+                <input type="text" className="field-input" placeholder={t('add.toppingsPlaceholder')}
                   value={form.toppings} onChange={set('toppings')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Ghi chú</label>
-                <textarea className="field-input field-textarea" placeholder="Ít đá, không đường…"
+                <label className="field-label">{t('add.notes')}</label>
+                <textarea className="field-input field-textarea" placeholder={t('add.notesPlaceholder')}
                   value={form.notes} onChange={set('notes')} rows={3} />
               </div>
             </>
@@ -395,26 +396,26 @@ export default function AddPage() {
           {itemType === 'restaurant' && (
             <>
               <div className="field-group">
-                <label className="field-label">Món chính</label>
-                <input type="text" className="field-input" placeholder="Phở, bún bò…"
+                <label className="field-label">{t('add.mainFood')}</label>
+                <input type="text" className="field-input" placeholder={t('add.mainFoodPlaceholder')}
                   value={form.main_food} onChange={set('main_food')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Loại ẩm thực</label>
-                <input type="text" className="field-input" placeholder="Việt, Nhật, Hàn…"
+                <label className="field-label">{t('add.cuisine')}</label>
+                <input type="text" className="field-input" placeholder={t('add.cuisinePlaceholder')}
                   value={form.cuisine_type} onChange={set('cuisine_type')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Địa chỉ</label>
-                <input type="text" className="field-input" placeholder="Số nhà, đường, quận…"
+                <label className="field-label">{t('add.address')}</label>
+                <input type="text" className="field-input" placeholder={t('add.addressPlaceholder')}
                   value={form.address} onChange={set('address')} />
               </div>
               <div className="field-group">
-                <label className="field-label">Thời gian ăn</label>
+                <label className="field-label">{t('add.timeToEat')}</label>
                 <select className="field-input" value={form.time_to_eat} onChange={set('time_to_eat')}>
-                  <option value="">Chọn cách hẹn giờ…</option>
-                  <option value="pick_date">Chọn ngày</option>
-                  <option value="auto_schedule">Tự động lên lịch</option>
+                  <option value="">{t('add.timeToEatPlaceholder')}</option>
+                  <option value="pick_date">{t('add.pickDate')}</option>
+                  <option value="auto_schedule">{t('add.autoSchedule')}</option>
                 </select>
               </div>
             </>
@@ -423,15 +424,15 @@ export default function AddPage() {
           {/* Others fields */}
           {itemType === 'others' && (
             <div className="field-group">
-              <label className="field-label">Danh mục</label>
-              <input type="text" className="field-input" placeholder="Nhập danh mục…"
+              <label className="field-label">{t('add.category')}</label>
+              <input type="text" className="field-input" placeholder={t('add.categoryPlaceholder')}
                 value={form.category} onChange={set('category')} />
             </div>
           )}
 
           {/* ── Media Upload ── */}
           <div className="field-group">
-            <label className="field-label">Ảnh &amp; Video</label>
+            <label className="field-label">{t('add.media')}</label>
 
             <div
               className={`media-drop-zone ${dragging ? 'dragging' : ''}`}
@@ -442,9 +443,9 @@ export default function AddPage() {
             >
               <span className="media-drop-icon">📎</span>
               <span className="media-drop-text">
-                Kéo thả hoặc <strong>bấm để chọn</strong>
+                {t('add.dropText', { action: <strong>{t('add.dropAction')}</strong> })}
               </span>
-              <span className="media-drop-hint">Hỗ trợ: JPG, PNG, GIF, MP4, MOV…</span>
+              <span className="media-drop-hint">{t('add.dropHint')}</span>
             </div>
 
             <input
@@ -470,7 +471,7 @@ export default function AddPage() {
                       type="button"
                       className="media-remove-btn"
                       onClick={(e) => { e.stopPropagation(); removeMedia(i); }}
-                      title="Xóa"
+                      title={t('common.remove')}
                     >
                       ×
                     </button>
@@ -484,7 +485,7 @@ export default function AddPage() {
           {error && <p className="error-msg">{error}</p>}
 
           <button type="submit" className="add-submit-btn" disabled={loading}>
-            {loading ? <span className="spinner" /> : '✓ Thêm Mục'}
+            {loading ? <span className="spinner" /> : t('add.submit')}
           </button>
         </form>
       </div>

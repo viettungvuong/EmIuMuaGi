@@ -8,9 +8,11 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../auth';
 import { Spinner } from '../components/ui';
+import { getLanguage, LanguageContext, loadLanguage, setLanguage, t } from '../i18n';
 import { colors } from '../theme';
 
 export default function RootLayout() {
@@ -22,23 +24,35 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
 
+  // The saved language (null until read), held here so changing it redraws the screens
+  const [language, setLanguageState] = useState(null);
+  useEffect(() => {
+    loadLanguage().then(() => setLanguageState(getLanguage()));
+  }, []);
+  const changeLanguage = useCallback(async (lang) => {
+    await setLanguage(lang);
+    setLanguageState(lang);
+  }, []);
+
   return (
-    <AuthProvider>
-      <Routes fontsReady={fontsLoaded || !!fontError} />
-    </AuthProvider>
+    <LanguageContext.Provider value={{ language, changeLanguage }}>
+      <AuthProvider>
+        <Routes ready={(fontsLoaded || !!fontError) && language !== null} />
+      </AuthProvider>
+    </LanguageContext.Provider>
   );
 }
 
-function Routes({ fontsReady }) {
+function Routes({ ready }) {
   const { isAuth, checking } = useAuth();
 
   // The web app's "🎀 Checking..." screen while /api/me answers
-  if (checking || !fontsReady) {
+  if (checking || !ready) {
     return (
       <View style={styles.checking}>
         <StatusBar style="light" />
         <Spinner size="large" />
-        <Text style={styles.checkingText}>🎀 Checking...</Text>
+        <Text style={styles.checkingText}>{t('common.appChecking')}</Text>
       </View>
     );
   }
@@ -54,6 +68,7 @@ function Routes({ fontsReady }) {
           <Stack.Screen name="add" />
           <Stack.Screen name="question" />
           <Stack.Screen name="history" />
+          <Stack.Screen name="settings" />
           <Stack.Screen name="partner/[inviteID]" />
         </Stack.Protected>
         <Stack.Protected guard={!isAuth}>

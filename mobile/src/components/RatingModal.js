@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, fonts } from '../theme';
+import { t } from '../i18n';
 import { ModalCard } from './ui';
 
 export default function RatingModal(props) {
@@ -15,35 +16,35 @@ export default function RatingModal(props) {
 
 // The form alone, for a dialog that's already open (the main list's buy dialog
 // turns into it: iOS won't open a second dialog while the first is closing)
-export function RatingForm({ itemName, cancelLabel = 'Hủy', onCancel, onSubmit }) {
+export function RatingForm({ itemName, cancelLabel = t('common.cancel'), onCancel, onSubmit }) {
   const [form, setForm] = useState({ score: 5, content: '' });
 
   return (
     <>
-      <Text style={styles.title}>Em iu đánh giáaa</Text>
+      <Text style={styles.title}>{t('rating.title')}</Text>
       <Text style={styles.text}>
-        Viết vài dòng cảm nhận về <Text style={{ fontFamily: fonts.bold }}>{itemName}</Text> luôn để em biết nhaaa!
+        {t('rating.text', { item: <Text style={{ fontFamily: fonts.bold }}>{itemName}</Text> })}
       </Text>
 
       <View style={styles.form}>
         <View style={styles.field}>
-          <Text style={styles.label}>Chấm điểm (1-5 sao):</Text>
+          <Text style={styles.label}>{t('rating.score')}</Text>
           {/* The web takes a typed 1-5; on a phone the stars are tapped */}
           <View style={styles.starPicker}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <Pressable key={n} onPress={() => setForm((f) => ({ ...f, score: n }))} hitSlop={6} accessibilityLabel={`${n} sao`}>
+              <Pressable key={n} onPress={() => setForm((f) => ({ ...f, score: n }))} hitSlop={6} accessibilityLabel={t('rating.stars', { count: n })}>
                 <Text style={styles.star}>{n <= form.score ? '★' : '☆'}</Text>
               </Pressable>
             ))}
           </View>
         </View>
         <View style={styles.field}>
-          <Text style={styles.label}>Cảm nhận của em:</Text>
+          <Text style={styles.label}>{t('rating.feeling')}</Text>
           <TextInput
             style={styles.input}
             value={form.content}
             onChangeText={(content) => setForm((f) => ({ ...f, content }))}
-            placeholder="Quá chuẩn lun..."
+            placeholder={t('rating.placeholder')}
             placeholderTextColor={colors.textMuted}
             multiline
           />
@@ -55,7 +56,7 @@ export function RatingForm({ itemName, cancelLabel = 'Hủy', onCancel, onSubmit
           <Text style={[styles.btnText, { color: colors.text }]}>{cancelLabel}</Text>
         </Pressable>
         <Pressable style={[styles.btn, styles.confirm]} onPress={() => onSubmit(form)}>
-          <Text style={[styles.btnText, { color: '#fff' }]}>Gửi Đánh Giá</Text>
+          <Text style={[styles.btnText, { color: '#fff' }]}>{t('rating.submit')}</Text>
         </Pressable>
       </View>
     </>

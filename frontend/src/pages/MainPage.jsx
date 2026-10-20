@@ -2,14 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 import RatingModal from "../components/RatingModal";
+import { dateLocale, t } from "../i18n";
 import "../styles/MainPage.css";
 
-const TYPE_LABELS = {
-  clothes: "Quần Áo",
-  food_and_drink: "Đồ Ăn & Uống",
-  restaurant: "Nhà Hàng",
-  others: "Khác",
-};
+const ITEM_TYPES = ["clothes", "food_and_drink", "restaurant", "others"];
 
 const TYPE_COLOR = "#cb1d7aff";
 
@@ -24,11 +20,11 @@ function ItemSubInfo({ item }) {
     ) : null;
   }
   if (item.item_type === "food_and_drink") {
-    const parts = [item.size, item.sugar && `Đường: ${item.sugar}`].filter(
+    const parts = [item.size, item.sugar && t("main.sugar", { sugar: item.sugar })].filter(
       Boolean,
     );
     const toppingStr = item.toppings?.length
-      ? `Topping: ${item.toppings.join(", ")}`
+      ? t("main.toppings", { toppings: item.toppings.join(", ") })
       : null;
     return parts.length || toppingStr ? (
       <p className="item-subinfo">
@@ -200,20 +196,25 @@ export default function MainPage({ setIsAuth }) {
       <header className="main-header">
         <div className="header-left">
           <h1 className="main-title">
-            Em Iu<span className="accent"> Muốn Gìiiiii</span>
+            {t("common.titleStart")}<span className="accent">{t("common.titleAccent")}</span>
           </h1>
-          <span className="item-count">{items.length} mục</span>
+          <span className="item-count">{t("common.itemCount", { count: items.length })}</span>
         </div>
         <div className="header-right">
-          <span className="user-welcome">Chào, {localStorage.getItem("username") || "bạn"} 👋</span>
+          <span className="user-welcome">
+            {t("common.hello", { name: localStorage.getItem("username") || t("common.you") })}
+          </span>
           <button className="history-link-btn" onClick={() => navigate("/search")}>
-            Tìm Online
+            {t("common.searchOnline")}
           </button>
           <button className="history-link-btn" onClick={() => navigate("/history")}>
-            Lịch Sử
+            {t("common.history")}
+          </button>
+          <button className="history-link-btn" onClick={() => navigate("/settings")}>
+            {t("common.settings")}
           </button>
           <button className="logout-btn" onClick={handleLogout}>
-            Đăng Xuất
+            {t("common.logout")}
           </button>
         </div>
       </header>
@@ -222,7 +223,7 @@ export default function MainPage({ setIsAuth }) {
         {loading ? (
           <div className="loading-state">
             <div className="loading-spinner" />
-            <p>Đang tải…</p>
+            <p>{t("common.loading")}</p>
           </div>
         ) : (
           <div className="items-content">
@@ -231,7 +232,7 @@ export default function MainPage({ setIsAuth }) {
                 <div className="partner-info-card">
                   <div className="partner-avatar">🤝</div>
                   <div className="partner-details">
-                    <span className="partner-label">Người ấy của bạn:</span>
+                    <span className="partner-label">{t("main.partnerLabel")}</span>
                     <span className="partner-name">{userData.partner.id}</span>
                     <span className="partner-email">{userData.partner.email}</span>
                   </div>
@@ -240,7 +241,7 @@ export default function MainPage({ setIsAuth }) {
                 <div className="invite-link-card">
                   <div className="invite-icon">🔗</div>
                   <div className="invite-details">
-                    <span className="invite-label">Chưa có người ấy? Gửi link này nha:</span>
+                    <span className="invite-label">{t("main.inviteLabel")}</span>
                     <div className="invite-input-wrapper">
                       <input 
                         type="text" 
@@ -250,7 +251,7 @@ export default function MainPage({ setIsAuth }) {
                         onClick={(e) => e.target.select()}
                       />
                       <button className="copy-btn" onClick={copyInviteLink}>
-                        {copySuccess ? "✓ Đã copy" : "Copy"}
+                        {copySuccess ? t("main.copied") : t("main.copy")}
                       </button>
                     </div>
                   </div>
@@ -261,7 +262,7 @@ export default function MainPage({ setIsAuth }) {
             {items.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-icon">🧐</span>
-                <p className="empty-text">Bà xã chưa mún mua gì hỏooooo</p>
+                <p className="empty-text">{t("main.empty")}</p>
               </div>
             ) : (
               <>
@@ -269,7 +270,7 @@ export default function MainPage({ setIsAuth }) {
               <input
                 type="text"
                 className="search-bar"
-                placeholder="Tìm kiếm danh sách..."
+                placeholder={t("main.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -279,15 +280,15 @@ export default function MainPage({ setIsAuth }) {
                     className={`filter-tab ${filterType === "all" ? "active" : ""}`}
                     onClick={() => setFilterType("all")}
                   >
-                    Tất Cả
+                    {t("types.all")}
                   </button>
-                  {Object.entries(TYPE_LABELS).map(([type, label]) => (
+                  {ITEM_TYPES.map((type) => (
                     <button
                       key={type}
                       className={`filter-tab ${filterType === type ? "active" : ""}`}
                       onClick={() => setFilterType(type)}
                     >
-                      {label}
+                      {t(`types.${type}`)}
                     </button>
                   ))}
                 </div>
@@ -297,7 +298,7 @@ export default function MainPage({ setIsAuth }) {
                     checked={hideBought}
                     onChange={(e) => setHideBought(e.target.checked)}
                   />
-                  <span>Ẩn đồ đã mua</span>
+                  <span>{t("main.hideBought")}</span>
                 </label>
               </div>
             </div>
@@ -305,9 +306,7 @@ export default function MainPage({ setIsAuth }) {
             {filteredItems.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-icon">😅</span>
-                <p className="empty-text">
-                  Không tìm thấy món nào phù hợp nữa...
-                </p>
+                <p className="empty-text">{t("main.noMatch")}</p>
               </div>
             ) : (
               <ul className="items-list">
@@ -334,7 +333,7 @@ export default function MainPage({ setIsAuth }) {
                               borderColor: TYPE_COLOR + "55",
                             }}
                           >
-                            {TYPE_LABELS[item.item_type] ?? item.item_type}
+                            {ITEM_TYPES.includes(item.item_type) ? t(`types.${item.item_type}`) : item.item_type}
                           </span>
                         </div>
                         <ItemSubInfo item={item} />
@@ -355,7 +354,7 @@ export default function MainPage({ setIsAuth }) {
                           <span className="item-date">
                             {item.created_at
                               ? new Date(item.created_at).toLocaleString(
-                                  "vi-VN",
+                                  dateLocale(),
                                   {
                                     timeZone: "Asia/Ho_Chi_Minh",
                                     month: "short",
@@ -375,7 +374,7 @@ export default function MainPage({ setIsAuth }) {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            🔗 {item.item_type === "restaurant" ? "Xem nhà hàng" : "Xem sản phẩm"}
+                            🔗 {item.item_type === "restaurant" ? t("main.viewRestaurant") : t("main.viewProduct")}
                           </a>
                         )}
                       </div>
@@ -387,16 +386,16 @@ export default function MainPage({ setIsAuth }) {
                           <button
                             className="buy-btn"
                             onClick={() => handleBuy(item.id)}
-                            aria-label="Đã mua mục này"
+                            aria-label={t("main.boughtLabel")}
                           >
-                            ✓ Anh đã mua
+                            {t("main.bought")}
                           </button>
                         )}
                         {item.owner === currentUser && (
                           <button
                             className="delete-btn"
                             onClick={() => handleDelete(item.id)}
-                            aria-label="Xóa mục"
+                            aria-label={t("main.deleteLabel")}
                           >
                             🗑
                           </button>
@@ -415,7 +414,7 @@ export default function MainPage({ setIsAuth }) {
       <button
         className="fab"
         onClick={() => navigate("/add")}
-        aria-label="Thêm mục mới"
+        aria-label={t("main.addLabel")}
       >
         +
       </button>
@@ -423,10 +422,10 @@ export default function MainPage({ setIsAuth }) {
       {confirmModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <p className="modal-text">Có chắc anh đã mua chưaaaaaa 🧐</p>
+            <p className="modal-text">{t("main.confirmBuy")}</p>
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={cancelBuy}>Chưa nha</button>
-              <button className="modal-btn confirm" onClick={confirmBuy}>Đã mua rùii</button>
+              <button className="modal-btn cancel" onClick={cancelBuy}>{t("main.notYet")}</button>
+              <button className="modal-btn confirm" onClick={confirmBuy}>{t("main.yesBought")}</button>
             </div>
           </div>
         </div>
@@ -435,7 +434,7 @@ export default function MainPage({ setIsAuth }) {
       {ratingPurchase && (
         <RatingModal
           itemName={ratingPurchase.name}
-          cancelLabel="Để sau"
+          cancelLabel={t("common.later")}
           onCancel={() => setRatingPurchase(null)}
           onSubmit={submitRating}
         />

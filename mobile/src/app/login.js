@@ -4,32 +4,35 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { useAuth } from '../auth';
+import { LanguageIsland } from '../components/LanguageIsland';
 import { Spinner } from '../components/ui';
+import { serverText, t, useLanguage } from '../i18n';
 import { colors, fonts } from '../theme';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
-// or email), shown larger so they aren't missed
+// or email), shown larger so they aren't missed. As the server words them.
 const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
 
 export default function LoginScreen() {
+  useLanguage(); // redraw in a newly picked language
   const { signIn, expired, clearExpired } = useAuth();
   const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [error, setError] = useState(expired ? 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.' : '');
+  const [error, setError] = useState(expired ? t('auth.sessionExpired') : '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     setError('');
     clearExpired();
     if (!username || !password || (mode === 'signup' && !email)) {
-      setError('Vui lòng điền đầy đủ thông tin.'); // the web form's `required` does this
+      setError(t('auth.fillAll')); // the web form's `required` does this
       return;
     }
     if (mode === 'verify' && otp.length !== 6) {
-      setError('Mã gồm 6 chữ số.'); // the web input's `pattern` does this
+      setError(t('auth.otpLength')); // the web input's `pattern` does this
       return;
     }
     setLoading(true);
@@ -51,20 +54,20 @@ export default function LoginScreen() {
         const response = await client.post('/api/auth/signup/verify', { username, email, password, otp });
         if (response.status === 201 || response.data.success) {
           setMode('login');
-          setError('Đăng ký thành công! Hãy đăng nhập.');
+          setError(t('auth.signupSuccess'));
           setPassword('');
           setOtp('');
         }
       }
     } catch (err) {
       if (err.response?.data?.error) {
-        setError(err.response.data.error);
+        setError(serverText(err.response.data.error));
       } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
+        setError(serverText(err.response.data.message));
       } else if (mode === 'verify') {
-        setError('Xác thực thất bại. Vui lòng thử lại.');
+        setError(t('auth.verifyFailed'));
       } else {
-        setError(mode === 'login' ? 'Đăng nhập thất bại. Kiểm tra lại tài khoản.' : 'Đăng ký thất bại. Vui lòng thử lại.');
+        setError(mode === 'login' ? t('auth.loginFailed') : t('auth.signupFailed'));
       }
     } finally {
       setLoading(false);
@@ -87,9 +90,9 @@ export default function LoginScreen() {
     try {
       await client.post('/api/auth/signup', { username, email, password });
       setOtp('');
-      setError('Đã gửi lại mã thành công! Kiểm tra email nhé.');
+      setError(t('auth.codeResent'));
     } catch (err) {
-      setError(err.response?.data?.error || 'Không gửi lại được mã. Vui lòng thử lại.');
+      setError(serverText(err.response?.data?.error) || t('auth.resendFailed'));
     } finally {
       setLoading(false);
     }
@@ -102,31 +105,32 @@ export default function LoginScreen() {
     setOtp('');
   };
 
-  const success = error.includes('thành công');
+  // Success notes share the error line, in green
+  const success = error === t('auth.signupSuccess') || error === t('auth.codeResent');
+  const big = BIG_ERRORS.some((message) => error === serverText(message));
   const inputStyle = (value) => [styles.input, error && !success && !value && styles.inputError];
 
   return (
     <SafeAreaView style={styles.page}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <LanguageIsland />
           <View style={styles.card}>
             <View style={styles.header}>
               <Text style={styles.brandIcon}>🎀</Text>
               <Text style={styles.title}>EmIuMuaGi</Text>
               <Text style={styles.subtitle}>
                 {mode === 'verify' ? (
-                  <>
-                    Nhập mã 6 số vừa được gửi tới <Text style={styles.subtitleEmail}>{email}</Text>
-                  </>
-                ) : mode === 'login' ? 'Em ấy bắt mua đồ hỏoo' : 'Tạo tài khoản mới để bắt đầu.'}
+                  t('auth.verifySubtitle', { email: <Text style={styles.subtitleEmail}>{email}</Text> })
+                ) : mode === 'login' ? t('auth.loginSubtitle') : t('auth.signupSubtitle')}
               </Text>
             </View>
 
             {mode !== 'verify' && (
               <View style={styles.tabs}>
                 {[
-                  ['login', 'Đăng Nhập'],
-                  ['signup', 'Đăng Ký'],
+                  ['login', t('auth.login')],
+                  ['signup', t('auth.signup')],
                 ].map(([value, label]) => (
                   <Pressable key={value} style={[styles.tab, mode === value && styles.tabActive]} onPress={() => setMode(value)}>
                     <Text style={[styles.tabText, mode === value && styles.tabTextActive]}>{label}</Text>
@@ -138,7 +142,7 @@ export default function LoginScreen() {
             <View style={styles.form}>
               {mode === 'verify' ? (
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Mã xác thực</Text>
+                  <Text style={styles.label}>{t('auth.otp')}</Text>
                   <TextInput
                     style={[styles.input, styles.otpInput]}
                     placeholder="••••••"
@@ -154,10 +158,10 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Tên đăng nhập</Text>
+                    <Text style={styles.label}>{t('auth.username')}</Text>
                     <TextInput
                       style={inputStyle(username)}
-                      placeholder="Username…"
+                      placeholder={t('auth.usernamePlaceholder')}
                       placeholderTextColor={colors.textMuted}
                       value={username}
                       onChangeText={setUsername}
@@ -168,7 +172,7 @@ export default function LoginScreen() {
 
                   {mode === 'signup' && (
                     <View style={styles.inputGroup}>
-                      <Text style={styles.label}>Email</Text>
+                      <Text style={styles.label}>{t('auth.email')}</Text>
                       <TextInput
                         style={inputStyle(email)}
                         placeholder="email@example.com"
@@ -183,7 +187,7 @@ export default function LoginScreen() {
                   )}
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Mật khẩu</Text>
+                    <Text style={styles.label}>{t('auth.password')}</Text>
                     <TextInput
                       style={inputStyle(password)}
                       placeholder="••••••••"
@@ -198,7 +202,7 @@ export default function LoginScreen() {
               )}
 
               {!!error && (
-                <Text style={[styles.error, BIG_ERRORS.includes(error) && styles.errorBig, success && { color: colors.success }]}>
+                <Text style={[styles.error, big && styles.errorBig, success && { color: colors.success }]}>
                   {error}
                 </Text>
               )}
@@ -207,11 +211,11 @@ export default function LoginScreen() {
                 {loading ? (
                   <>
                     <Spinner color="#fff" />
-                    <Text style={styles.submitText}>Đang xử lý...</Text>
+                    <Text style={styles.submitText}>{t('auth.processing')}</Text>
                   </>
                 ) : (
                   <Text style={styles.submitText}>
-                    {mode === 'login' ? 'Đăng Nhập' : mode === 'signup' ? 'Đăng Ký' : 'Xác Nhận'}
+                    {mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.confirm')}
                   </Text>
                 )}
               </Pressable>
@@ -220,23 +224,23 @@ export default function LoginScreen() {
             {mode === 'verify' ? (
               <>
                 <Text style={styles.footer}>
-                  Không nhận được mã?{' '}
+                  {t('auth.noCode')}{' '}
                   <Text style={styles.link} onPress={resendOtp}>
-                    Gửi lại
+                    {t('auth.resend')}
                   </Text>
                 </Text>
                 <Text style={[styles.footer, styles.footerSecond]}>
-                  Sai email?{' '}
+                  {t('auth.wrongEmail')}{' '}
                   <Text style={styles.link} onPress={backToSignup}>
-                    Quay lại
+                    {t('auth.goBack')}
                   </Text>
                 </Text>
               </>
             ) : (
               <Text style={styles.footer}>
-                {mode === 'login' ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
+                {mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
                 <Text style={styles.link} onPress={() => switchMode(mode === 'login' ? 'signup' : 'login')}>
-                  {mode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
+                  {mode === 'login' ? t('auth.signupNow') : t('auth.loginLink')}
                 </Text>
               </Text>
             )}

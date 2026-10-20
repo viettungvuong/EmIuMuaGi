@@ -42,9 +42,23 @@ func GenerateOTP(email string) error {
 		return err
 	}
 
+	// Vietnamese first (the app's default language), then English. The HTML
+	// version shows the code in bold; the text one is for mail apps without HTML.
 	minutes := int(models.OTPTTL.Minutes())
-	body := fmt.Sprintf("Your EmIuMuaGi verification code is: %s\n\nIt expires in %d minutes. If you didn't request this code, you can ignore this email.", code, minutes)
-	if err := internal.SendEmail(email, "Your EmIuMuaGi verification code", body); err != nil {
+	text := fmt.Sprintf("Mã xác thực EmIuMuaGi của bạn là: %[1]s\n\n"+
+		"Mã có hiệu lực trong %[2]d phút. Nếu bạn không yêu cầu mã này, hãy bỏ qua email này.\n\n"+
+		"----------\n\n"+
+		"Your EmIuMuaGi verification code is: %[1]s\n\n"+
+		"It expires in %[2]d minutes. If you didn't request this code, you can ignore this email.", code, minutes)
+	// code is 6 digits, so it needs no HTML escaping
+	codeHTML := `<strong style="font-size:24px;letter-spacing:4px">` + code + `</strong>`
+	html := fmt.Sprintf("<p>Mã xác thực EmIuMuaGi của bạn là: %[1]s</p>\n"+
+		"<p>Mã có hiệu lực trong %[2]d phút. Nếu bạn không yêu cầu mã này, hãy bỏ qua email này.</p>\n"+
+		"<hr>\n"+
+		"<p>Your EmIuMuaGi verification code is: %[1]s</p>\n"+
+		"<p>It expires in %[2]d minutes. If you didn't request this code, you can ignore this email.</p>\n", codeHTML, minutes)
+	subject := "Mã xác thực EmIuMuaGi / Your EmIuMuaGi verification code"
+	if err := internal.SendEmail(email, subject, text, html); err != nil {
 		// Nobody received this code, so don't leave it valid
 		database.RDB.Del(ctx, key)
 		return err

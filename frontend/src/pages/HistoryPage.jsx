@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 import RatingModal from "../components/RatingModal";
+import { dateLocale, t } from "../i18n";
 import "../styles/HistoryPage.css";
 
 export default function HistoryPage() {
@@ -58,7 +59,7 @@ export default function HistoryPage() {
           <button className="back-btn" onClick={() => navigate("/")}>
             ←
           </button>
-          <h1 className="history-title">Lịch Sử Mua Đồ</h1>
+          <h1 className="history-title">{t("history.title")}</h1>
         </div>
       </header>
 
@@ -66,12 +67,12 @@ export default function HistoryPage() {
         {loading ? (
           <div className="loading-state">
             <div className="loading-spinner" />
-            <p>Đang tải…</p>
+            <p>{t("common.loading")}</p>
           </div>
         ) : histories.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">📭</span>
-            <p className="empty-text">Chưa có lịch sử mua đồ nàooo</p>
+            <p className="empty-text">{t("history.empty")}</p>
           </div>
         ) : (
           <ul className="history-list">
@@ -82,7 +83,7 @@ export default function HistoryPage() {
                     <h3 className="history-item-name">{history.item_name}</h3>
                     <p className="history-date">
                       {history.time
-                        ? new Date(history.time).toLocaleString("vi-VN", {
+                        ? new Date(history.time).toLocaleString(dateLocale(), {
                             timeZone: "Asia/Ho_Chi_Minh",
                             month: "short",
                             day: "numeric",
@@ -90,7 +91,7 @@ export default function HistoryPage() {
                             hour: "2-digit",
                             minute: "2-digit",
                           })
-                        : "Không xác định"}
+                        : t("common.unknown")}
                     </p>
                   </div>
 
@@ -109,7 +110,7 @@ export default function HistoryPage() {
                       className="add-review-btn"
                       onClick={() => handleReview(history.id, history.item_name)}
                     >
-                      ⭐ Đánh giá ngay
+                      {t("history.rateNow")}
                     </button>
                   )}
                 </div>

@@ -1,6 +1,8 @@
 .auth-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column; /* the language island sits above the card */
+  gap: 1rem;
   align-items: center;
   justify-content: center;
   background: var(--bg); /* Solid color from index.css */

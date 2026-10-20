@@ -7,16 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WEB_URL } from '../api/config';
 import { useAuth } from '../auth';
+import { t, useLanguage } from '../i18n';
 import { RatingForm } from '../components/RatingModal';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
 import { colors, fonts, formatDate, radius } from '../theme';
 
-const TYPE_LABELS = {
-  clothes: 'Quần Áo',
-  food_and_drink: 'Đồ Ăn & Uống',
-  restaurant: 'Nhà Hàng',
-  others: 'Khác',
-};
+const ITEM_TYPES = ['clothes', 'food_and_drink', 'restaurant', 'others'];
+const typeLabel = (type) => (ITEM_TYPES.includes(type) ? t(`types.${type}`) : type);
 
 const TYPE_COLOR = '#cb1d7a';
 
@@ -28,8 +25,8 @@ function subInfo(item) {
     return [item.size, item.color, item.brand].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'food_and_drink') {
-    const toppings = item.toppings?.length ? `Topping: ${item.toppings.join(', ')}` : null;
-    return [item.size, item.sugar && `Đường: ${item.sugar}`, toppings].filter(Boolean).join(' · ');
+    const toppings = item.toppings?.length ? t('main.toppings', { toppings: item.toppings.join(', ') }) : null;
+    return [item.size, item.sugar && t('main.sugar', { sugar: item.sugar }), toppings].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'restaurant') {
     return [item.main_food, item.cuisine_type, item.address, item.time_to_eat].filter(Boolean).join(' · ');
@@ -41,6 +38,7 @@ function subInfo(item) {
 }
 
 export default function MainScreen() {
+  useLanguage(); // redraw in a newly picked language
   const router = useRouter();
   const { username, signOut } = useAuth();
   const [items, setItems] = useState([]);
@@ -159,6 +157,7 @@ export default function MainScreen() {
         username={username}
         count={items.length}
         onHistory={() => router.push('/history')}
+        onSettings={() => router.push('/settings')}
         onLogout={signOut}
       />
 
@@ -178,7 +177,7 @@ export default function MainScreen() {
                     <Text style={styles.avatarEmoji}>🤝</Text>
                   </View>
                   <View style={styles.partnerDetails}>
-                    <Text style={styles.partnerLabel}>Người ấy của bạn:</Text>
+                    <Text style={styles.partnerLabel}>{t('main.partnerLabel')}</Text>
                     <Text style={styles.partnerName}>{userData.partner.id}</Text>
                     <Text style={styles.partnerEmail}>{userData.partner.email}</Text>
                   </View>
@@ -189,13 +188,13 @@ export default function MainScreen() {
                     <Text style={styles.avatarEmoji}>🔗</Text>
                   </View>
                   <View style={styles.inviteDetails}>
-                    <Text style={styles.partnerLabel}>Chưa có người ấy? Gửi link này nha:</Text>
+                    <Text style={styles.partnerLabel}>{t('main.inviteLabel')}</Text>
                     <View style={styles.inviteRow}>
                       <Text style={styles.inviteUrl} numberOfLines={1} selectable>
                         {inviteLink}
                       </Text>
                       <Pressable style={styles.copyBtn} onPress={copyInviteLink}>
-                        <Text style={styles.copyBtnText}>{copySuccess ? '✓ Đã copy' : 'Copy'}</Text>
+                        <Text style={styles.copyBtnText}>{copySuccess ? t('main.copied') : t('main.copy')}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -204,19 +203,19 @@ export default function MainScreen() {
             </View>
 
             {items.length === 0 ? (
-              <EmptyState icon="🧐" text="Bà xã chưa mún mua gì hỏooooo" />
+              <EmptyState icon="🧐" text={t('main.empty')} />
             ) : (
               <>
                 <View style={styles.controls}>
                   <TextInput
                     style={styles.search}
-                    placeholder="Tìm kiếm danh sách..."
+                    placeholder={t('main.searchPlaceholder')}
                     placeholderTextColor={colors.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                   />
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTabs}>
-                    {[['all', 'Tất Cả'], ...Object.entries(TYPE_LABELS)].map(([type, label]) => (
+                    {[['all', t('types.all')], ...ITEM_TYPES.map((type) => [type, typeLabel(type)])].map(([type, label]) => (
                       <Pressable
                         key={type}
                         style={[styles.filterTab, filterType === type && styles.filterTabActive]}
@@ -230,12 +229,12 @@ export default function MainScreen() {
                     <View style={[styles.checkbox, hideBought && styles.checkboxOn]}>
                       {hideBought && <Text style={styles.checkmark}>✓</Text>}
                     </View>
-                    <Text style={styles.hideBoughtText}>Ẩn đồ đã mua</Text>
+                    <Text style={styles.hideBoughtText}>{t('main.hideBought')}</Text>
                   </Pressable>
                 </View>
 
                 {filteredItems.length === 0 ? (
-                  <EmptyState icon="😅" text="Không tìm thấy món nào phù hợp nữa..." />
+                  <EmptyState icon="😅" text={t('main.noMatch')} />
                 ) : (
                   <View style={styles.list}>
                     {filteredItems.map((item) => (
@@ -255,7 +254,7 @@ export default function MainScreen() {
         )}
       </ScrollView>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/add')} accessibilityLabel="Thêm mục mới">
+      <Pressable style={styles.fab} onPress={() => router.push('/add')} accessibilityLabel={t('main.addLabel')}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
 
@@ -268,19 +267,19 @@ export default function MainScreen() {
         {ratingPurchase ? (
           <RatingForm
             itemName={ratingPurchase.name}
-            cancelLabel="Để sau"
+            cancelLabel={t('common.later')}
             onCancel={() => setRatingPurchase(null)}
             onSubmit={submitRating}
           />
         ) : (
           <>
-            <Text style={styles.modalText}>Có chắc anh đã mua chưaaaaaa 🧐</Text>
+            <Text style={styles.modalText}>{t('main.confirmBuy')}</Text>
             <View style={styles.modalActions}>
               <Pressable style={[styles.modalBtn, styles.modalCancel]} onPress={() => setConfirmItemId(null)}>
-                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>Chưa nha</Text>
+                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>{t('main.notYet')}</Text>
               </Pressable>
               <Pressable style={[styles.modalBtn, styles.modalConfirm, buying && { opacity: 0.6 }]} onPress={confirmBuy} disabled={buying}>
-                <Text style={[styles.modalBtnText, { color: colors.success }]}>Đã mua rùii</Text>
+                <Text style={[styles.modalBtnText, { color: colors.success }]}>{t('main.yesBought')}</Text>
               </Pressable>
             </View>
           </>
@@ -298,7 +297,7 @@ function ItemCard({ item, currentUser, onBuy, onDelete }) {
       <View style={styles.cardHeader}>
         <Text style={[styles.itemName, item.bought && styles.itemNameBought]}>{item.item_name}</Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{TYPE_LABELS[item.item_type] ?? item.item_type}</Text>
+          <Text style={styles.badgeText}>{typeLabel(item.item_type)}</Text>
         </View>
       </View>
 
@@ -313,7 +312,7 @@ function ItemCard({ item, currentUser, onBuy, onDelete }) {
 
       {!!item.buy_url && (
         <Text style={styles.itemLink} onPress={() => Linking.openURL(item.buy_url)}>
-          🔗 {item.item_type === 'restaurant' ? 'Xem nhà hàng' : 'Xem sản phẩm'}
+          🔗 {item.item_type === 'restaurant' ? t('main.viewRestaurant') : t('main.viewProduct')}
         </Text>
       )}
 
@@ -323,12 +322,12 @@ function ItemCard({ item, currentUser, onBuy, onDelete }) {
             <Text style={styles.boughtBadgeText}>✓</Text>
           </View>
         ) : (
-          <Pressable style={styles.buyBtn} onPress={onBuy} accessibilityLabel="Đã mua mục này">
-            <Text style={styles.buyBtnText}>✓ Anh đã mua</Text>
+          <Pressable style={styles.buyBtn} onPress={onBuy} accessibilityLabel={t('main.boughtLabel')}>
+            <Text style={styles.buyBtnText}>{t('main.bought')}</Text>
           </Pressable>
         )}
         {item.owner === currentUser && (
-          <Pressable style={styles.deleteBtn} onPress={onDelete} accessibilityLabel="Xóa mục">
+          <Pressable style={styles.deleteBtn} onPress={onDelete} accessibilityLabel={t('main.deleteLabel')}>
             <Text style={styles.deleteBtnText}>🗑</Text>
           </Pressable>
         )}

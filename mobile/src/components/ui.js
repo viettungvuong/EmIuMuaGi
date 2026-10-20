@@ -4,12 +4,13 @@ import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius } from '../theme';
+import { t } from '../i18n';
 
 export function Spinner({ size = 'small', color = colors.accent }) {
   return <ActivityIndicator size={size} color={color} />;
 }
 
-export function LoadingState({ text = 'Đang tải…' }) {
+export function LoadingState({ text = t('common.loading') }) {
   return (
     <View style={styles.state}>
       <Spinner size="large" />
@@ -88,29 +89,34 @@ export function Select({ value, options, placeholder, onChange, style, textStyle
 }
 
 // .main-header, shared by the main and partner screens
-export function AppHeader({ username, count, onTitlePress, onHistory, onLogout }) {
+export function AppHeader({ username, count, onTitlePress, onHistory, onSettings, onLogout }) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
         <Text style={styles.headerTitle} onPress={onTitlePress}>
-          Em Iu<Text style={{ color: colors.accent }}> Muốn Gìiiiii</Text>
+          {t('common.titleStart')}<Text style={{ color: colors.accent }}>{t('common.titleAccent')}</Text>
         </Text>
-        {count !== undefined && <Text style={styles.itemCount}>{count} mục</Text>}
+        {count !== undefined && <Text style={styles.itemCount}>{t('common.itemCount', { count })}</Text>}
       </View>
       <View style={styles.headerRight}>
         <Text style={styles.welcome} numberOfLines={1}>
-          Chào, {username || 'bạn'} 👋
+          {t('common.hello', { name: username || t('common.you') })}
         </Text>
         {/* Icons on the phone; the labels are still what VoiceOver/TalkBack read */}
         <View style={styles.headerButtons}>
-          <Pressable style={[styles.iconBtn, styles.historyBtn]} onPress={onHistory} accessibilityRole="button" accessibilityLabel="Lịch Sử" hitSlop={4}>
+          <Pressable style={[styles.iconBtn, styles.historyBtn]} onPress={onHistory} accessibilityRole="button" accessibilityLabel={t('common.history')} hitSlop={4}>
             <SymbolView
               name={{ ios: 'clock.arrow.circlepath', android: 'history', web: 'history' }}
               size={20}
               tintColor={colors.accent}
             />
           </Pressable>
-          <Pressable style={[styles.iconBtn, styles.logoutBtn]} onPress={onLogout} accessibilityRole="button" accessibilityLabel="Đăng Xuất" hitSlop={4}>
+          {onSettings && (
+            <Pressable style={[styles.iconBtn, styles.logoutBtn]} onPress={onSettings} accessibilityRole="button" accessibilityLabel={t('common.settings')} hitSlop={4}>
+              <SymbolView name={{ ios: 'gearshape', android: 'settings', web: 'settings' }} size={20} tintColor={colors.textMuted} />
+            </Pressable>
+          )}
+          <Pressable style={[styles.iconBtn, styles.logoutBtn]} onPress={onLogout} accessibilityRole="button" accessibilityLabel={t('common.logout')} hitSlop={4}>
             <SymbolView
               name={{ ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' }}
               size={20}

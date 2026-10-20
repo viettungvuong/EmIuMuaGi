@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GradientButton } from '../components/ui';
+import { t, useLanguage } from '../i18n';
 import { colors, fonts, radius } from '../theme';
 
 export default function QuestionScreen() {
+  useLanguage(); // redraw in a newly picked language
   const router = useRouter();
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,16 +33,16 @@ export default function QuestionScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Pressable style={styles.backBtn} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
-              <Text style={styles.backBtnText}>← Quay Lại</Text>
+              <Text style={styles.backBtnText}>{t('common.back')}</Text>
             </Pressable>
-            <Text style={styles.title}>Hỏi Đáp</Text>
+            <Text style={styles.title}>{t('question.title')}</Text>
 
             <View style={styles.form}>
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Câu hỏi của bạn</Text>
+                <Text style={styles.label}>{t('question.label')}</Text>
                 <TextInput
                   style={styles.textarea}
-                  placeholder="Nhập câu hỏi tại đây..."
+                  placeholder={t('question.placeholder')}
                   placeholderTextColor={colors.textMuted}
                   value={question}
                   onChangeText={setQuestion}
@@ -49,10 +51,10 @@ export default function QuestionScreen() {
                 />
               </View>
 
-              {success && <Text style={styles.success}>Đã gửi câu hỏi thành công!</Text>}
+              {success && <Text style={styles.success}>{t('question.sent')}</Text>}
 
               <GradientButton
-                title="Gửi Câu Hỏi"
+                title={t('question.submit')}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={!question.trim()}

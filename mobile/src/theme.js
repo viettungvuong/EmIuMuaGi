@@ -1,3 +1,5 @@
+import { dateLocale } from './i18n';
+
 // The web frontend's CSS variables (frontend/src/index.css), so both apps look alike
 export const colors = {
   bg: '#fff1f2', // soft pink page background
@@ -33,7 +35,7 @@ export function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
   try {
-    return date.toLocaleString('vi-VN', {
+    return date.toLocaleString(dateLocale(), {
       timeZone: 'Asia/Ho_Chi_Minh',
       month: 'short',
       day: 'numeric',

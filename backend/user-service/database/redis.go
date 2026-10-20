@@ -17,9 +17,6 @@ var RDB *redis.Client
 // everything else keep working.
 func InitRedis() {
 	url := strings.TrimSpace(os.Getenv("REDIS_URL"))
-	if url == "" {
-		url = "redis://localhost:6379/0"
-	}
 
 	opts, err := redis.ParseURL(url)
 	if err != nil {

@@ -40,6 +40,7 @@ func main() {
 	loadEnv()
 
 	database.InitDB()
+	database.InitRedis()
 
 	r := gin.Default()
 

@@ -95,20 +95,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	tokens, err := internal.GenerateTokens(user.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
-		return
-	}
+	// tokens, err := internal.GenerateTokens(user.ID)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+	// 	return
+	// }
 
-	// Set HttpOnly cookies for both tokens
-	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
-	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
+	// // Set HttpOnly cookies for both tokens
+	// c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
+	// c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"token":   tokens,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"message": "Login successful",
+	// 	"token":   tokens,
+	// })
 }
 
 func RefreshToken(c *gin.Context) {

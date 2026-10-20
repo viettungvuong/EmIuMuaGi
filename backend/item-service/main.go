@@ -11,7 +11,9 @@ package main
 // @name Authorization
 
 import (
+	"flag"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -42,6 +44,9 @@ func loadEnv() {
 
 func main() {
 	loadEnv()
+
+	port := flag.Int("port", internal.PreferredPort(8002), "port to try first; the next free one is used if it's taken")
+	flag.Parse()
 
 	database.InitDB()
 
@@ -77,11 +82,15 @@ func main() {
 		}
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8002"
+	// The API gateway starts this service with -port; when that port is taken the
+	// next free one is used, and the gateway is told which (see internal/listen.go)
+	ln, err := internal.ListenFrom(*port)
+	if err != nil {
+		log.Fatalf("Could not open a port: %v", err)
 	}
 
-	log.Printf("Starting item server on port %s...", port)
-	r.Run("0.0.0.0:" + port)
+	log.Printf("Starting item server on port %d...", ln.Addr().(*net.TCPAddr).Port)
+	if err := r.RunListener(ln); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -118,7 +118,7 @@ export default function LoginScreen() {
           <View style={styles.card}>
             <View style={styles.header}>
               <Text style={styles.brandIcon}>🎀</Text>
-              <Text style={styles.title}>EmIuMuaGi</Text>
+              <Text style={styles.title}>{t('auth.appName')}</Text>
               <Text style={styles.subtitle}>
                 {mode === 'verify' ? (
                   t('auth.verifySubtitle', { email: <Text style={styles.subtitleEmail}>{email}</Text> })
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   header: { alignItems: 'center', marginBottom: 32 },
   brandIcon: { fontSize: 48, marginBottom: 16 },
-  title: { fontFamily: fonts.bold, fontSize: 30, color: colors.text, marginBottom: 8, letterSpacing: -0.75 },
+  title: { fontFamily: fonts.bold, fontSize: 30, color: colors.text, marginBottom: 8, letterSpacing: -0.75, textAlign: 'center' },
   subtitle: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted, textAlign: 'center' },
   subtitleEmail: { fontFamily: fonts.semibold, color: colors.text },
   tabs: { flexDirection: 'row', backgroundColor: colors.surface2, padding: 4, borderRadius: 12, marginBottom: 32 },

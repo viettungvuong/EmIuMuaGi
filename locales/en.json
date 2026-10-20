@@ -29,6 +29,7 @@
     "others": "Others"
   },
   "auth": {
+    "appName": "My Love Wants Whaaat",
     "login": "Log In",
     "signup": "Sign Up",
     "confirm": "Confirm",

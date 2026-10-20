@@ -84,27 +84,28 @@ jobs:
             # Ensure the binaries are executable
             chmod +x backend/services/*-service/* backend/services/api-gateway/*
 
-            # Restart all services using PM2
+            # pm2 runs only the gateway now; it starts the other services itself and
+            # moves one to the next port when its usual one is taken
             pm2 delete gateway user-service item-service ai-service || true
+            cd backend/services/api-gateway && pm2 start api-gateway --name gateway --kill-timeout 10000
 
-            # Start each service from its respective folder (so it picks up its own .env)
-            cd backend/services/api-gateway && pm2 start api-gateway --name gateway
-            cd ../user-service && pm2 start user-service --name user-service
-            cd ../item-service && pm2 start item-service --name item-service
-            # Only the gateway on this machine talks to it, so listen on localhost only
-            cd ../ai-service && pm2 start .venv/bin/uvicorn --name ai-service --interpreter none -- main:app --host 127.0.0.1 --port 8004
-
-            # pm2 reports success even when the process crashes right after starting,
-            # so wait for the AI service to answer; if it never does, show why and fail
-            for i in $(seq 1 30); do
-              curl -sf -o /dev/null http://127.0.0.1:8004/ && break
+            # pm2 reports success even when a service crashes right after starting,
+            # so wait for the gateway to report a port for every service; if one
+            # never comes up, show why and fail
+            ready() {
+              ports=$(curl -sf http://127.0.0.1:8000/_gateway/services) || return 1
+              for name in user-service item-service ai-service; do
+                echo "$ports" | grep -qE "\"$name\":[1-9]" || return 1
+              done
+            }
+            for i in $(seq 1 60); do
+              ready && break
               sleep 1
             done
-            if curl -sf -o /dev/null http://127.0.0.1:8004/; then
-              echo "ai-service is up on port 8004"
+            if ready; then
+              echo "All services are up: $(curl -s http://127.0.0.1:8000/_gateway/services)"
             else
-              echo "ai-service did not start. Its pm2 status and last log lines:"
-              pm2 describe ai-service | grep -E "status|restarts|script path|exec cwd|error log path" || true
-              pm2 logs ai-service --lines 40 --nostream || true
+              echo "Not every service came up: $(curl -s http://127.0.0.1:8000/_gateway/services || echo 'gateway not answering')"
+              pm2 logs gateway --lines 60 --nostream || true
               exit 1
             fi

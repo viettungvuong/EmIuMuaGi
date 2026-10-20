@@ -8,22 +8,17 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
+	"os/signal"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-)
-
-type service struct{ name, target string }
-
-var (
-	userService = service{"user-service", "http://localhost:8001"}
-	itemService = service{"item-service", "http://localhost:8002"}
-	aiService   = service{"ai-service", "http://localhost:8004"}
 )
 
 // What a failed proxy call usually means, for the log
@@ -39,12 +34,17 @@ func proxyErrorHint(err error) string {
 	}
 }
 
-func proxy(s service) gin.HandlerFunc {
-	url, err := url.Parse(s.target)
-	if err != nil {
-		log.Fatal(err)
+// proxy sends the request to wherever s says it listens (see services.go)
+func proxy(s *service) gin.HandlerFunc {
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = "127.0.0.1:" + strconv.Itoa(servicePort(s.name))
+			if _, ok := req.Header["User-Agent"]; !ok {
+				req.Header.Set("User-Agent", "") // keep Go's default out, like NewSingleHostReverseProxy
+			}
+		},
 	}
-	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	// The default handler only logs "http: proxy error: …"; name the service and the likely cause
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
@@ -53,11 +53,16 @@ func proxy(s service) gin.HandlerFunc {
 		if errors.Is(err, context.Canceled) {
 			return // the client went away mid-request, not the service's fault
 		}
-		log.Printf("proxy: %s %s -> %s at %s failed: %v (%s)", r.Method, r.URL.Path, s.name, s.target, err, proxyErrorHint(err))
+		log.Printf("proxy: %s %s -> %s at %s failed: %v (%s)", r.Method, r.URL.Path, s.name, r.URL.Host, err, proxyErrorHint(err))
 		fmt.Fprintf(w, `{"error":"%s is unavailable"}`, s.name)
 	}
 
 	return func(c *gin.Context) {
+		// Still starting, or restarting after a crash
+		if servicePort(s.name) == 0 {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": s.name + " is unavailable"})
+			return
+		}
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
 }
@@ -112,11 +117,44 @@ func main() {
 		c.JSON(http.StatusNotFound, gin.H{"error": "API route not found on gateway"})
 	})
 
+	// Which port each service ended up on, for checking from this machine
+	// (nginx only passes /api/ through)
+	r.GET("/_gateway/services", func(c *gin.Context) {
+		c.JSON(http.StatusOK, servicePorts())
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8000"
 	}
 
-	log.Printf("Starting API Gateway on port %s...", port)
-	r.Run("0.0.0.0:" + port)
+	// Ctrl+C or pm2 stopping the gateway stops the services too
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var running sync.WaitGroup
+	for _, s := range services {
+		running.Add(1)
+		go func() {
+			defer running.Done()
+			s.supervise(ctx)
+		}()
+	}
+
+	// The gateway keeps its own port: the apps, Vite and nginx all point at it
+	server := &http.Server{Addr: "0.0.0.0:" + port, Handler: r}
+	go func() {
+		log.Printf("Starting API Gateway on port %s...", port)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("API Gateway could not serve on port %s: %v", port, err)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Stopping the API Gateway and its services...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = server.Shutdown(shutdownCtx)
+	running.Wait()
 }

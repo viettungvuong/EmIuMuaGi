@@ -117,7 +117,7 @@ export default function AuthPage({ setIsAuth }) {
       <div className="auth-card">
         <div className="auth-header">
           <div className="brand-icon">🎀</div>
-          <h1 className="auth-title">EmIuMuaGi</h1>
+          <h1 className="auth-title">{t('auth.appName')}</h1>
           <p className="auth-subtitle">
             {mode === 'verify' ? (
               t('auth.verifySubtitle', { email: <strong>{email}</strong> })

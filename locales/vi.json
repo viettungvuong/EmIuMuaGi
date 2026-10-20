@@ -29,6 +29,7 @@
     "others": "Khác"
   },
   "auth": {
+    "appName": "EmIuMuaGi",
     "login": "Đăng Nhập",
     "signup": "Đăng Ký",
     "confirm": "Xác Nhận",

@@ -6,6 +6,7 @@ import MainPage from './pages/MainPage';
 import AddPage from './pages/AddPage';
 import QuestionPage from './pages/QuestionPage';
 import HistoryPage from './pages/HistoryPage';
+import SearchPage from './pages/SearchPage';
 
 import PartnerPage from './pages/PartnerPage';
 
@@ -87,6 +88,14 @@ export default function App() {
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
               <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute isAuth={isAuth} loading={loading}>
+              <SearchPage />
             </ProtectedRoute>
           }
         />

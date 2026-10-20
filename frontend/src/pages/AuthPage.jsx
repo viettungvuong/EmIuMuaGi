@@ -3,6 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import client from '../api/client';
 import '../styles/AuthPage.css';
 
+// Mistakes the user fixes right here (a wrong or expired code, a taken username
+// or email), shown larger so they aren't missed
+const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
+
 export default function AuthPage({ setIsAuth }) {
   const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
   const [username, setUsername] = useState('');
@@ -190,7 +194,7 @@ export default function AuthPage({ setIsAuth }) {
             </>
           )}
 
-          {error && <p className={`error-msg ${error.includes('thành công') ? 'success-msg' : ''}`} style={error.includes('thành công') ? {color: '#10b981'} : {}}>{error}</p>}
+          {error && <p className={`error-msg ${error.includes('thành công') ? 'success-msg' : ''} ${BIG_ERRORS.includes(error) ? 'error-msg-big' : ''}`} style={error.includes('thành công') ? {color: '#10b981'} : {}}>{error}</p>}
 
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? (

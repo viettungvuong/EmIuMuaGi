@@ -62,11 +62,13 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // A 401 (Unauthorized) we haven't tried to recover from yet
+    // A 401 (Unauthorized) we haven't tried to recover from yet. Login and
+    // signup answer 401 for a wrong password or OTP, not for an expired session.
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.includes('/api/auth/login') &&
+      !originalRequest.url.includes('/api/auth/signup') &&
       !originalRequest.url.includes('/api/auth/refresh')
     ) {
       originalRequest._retry = true;

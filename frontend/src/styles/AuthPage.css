@@ -133,6 +133,12 @@
   padding-left: calc(1rem + 0.5em);
 }
 
+/* A wrong or expired code, or a taken username or email */
+.error-msg-big {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
 .auth-submit {
   margin-top: 1rem;
   padding: 0.875rem;

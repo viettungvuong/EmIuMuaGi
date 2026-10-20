@@ -43,8 +43,8 @@ func GenerateOTP(email string) error {
 	}
 
 	minutes := int(models.OTPTTL.Minutes())
-	body := fmt.Sprintf("Mã xác thực EmIuMuaGi của bạn là: %s\n\nMã có hiệu lực trong %d phút. Nếu bạn không yêu cầu mã này, hãy bỏ qua email này.", code, minutes)
-	if err := internal.SendEmail(email, "Mã xác thực EmIuMuaGi", body); err != nil {
+	body := fmt.Sprintf("Your EmIuMuaGi verification code is: %s\n\nIt expires in %d minutes. If you didn't request this code, you can ignore this email.", code, minutes)
+	if err := internal.SendEmail(email, "Your EmIuMuaGi verification code", body); err != nil {
 		// Nobody received this code, so don't leave it valid
 		database.RDB.Del(ctx, key)
 		return err

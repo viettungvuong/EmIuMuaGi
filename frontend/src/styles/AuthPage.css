@@ -53,6 +53,12 @@
   font-size: 0.9375rem;
 }
 
+.auth-subtitle strong {
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere; /* a long email wraps instead of widening the card */
+}
+
 .auth-tabs {
   display: flex;
   background: var(--surface-2);
@@ -117,6 +123,16 @@
   box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1);
 }
 
+/* One box for the whole code, so pasting it or letting the phone fill it in works */
+.otp-input {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  /* letter-spacing also adds space after the last digit; this evens it out so the code sits centered */
+  padding-left: calc(1rem + 0.5em);
+}
+
 .auth-submit {
   margin-top: 1rem;
   padding: 0.875rem;
@@ -155,6 +171,10 @@
   text-align: center;
   font-size: 0.875rem;
   color: var(--text-muted);
+}
+
+.auth-footer p + p {
+  margin-top: 0.5rem;
 }
 
 .auth-link {

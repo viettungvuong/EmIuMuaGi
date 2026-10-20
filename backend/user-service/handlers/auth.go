@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -24,14 +25,20 @@ type SignupRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// SignUp's fields again, plus the OTP it emailed
+type VerifySignupRequest struct {
+	SignupRequest
+	OTP string `json:"otp" binding:"required,len=6,numeric"`
+}
+
 type AuthResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
 
-// SignUp handles user registration
+// SignUp starts registration: if the username and email are free, it emails an OTP
 // @Summary Register a new user
-// @Description Create a new user with username, email, and password
+// @Description Check that the username and email are free, then email a 6-digit OTP. Send it to /auth/signup/verify to create the user.
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -39,11 +46,63 @@ type AuthResponse struct {
 // @Success 201 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 409 {object} map[string]string
+// @Failure 500 {object} map[string]string
 // @Router /auth/signup [post]
 func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Turn away a taken username or email now, not after the user has fetched the code
+	var taken int64
+	if err := database.DB.Model(&models.User{}).
+		Where("id = ? OR email = ?", req.Username, req.Email).
+		Count(&taken).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not check username and email"})
+		return
+	}
+	if taken > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already exists"})
+		return
+	}
+
+	if err := GenerateOTP(req.Email); err != nil {
+		log.Printf("SignUp: could not send OTP to %s: %v", req.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send OTP: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "OTP sent successfully"})
+}
+
+// VerifySignUp creates the user once the OTP that SignUp emailed checks out
+// @Summary Verify signup OTP
+// @Description Check the OTP emailed by /auth/signup, then create the user with username, email, and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param signup body VerifySignupRequest true "Signup details and OTP"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Router /auth/signup/verify [post]
+func VerifySignUp(c *gin.Context) {
+	var req VerifySignupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	ok, err := VerifyOTP(req.Email, req.OTP)
+	if err != nil {
+		log.Printf("VerifySignUp: could not verify OTP for %s: %v", req.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not verify OTP: " + err.Error()})
+		return
+	}
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired OTP"})
 		return
 	}
 
@@ -95,20 +154,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// tokens, err := internal.GenerateTokens(user.ID)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
-	// 	return
-	// }
+	tokens, err := internal.GenerateTokens(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		return
+	}
 
-	// // Set HttpOnly cookies for both tokens
-	// c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
-	// c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
+	// Set HttpOnly cookies for both tokens
+	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
+	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"message": "Login successful",
-	// 	"token":   tokens,
-	// })
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   tokens,
+	})
 }
 
 func RefreshToken(c *gin.Context) {

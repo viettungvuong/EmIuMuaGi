@@ -42,3 +42,6 @@ yarn-error.*
 
 # The repo-wide *.png ignore would leave out the app icon and splash image
 !assets/*.png
+
+# Play upload keystore and its passwords
+/credentials

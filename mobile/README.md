@@ -11,15 +11,17 @@ npx expo start
 
 Scan the QR code with Expo Go (or press `i` / `a` for a simulator). Start the backend first (`cd ../backend && bash start.sh`, which also starts the AI service on port 8004).
 
-### On the iOS simulator
+### On the iOS simulator or Android emulator
 
 ```sh
-./simulator-test.sh              # the booted simulator, else the first iPhone
-./simulator-test.sh "iPhone 15"  # a specific one
-# or: npm run simulator-test
+./simulator-test.sh                            # the booted simulator, else the first iPhone
+./simulator-test.sh "iPhone 15"                # a specific one
+./simulator-test.sh --android                  # the running emulator, else the first AVD
+./simulator-test.sh --android "Pixel_8_API_35" # a specific AVD
+# or: npm run simulator-test / npm run emulator-test
 ```
 
-It boots the simulator if needed, warns if the backend isn't up, starts Metro on the first free port from 8081 and opens the app in Expo Go (installing Expo Go the first time).
+It boots the simulator or emulator if needed (on Android it also forwards the emulator's `localhost` to this Mac's backend), warns if the backend isn't up, starts Metro on the first free port from 8081 and opens the app in Expo Go (installing Expo Go the first time).
 
 ## Which server it talks to
 

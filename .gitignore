@@ -30,3 +30,6 @@ frontend/.env.local
 backend/item-service/item-service
 backend/api-gateway/api-gateway
 backend/user-service/user-service
+# Built Play artifacts
+play-store/*.aab
+play-store/*.apk

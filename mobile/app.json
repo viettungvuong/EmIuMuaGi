@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.viettungvuong.emiumuagi"
+      "package": "com.viettungvuong.emiumuagi",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -32,6 +33,14 @@
         "expo-image-picker",
         {
           "photosPermission": "Cho phép EmIuMuaGi chọn ảnh và video để đính kèm vào món đồ."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

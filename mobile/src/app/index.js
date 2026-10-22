@@ -2,7 +2,18 @@
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Animated,
+  Linking,
+  PanResponder,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WEB_URL } from '../api/config';
@@ -16,6 +27,9 @@ const ITEM_TYPES = ['clothes', 'food_and_drink', 'restaurant', 'others'];
 const typeLabel = (type) => (ITEM_TYPES.includes(type) ? t(`types.${type}`) : type);
 
 const TYPE_COLOR = '#cb1d7a';
+
+// How far left a card must be swiped before letting go marks it bought
+const SWIPE_TRIGGER = 100;
 
 // What the backend sends as the history ID when it couldn't record the purchase
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
@@ -292,6 +306,41 @@ export default function MainScreen() {
 function ItemCard({ item, currentUser, onBuy, onDelete }) {
   const info = subInfo(item);
 
+  // Swipe left to buy: the card slides over a green strip, and letting go past
+  // SWIPE_TRIGGER opens the same "did you buy it?" dialog as the button
+  // (onBuy is kept from the first render: it only opens the dialog for this item's id)
+  const [translateX] = useState(() => new Animated.Value(0));
+  const [swipe] = useState(() => {
+    const springBack = () => Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+    return PanResponder.create({
+      // Only clearly horizontal, leftward drags, so the list still scrolls
+      onMoveShouldSetPanResponder: (_, g) => g.dx < -10 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, g) => translateX.setValue(Math.min(0, g.dx)),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -SWIPE_TRIGGER) onBuy();
+        springBack();
+      },
+      onPanResponderTerminate: springBack,
+    });
+  });
+  const actionOpacity = translateX.interpolate({ inputRange: [-SWIPE_TRIGGER, 0], outputRange: [1, 0], extrapolate: 'clamp' });
+
+  if (item.bought) return <CardBody item={item} info={info} currentUser={currentUser} onBuy={onBuy} onDelete={onDelete} />;
+
+  return (
+    <View>
+      <Animated.View style={[styles.swipeAction, { opacity: actionOpacity }]}>
+        <Text style={styles.swipeActionText}>✓ {t('main.bought')}</Text>
+      </Animated.View>
+      <Animated.View style={{ transform: [{ translateX }] }} {...swipe.panHandlers}>
+        <CardBody item={item} info={info} currentUser={currentUser} onBuy={onBuy} onDelete={onDelete} />
+      </Animated.View>
+    </View>
+  );
+}
+
+function CardBody({ item, info, currentUser, onBuy, onDelete }) {
   return (
     <View style={[styles.card, item.bought && { opacity: 0.6 }]}>
       <View style={styles.cardHeader}>
@@ -449,6 +498,15 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
   },
+  swipeAction: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 24,
+    backgroundColor: colors.success,
+    borderRadius: radius.lg,
+  },
+  swipeActionText: { fontFamily: fonts.bold, fontSize: 15, color: '#fff' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
   itemName: { fontFamily: fonts.bold, fontSize: 17, color: colors.text, flexShrink: 1 },
   itemNameBought: { textDecorationLine: 'line-through', color: colors.textMuted },

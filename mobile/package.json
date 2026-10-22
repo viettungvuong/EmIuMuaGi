@@ -7,6 +7,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "axios": "^1.20.0",
     "expo": "~57.0.26",
+    "expo-build-properties": "~57.0.22",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.20",
     "expo-crypto": "~57.0.3",
@@ -31,7 +32,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "simulator-test": "bash simulator-test.sh",
-    "emulator-test": "bash emulator-test.sh"
+    "emulator-test": "bash simulator-test.sh --android"
   },
   "private": true,
   "devDependencies": {

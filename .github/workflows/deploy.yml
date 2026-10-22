@@ -9,6 +9,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # 0. Stop before building if a secret the services need isn't set in GitHub
+      - name: Check Secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+        run: |
+          missing=""
+          for name in DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET REDIS_URL SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_FROM; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing"
+            exit 1
+          fi
+
       # 1. Build Frontend
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,10 +76,22 @@ jobs:
       # 4. Restart Services
       - name: Restart Services on VPS
         uses: appleboy/ssh-action@master
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
+          # Exported into the script below, which writes them to each service's .env
+          envs: DATABASE_URL,JWT_SECRET,JWT_REFRESH_SECRET,REDIS_URL,SMTP_HOST,SMTP_PORT,SMTP_USERNAME,SMTP_PASSWORD,SMTP_FROM
           # Default is 10m; leaves room for the AI service's first-time setup
           # (a fresh .venv) on a slow VPS. Normal deploys take well under a minute.
           command_timeout: 30m
@@ -65,6 +100,16 @@ jobs:
 
             # Setup Folder Structure (if it doesn't exist)
             mkdir -p backend/services/item-service backend/services/user-service backend/services/api-gateway backend/services/ai-service
+
+            # Each service's .env, from the GitHub secrets (readable only by this user).
+            # Single-quoted so the dotenv loader takes the values literally.
+            write_env() {
+              file=$1; shift
+              ( umask 077; for name in "$@"; do eval "value=\$$name"; printf "%s='%s'\n" "$name" "$value"; done > "$file" )
+            }
+            write_env backend/services/user-service/.env \
+              DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET REDIS_URL SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_FROM
+            write_env backend/services/item-service/.env DATABASE_URL JWT_SECRET
 
             # Apply new backend/migrations/<YYYYMMDD>_*.sql files before the new binaries
             # go live. If one fails, the deploy stops here and the old services keep running.

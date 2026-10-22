@@ -7,6 +7,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Secrets come from the "production" environment (Settings → Environments)
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +30,7 @@ jobs:
             [ -n "${!name}" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
-            echo "::error::Missing repository secrets:$missing"
+            echo "::error::Missing secrets in the production environment:$missing"
             exit 1
           fi
 

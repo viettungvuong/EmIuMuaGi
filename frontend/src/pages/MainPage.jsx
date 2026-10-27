@@ -204,9 +204,6 @@ export default function MainPage({ setIsAuth }) {
           <span className="user-welcome">
             {t("common.hello", { name: localStorage.getItem("username") || t("common.you") })}
           </span>
-          <button className="history-link-btn" onClick={() => navigate("/search")}>
-            {t("common.searchOnline")}
-          </button>
           <button className="history-link-btn" onClick={() => navigate("/history")}>
             {t("common.history")}
           </button>

@@ -63,6 +63,8 @@
   },
   "main": {
     "partnerLabel": "Người ấy của bạn:",
+    "removePartner": "Hủy kết nối",
+    "confirmRemovePartner": "Bạn có chắc muốn hủy kết nối với người ấy không?",
     "inviteLabel": "Chưa có người ấy? Gửi link này nha:",
     "copy": "Copy",
     "copied": "✓ Đã copy",

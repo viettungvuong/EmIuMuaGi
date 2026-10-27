@@ -191,6 +191,17 @@ export default function MainPage({ setIsAuth }) {
     document.body.removeChild(textArea);
   };
 
+  const handleRemovePartner = async () => {
+    if (!window.confirm(t("main.confirmRemovePartner"))) return;
+    try {
+      await client.delete("/api/partner");
+      await Promise.all([fetchItems(), fetchUserData()]);
+    } catch (err) {
+      console.error("Failed to remove partner:", err);
+      alert(err.response?.data?.error || t("errors.Could not remove your partner") || "Failed to remove partner");
+    }
+  };
+
   return (
     <div className="main-page">
       <header className="main-header">
@@ -233,6 +244,9 @@ export default function MainPage({ setIsAuth }) {
                     <span className="partner-name">{userData.partner.id}</span>
                     <span className="partner-email">{userData.partner.email}</span>
                   </div>
+                  <button className="partner-remove-btn" onClick={handleRemovePartner}>
+                    {t("main.removePartner")}
+                  </button>
                 </div>
               ) : (
                 <div className="invite-link-card">

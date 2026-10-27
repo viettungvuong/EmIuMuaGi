@@ -91,6 +91,7 @@ func main() {
 
 	// Redirect based on endpoints
 	r.Any("/api/auth/*path", proxy(userService))
+	r.Any("/api/partner", proxy(userService))
 	r.Any("/api/partner/*path", proxy(userService))
 	r.Any("/api/me", proxy(userService))
 	r.Any("/api/items", proxy(itemService))

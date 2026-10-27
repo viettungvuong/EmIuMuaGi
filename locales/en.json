@@ -63,6 +63,8 @@
   },
   "main": {
     "partnerLabel": "Your partner:",
+    "removePartner": "Unlink",
+    "confirmRemovePartner": "Are you sure you want to unlink from your partner?",
     "inviteLabel": "No partner yet? Send them this link:",
     "copy": "Copy",
     "copied": "✓ Copied",

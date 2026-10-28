@@ -47,6 +47,14 @@
   padding: 32px;
   max-width: 560px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-section-label {
@@ -109,11 +117,137 @@
   font-weight: 700;
 }
 
+/* Password Change Card */
+.password-change-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.password-form-error {
+  padding: 10px 14px;
+  background: rgba(255, 77, 109, 0.1);
+  border: 1px solid rgba(255, 77, 109, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 0.88rem;
+  font-weight: 500;
+  animation: shake 0.3s ease;
+}
+
+.password-form-success {
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm);
+  color: #10b981;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.password-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.password-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-left: 2px;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 12px 44px 12px 14px;
+  background: var(--surface-2);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.password-input:focus {
+  outline: none;
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.12);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.password-toggle-btn:hover {
+  opacity: 0.8;
+}
+
+.password-submit-btn {
+  margin-top: 8px;
+  padding: 13px 20px;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.25);
+}
+
+.password-submit-btn:hover:not(:disabled) {
+  background: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
+}
+
+.password-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 600px) {
   .settings-header {
     padding: 20px 16px;
   }
   .settings-container {
     padding: 24px 16px;
+    gap: 28px;
+  }
+  .password-change-card {
+    padding: 18px 16px;
   }
 }

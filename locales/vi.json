@@ -177,9 +177,25 @@
   },
   "settings": {
     "title": "Cài Đặt",
-    "language": "Ngôn ngữ"
+    "language": "Ngôn ngữ",
+    "changePassword": "Đổi Mật Khẩu",
+    "oldPassword": "Mật khẩu hiện tại",
+    "oldPasswordPlaceholder": "Nhập mật khẩu hiện tại...",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới...",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới...",
+    "updatePasswordBtn": "Cập nhật mật khẩu",
+    "passwordMismatch": "Mật khẩu mới không trùng khớp",
+    "passwordSameAsOld": "Mật khẩu mới không được trùng với mật khẩu cũ",
+    "passwordChanged": "Đổi mật khẩu thành công!"
   },
   "server": {
+    "Incorrect old password": "Mật khẩu hiện tại không chính xác",
+    "Both oldPassword and newPassword are required": "Vui lòng nhập cả mật khẩu cũ và mới",
+    "Could not hash new password": "Không thể xử lý mật khẩu mới",
+    "Could not update password": "Không thể cập nhật mật khẩu",
+    "Password changed successfully": "Đổi mật khẩu thành công",
     "Invalid request": "Yêu cầu không hợp lệ",
     "Invalid password": "Sai mật khẩu",
     "User not found": "Không tìm thấy người dùng",

@@ -66,6 +66,7 @@ func main() {
 			auth.POST("/signup/verify", handlers.VerifySignUp) // create the user once the emailed OTP checks out
 			auth.GET("/refresh", handlers.RefreshToken)        // get Refresh Token directly from the token
 			auth.POST("/logout", handlers.SignOut)             // clear tokens and session
+			auth.POST("/change-password", handlers.ChangePassword)
 		}
 
 		partner := api.Group("/partner")

@@ -60,7 +60,8 @@ client.interceptors.response.use(
       !originalRequest._retry &&
       !originalRequest.url.includes("/api/auth/login") &&
       !originalRequest.url.includes("/api/auth/signup") &&
-      !originalRequest.url.includes("/api/auth/refresh")
+      !originalRequest.url.includes("/api/auth/refresh") &&
+      !originalRequest.url.includes("/api/auth/change-password")
     ) {
       originalRequest._retry = true;
 

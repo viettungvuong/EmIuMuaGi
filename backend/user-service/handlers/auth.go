@@ -3,9 +3,9 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"time"
-
 	"os"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -34,6 +34,13 @@ type VerifySignupRequest struct {
 type AuthResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword      string `json:"oldPassword"`
+	NewPassword      string `json:"newPassword"`
+	OldPasswordSnake string `json:"old_password,omitempty"`
+	NewPasswordSnake string `json:"new_password,omitempty"`
 }
 
 // SignUp starts registration: if the username and email are free, it emails an OTP
@@ -231,6 +238,103 @@ func CheckSignedIn(c *gin.Context) {
 		"authenticated": true,
 		"username":      username,
 	})
+}
+
+// ChangePassword verifies the user's current password and updates it to a new one
+// @Summary Change user password
+// @Description Verify old password against the hashed password in the database and update to the new password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body ChangePasswordRequest true "Old and new password"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /auth/change-password [post]
+func ChangePassword(c *gin.Context) {
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if req.OldPassword == "" {
+		req.OldPassword = req.OldPasswordSnake
+	}
+	if req.NewPassword == "" {
+		req.NewPassword = req.NewPasswordSnake
+	}
+
+	if req.OldPassword == "" || req.NewPassword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Both oldPassword and newPassword are required"})
+		return
+	}
+
+	// Extract and verify JWT from access_token cookie or Authorization header
+	tokenString, err := c.Cookie("access_token")
+	if err != nil || tokenString == "" {
+		authHeader := c.GetHeader("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+	}
+
+	var username string
+	if tokenString != "" {
+		claims := &internal.Claims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("JWT_SECRET")), nil
+		})
+		if err == nil && token.Valid {
+			username = claims.Username
+		}
+	}
+
+	// If access token is missing or expired, try the refresh token JWT
+	if username == "" {
+		if refreshToken, err := c.Cookie("refresh_token"); err == nil && refreshToken != "" {
+			refreshClaims := &internal.Claims{}
+			token, err := jwt.ParseWithClaims(refreshToken, refreshClaims, func(token *jwt.Token) (interface{}, error) {
+				return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+			})
+			if err == nil && token.Valid {
+				username = refreshClaims.Username
+			}
+		}
+	}
+
+	if username == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("id = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Verify oldPassword against hashed password stored in the database
+	if !internal.CheckPasswordHash(req.OldPassword, user.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect old password"})
+		return
+	}
+
+	// Only set new password if old password was correct
+	hashedNewPassword, err := internal.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash new password"})
+		return
+	}
+
+	if err := database.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("password", hashedNewPassword).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }
 
 func SignOut(c *gin.Context) {

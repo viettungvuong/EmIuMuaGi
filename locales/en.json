@@ -177,9 +177,25 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "changePassword": "Change Password",
+    "oldPassword": "Current Password",
+    "oldPasswordPlaceholder": "Enter current password...",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter new password...",
+    "confirmPassword": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Confirm new password...",
+    "updatePasswordBtn": "Update Password",
+    "passwordMismatch": "New passwords do not match",
+    "passwordSameAsOld": "New password cannot be the same as current password",
+    "passwordChanged": "Password changed successfully!"
   },
   "server": {
+    "Incorrect old password": "Incorrect current password",
+    "Both oldPassword and newPassword are required": "Current and new passwords are required",
+    "Could not hash new password": "Could not process new password",
+    "Could not update password": "Could not update password",
+    "Password changed successfully": "Password changed successfully",
     "Invalid request": "Invalid request",
     "Invalid password": "Wrong password",
     "User not found": "User not found",

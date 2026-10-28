@@ -32,7 +32,7 @@ func InitDB() {
 		defer sqlDB.Close()
 	}
 
-	dbName := "emiumuagi_item"
+	dbName := "emiumuagi_user"
 
 	// 2. Check if the database already exists
 	var count int64

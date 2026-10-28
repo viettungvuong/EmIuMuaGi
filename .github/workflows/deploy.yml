@@ -72,7 +72,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
-          source: "frontend/dist/*,backend/bin/*,backend/migrations/*,ai-service.tgz"
+          source: "frontend/dist/*,backend/bin/*,ai-service.tgz"
           target: "~/emiumuagi"
 
       # 4. Restart Services
@@ -112,10 +112,6 @@ jobs:
             write_env backend/services/user-service/.env \
               DATABASE_URL JWT_SECRET JWT_REFRESH_SECRET REDIS_URL SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_FROM
             write_env backend/services/item-service/.env DATABASE_URL JWT_SECRET
-
-            # Apply new backend/migrations/<YYYYMMDD>_*.sql files before the new binaries
-            # go live. If one fails, the deploy stops here and the old services keep running.
-            bash backend/migrations/migrate.sh backend/migrations backend/services/item-service/.env || exit 1
 
             # AI service: replace its code (keeping .venv), then
             # update its packages. A failure stops the deploy like a migration does.

@@ -1,8 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/viettungvuong/emiumuagi-user-service/models"
@@ -18,10 +20,38 @@ func InitDB() {
 		log.Fatal("DATABASE_URL is not set")
 	}
 
-	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// 1. Connect to the default 'postgres' database to check/create the target database
+	defaultDSN := regexp.MustCompile(`dbname=[^\s]+`).ReplaceAllString(dsn, "dbname=postgres")
+	tempDB, err := gorm.Open(postgres.Open(defaultDSN), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to connect to postgres server:", err)
+	}
+
+	// Ensure the underlying sql.DB gets closed when done
+	if sqlDB, err := tempDB.DB(); err == nil {
+		defer sqlDB.Close()
+	}
+
+	dbName := "emiumuagi_item"
+
+	// 2. Check if the database already exists
+	var count int64
+	tempDB.Raw("SELECT count(*) FROM pg_database WHERE datname = ?", dbName).Scan(&count)
+
+	if count == 0 {
+		// PostgreSQL does not support IF NOT EXISTS, so we create it explicitly here
+		// Note: Database names cannot be parameterized with '?', so fmt.Sprintf is required for identifiers.
+		err = tempDB.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName)).Error
+		if err != nil {
+			log.Fatalf("Failed to create database %s: %v", dbName, err)
+		}
+	}
+
+	// 3. Re-connect to the actual target database
+	targetDSN := regexp.MustCompile(`dbname=[^\s]+`).ReplaceAllString(dsn, "dbname="+dbName)
+	DB, err = gorm.Open(postgres.Open(targetDSN), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database %s: %v", dbName, err)
 	}
 
 	// Older rows can hold half-finished links from before linking became

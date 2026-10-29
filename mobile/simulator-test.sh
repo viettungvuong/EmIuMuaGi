@@ -8,21 +8,43 @@
 #   ./simulator-test.sh "iPhone 15"                # a specific simulator, by name
 #   ./simulator-test.sh --android                  # the running emulator, else the first AVD
 #   ./simulator-test.sh --android "Pixel_8_API_35" # a specific AVD, by name (see: emulator -list-avds)
+#   ./simulator-test.sh --e prod                   # against the production server (default: local)
+#
+# --e picks the backend: local (.env, else the gateway on this Mac) or prod
+# (https://emiumuagi.online). Also accepted as -e, --env or --e=prod.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-platform=ios
-device=""
-for arg in "$@"; do
-    case "$arg" in
-        --android) platform=android ;;
-        --ios) platform=ios ;;
-        *) device="$arg" ;;
-    esac
-done
-
 log() { echo "simulator-test: $*"; }
 die() { echo "simulator-test: $*" >&2; exit 1; }
+
+platform=ios
+device=""
+env=local
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --android) platform=android ;;
+        --ios) platform=ios ;;
+        -e|--e|--env)
+            [[ $# -ge 2 ]] || die "$1 needs a value: local or prod"
+            env="$2"
+            shift
+            ;;
+        -e=*|--e=*|--env=*) env="${1#*=}" ;;
+        *) device="$1" ;;
+    esac
+    shift
+done
+
+PROD_URL=https://emiumuagi.online
+case "$env" in
+    local) ;;
+    prod)
+        # The shell wins over .env, for Expo and for step 2 below
+        export EXPO_PUBLIC_API_URL="$PROD_URL" EXPO_PUBLIC_WEB_URL="$PROD_URL"
+        ;;
+    *) die "unknown environment '$env' (use local or prod)" ;;
+esac
 
 UUID_RE='[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}'
 

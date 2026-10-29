@@ -31,6 +31,10 @@ export default function LoginScreen() {
       setError(t('auth.fillAll')); // the web form's `required` does this
       return;
     }
+    if (mode === 'signup' && password.length < 6) {
+      setError(t('auth.passwordTooShort')); // the web input's `minLength` does this
+      return;
+    }
     if (mode === 'verify' && otp.length !== 6) {
       setError(t('auth.otpLength')); // the web input's `pattern` does this
       return;

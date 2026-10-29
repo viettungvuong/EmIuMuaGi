@@ -18,6 +18,7 @@ Scan the QR code with Expo Go (or press `i` / `a` for a simulator). Start the ba
 ./simulator-test.sh "iPhone 15"                # a specific one
 ./simulator-test.sh --android                  # the running emulator, else the first AVD
 ./simulator-test.sh --android "Pixel_8_API_35" # a specific AVD
+./simulator-test.sh --e prod                   # against https://emiumuagi.online (default: local)
 # or: npm run simulator-test / npm run emulator-test
 ```
 

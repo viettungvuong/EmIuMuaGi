@@ -196,6 +196,8 @@ export default function AuthPage({ setIsAuth }) {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  minLength={mode === 'signup' ? 6 : undefined}
+                  title={mode === 'signup' ? t('auth.passwordTooShort') : undefined}
                   required
                 />
               </div>

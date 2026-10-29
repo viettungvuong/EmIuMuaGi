@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -29,6 +30,16 @@ type SignupRequest struct {
 type VerifySignupRequest struct {
 	SignupRequest
 	OTP string `json:"otp" binding:"required,len=6,numeric"`
+}
+
+const minPasswordLength = 6
+
+func passwordTooShort(c *gin.Context, password string) bool {
+	if utf8.RuneCountInString(password) < minPasswordLength {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters"})
+		return true
+	}
+	return false
 }
 
 type AuthResponse struct {
@@ -59,6 +70,9 @@ func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	if passwordTooShort(c, req.Password) {
 		return
 	}
 
@@ -99,6 +113,9 @@ func VerifySignUp(c *gin.Context) {
 	var req VerifySignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	if passwordTooShort(c, req.Password) {
 		return
 	}
 
@@ -269,6 +286,9 @@ func ChangePassword(c *gin.Context) {
 
 	if req.OldPassword == "" || req.NewPassword == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Both oldPassword and newPassword are required"})
+		return
+	}
+	if passwordTooShort(c, req.NewPassword) {
 		return
 	}
 

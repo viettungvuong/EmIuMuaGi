@@ -30,6 +30,11 @@ export default function SettingsPage() {
       return;
     }
 
+    if (newPassword.length < 6) {
+      setError(t("auth.passwordTooShort"));
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError(t("settings.passwordMismatch"));
       return;

@@ -3,7 +3,7 @@
 Package: `com.viettungvuong.emiumuagi` · Version 1.0.0 (versionCode 1)
 
 ## App name (max 30)
-EmIuMuaGi - Em Iu Muốn Gì
+EmIuMuaGi - Em Iu Mua Gì
 
 ## Short description (max 80)
 VI: Danh sách mong muốn chung cho các cặp đôi: em muốn gì, anh mua nấy.

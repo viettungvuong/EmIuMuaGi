@@ -330,9 +330,8 @@ export default function AddPage() {
   return (
     <div className="add-page">
       <div className="add-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div>
           <button className="back-btn" onClick={() => navigate('/')}>{t('common.back')}</button>
-          <button className="back-btn" style={{ color: 'var(--accent)' }} onClick={() => navigate('/question')}>{t('add.question')}</button>
         </div>
         <h1 className="add-title">{t('add.title')}</h1>
 
@@ -476,7 +475,6 @@ export default function AddPage() {
                 <select className="field-input" value={form.time_to_eat} onChange={onTimeToEatChange}>
                   <option value="">{t('add.noDate')}</option>
                   <option value="pick_date">{t('add.pickDate')}</option>
-                  <option value="auto_schedule">{t('add.autoSchedule')}</option>
                 </select>
                 {form.time_to_eat === 'pick_date' && (
                   <button type="button" className={`field-input pick-date-btn ${pickedAt ? 'picked' : ''}`} onClick={openPicker}>

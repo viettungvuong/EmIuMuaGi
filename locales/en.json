@@ -128,7 +128,6 @@
   },
   "add": {
     "title": "Add New Item",
-    "question": "Q&A →",
     "link": "Link",
     "lookingUp": "(getting the address from {source}…)",
     "linkPlaceholderRestaurant": "TikTok or Google Maps link…",
@@ -160,7 +159,6 @@
     "timeToEat": "When to eat",
     "noDate": "No date",
     "pickDate": "Pick a date",
-    "autoSchedule": "Schedule automatically",
     "pickDateButton": "Choose a day and time",
     "change": "Change",
     "pickDateRequired": "Pick a day and time for the date first.",
@@ -189,13 +187,6 @@
     "feeling": "What you think:",
     "placeholder": "Absolutely perfect...",
     "submit": "Send Rating"
-  },
-  "question": {
-    "title": "Q&A",
-    "label": "Your question",
-    "placeholder": "Type your question here...",
-    "sent": "Question sent!",
-    "submit": "Send Question"
   },
   "partner": {
     "welcome": "🎊 Welcome 🎊",

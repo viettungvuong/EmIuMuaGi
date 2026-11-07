@@ -14,7 +14,7 @@ export const colors = {
   success: '#10b981',
   boy: '#3b82f6', // his items, next to accent pink for hers
   partner: '#8b5cf6', // your partner's dates on the calendar, next to your pink
-  // The Add / Question pages: a dark card on a plain pink page
+  // The Add page: a dark card on a plain pink page
   pinkPage: '#ffc0cb',
   darkCard: 'rgba(21, 25, 41, 0.85)',
   // The session check screen

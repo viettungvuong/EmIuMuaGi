@@ -86,7 +86,6 @@ function ItemSubInfo({ item }) {
       item.main_food,
       item.cuisine_type,
       item.address,
-      item.time_to_eat === "auto_schedule" ? t("add.autoSchedule") : null,
     ].filter(Boolean);
     return parts.length ? (
       <p className="item-subinfo">{parts.join(" · ")}</p>

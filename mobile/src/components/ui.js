@@ -39,7 +39,7 @@ export function ModalCard({ visible, onRequestClose, width = 340, children }) {
   );
 }
 
-// .add-submit-btn / .question-submit-btn: accent → accent-2 gradient
+// .add-submit-btn: accent → accent-2 gradient
 export function GradientButton({ title, onPress, disabled, loading, style }) {
   return (
     <Pressable onPress={onPress} disabled={disabled || loading} style={[style, (disabled || loading) && { opacity: 0.45 }]}>

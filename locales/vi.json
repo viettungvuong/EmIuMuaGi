@@ -128,7 +128,6 @@
   },
   "add": {
     "title": "Thêm Mục Mới",
-    "question": "Hỏi Đáp →",
     "link": "Link",
     "lookingUp": "(đang lấy địa chỉ từ {source}…)",
     "linkPlaceholderRestaurant": "Link TikTok, Google Maps…",
@@ -160,7 +159,6 @@
     "timeToEat": "Thời gian ăn",
     "noDate": "Không chọn ngày",
     "pickDate": "Chọn ngày",
-    "autoSchedule": "Tự động lên lịch",
     "pickDateButton": "Chọn ngày giờ",
     "change": "Đổi",
     "pickDateRequired": "Chọn ngày giờ hẹn trước nha.",
@@ -189,13 +187,6 @@
     "feeling": "Cảm nhận của em:",
     "placeholder": "Quá chuẩn lun...",
     "submit": "Gửi Đánh Giá"
-  },
-  "question": {
-    "title": "Hỏi Đáp",
-    "label": "Câu hỏi của bạn",
-    "placeholder": "Nhập câu hỏi tại đây...",
-    "sent": "Đã gửi câu hỏi thành công!",
-    "submit": "Gửi Câu Hỏi"
   },
   "partner": {
     "welcome": "🎊 Chào mừng 🎊",

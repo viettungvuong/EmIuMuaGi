@@ -94,9 +94,8 @@ function subInfo(item) {
     return [item.size, item.sugar && t('main.sugar', { sugar: item.sugar }), toppings].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'restaurant') {
-    // The picked date shows as its own chip, so "pick_date" isn't printed here
-    const timeToEat = item.time_to_eat === 'auto_schedule' ? t('add.autoSchedule') : null;
-    return [item.main_food, item.cuisine_type, item.address, timeToEat].filter(Boolean).join(' · ');
+    // A picked date shows as its own chip, so time_to_eat isn't printed here
+    return [item.main_food, item.cuisine_type, item.address].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'others') {
     return item.category || '';

@@ -5,7 +5,6 @@ import { t } from './i18n';
 import AuthPage from './pages/AuthPage';
 import MainPage from './pages/MainPage';
 import AddPage from './pages/AddPage';
-import QuestionPage from './pages/QuestionPage';
 import HistoryPage from './pages/HistoryPage';
 import SearchPage from './pages/SearchPage';
 import SettingsPage from './pages/SettingsPage';
@@ -74,14 +73,6 @@ export default function App() {
           element={
             <ProtectedRoute isAuth={isAuth} loading={loading}>
               <AddPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/question"
-          element={
-            <ProtectedRoute isAuth={isAuth} loading={loading}>
-              <QuestionPage />
             </ProtectedRoute>
           }
         />

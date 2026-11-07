@@ -40,7 +40,6 @@ const WANTED_BY = [
 // Labels are looked up when drawn, once the saved language has loaded
 const timeToEatOptions = () => [
   { value: 'pick_date', label: t('add.pickDate') },
-  { value: 'auto_schedule', label: t('add.autoSchedule') },
 ];
 
 // How long the link has to stay unchanged before it is sent to the parser
@@ -372,9 +371,6 @@ export default function AddScreen() {
             <View style={styles.topRow}>
               <Pressable style={styles.backBtn} onPress={goHome}>
                 <Text style={styles.backBtnText}>{t('common.back')}</Text>
-              </Pressable>
-              <Pressable style={styles.backBtn} onPress={() => router.push('/question')}>
-                <Text style={[styles.backBtnText, { color: colors.accent }]}>{t('add.question')}</Text>
               </Pressable>
             </View>
             <Text style={styles.title}>{t('add.title')}</Text>

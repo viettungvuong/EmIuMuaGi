@@ -120,8 +120,8 @@
 .empty-icon { font-size: 3rem; }
 .empty-text { font-size: 1rem; }
 
-/* The list as a conversation: your items on the right, your partner's on the
-   left. Bottom padding keeps the newest bubble clear of the + button. */
+/* The list as a conversation, newest on top: your items on the right, your
+   partner's on the left. Bottom padding keeps the last bubble clear of the + button. */
 .chat {
   display: flex;
   flex-direction: column;

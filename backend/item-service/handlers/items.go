@@ -44,10 +44,10 @@ func sendPushNotification(title string, message string) {
 // likeEscaper keeps the search text literal inside ILIKE: % and _ are wildcards there
 var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 
-// GetItems lists the caller's and their partner's items, oldest first like a
-// conversation, filtered in SQL by the list's controls
+// GetItems lists the caller's and their partner's items, newest first, filtered
+// in SQL by the list's controls
 // @Summary List items
-// @Description Items of the caller and their partner with their type details, oldest first
+// @Description Items of the caller and their partner with their type details, newest first
 // @Tags items
 // @Produce json
 // @Security BearerAuth
@@ -123,7 +123,7 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN others o ON i.id = o.id
 		LEFT JOIN restaurants r ON i.id = r.id
 		WHERE `+strings.Join(where, " AND ")+`
-		ORDER BY i.created_at, i.id
+		ORDER BY i.created_at DESC, i.id DESC
 	`, args...).Scan(&results).Error
 
 	if err != nil {

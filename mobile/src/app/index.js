@@ -62,9 +62,9 @@ function dayLabel(day) {
   });
 }
 
-// The list as a conversation (items come oldest first): a separator whenever the
-// day changes, and for each bubble whether it opens or closes a run of one
-// person's items, so a run sits close together with the avatar on its last bubble
+// The list as a conversation, newest on top: a separator whenever the day changes,
+// and for each bubble whether it opens or closes a run of one person's items, so
+// a run sits close together with the avatar on its last bubble
 // (mirrors chatRows in the web app's MainPage)
 function chatRows(items) {
   const rows = [];
@@ -130,8 +130,6 @@ export default function MainScreen() {
   // Only with a partner linked: after unlinking, "partner's items" would always be empty
   const whoFilter = userData?.partner ? who : 'all';
   const requestRef = useRef(0); // only the latest list request's answer is shown
-  const scrollRef = useRef(null);
-  const scrollToEndRef = useRef(false); // set when a fresh list arrives
 
   const fetchItems = useCallback(async () => {
     const request = ++requestRef.current;
@@ -144,7 +142,6 @@ export default function MainScreen() {
     try {
       const { data } = await client.get('/api/items', { params });
       if (request !== requestRef.current) return; // the controls changed meanwhile
-      scrollToEndRef.current = true;
       setItems(data);
     } catch (err) {
       console.error('Failed to fetch items:', err);
@@ -189,14 +186,6 @@ export default function MainScreen() {
       fetchItems();
     }, [fetchItems]),
   );
-
-  // Like a chat, a freshly loaded list opens on its newest message. The partner
-  // card above can still push the list down until it loads, so keep at it.
-  const onContentSizeChange = () => {
-    if (!scrollToEndRef.current) return;
-    scrollRef.current?.scrollToEnd({ animated: false });
-    if (userData) scrollToEndRef.current = false;
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -278,8 +267,6 @@ export default function MainScreen() {
       />
 
       <ScrollView
-        ref={scrollRef}
-        onContentSizeChange={onContentSizeChange}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}

@@ -17,8 +17,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WS_URL } from '../api/config';
+import { useAuth } from '../auth';
+import ScheduleModal from '../components/ScheduleModal';
 import { GradientButton, Select } from '../components/ui';
 import { t, useLanguage } from '../i18n';
+import { formatAt } from '../schedule';
 import { colors, fonts, radius } from '../theme';
 
 const ITEM_TYPES = [
@@ -26,6 +29,12 @@ const ITEM_TYPES = [
   { value: 'food_and_drink', icon: '🧋' },
   { value: 'restaurant', icon: '🍜' },
   { value: 'others', icon: '📦' },
+];
+
+// items.wanted_by: which of the couple wants it
+const WANTED_BY = [
+  { value: 0, key: 'girl', icon: '👧' },
+  { value: 1, key: 'boy', icon: '👦' },
 ];
 
 // Labels are looked up when drawn, once the saved language has loaded
@@ -79,6 +88,7 @@ export default function AddScreen() {
   // Made up front: names the parser channel now, saved as the item's uuid later
   const [itemUuid] = useState(() => Crypto.randomUUID());
   const [itemType, setItemType] = useState('clothes');
+  const [wantedBy, setWantedBy] = useState(0);
   const [form, setForm] = useState({
     item_name: '', quantity: '1', shop_name: '', buy_url: '',
     // clothes
@@ -90,6 +100,12 @@ export default function AddScreen() {
     // others
     category: '',
   });
+  const { username } = useAuth();
+  // "Pick a date": the chosen time, booked on the calendar along with the restaurant
+  const [pickedAt, setPickedAt] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // What the picker shows: the couple's dates and who's who, fetched on first open
+  const [calendarData, setCalendarData] = useState(null);
   const [mediaFiles, setMediaFiles] = useState([]); // { uri, name, mimeType, type }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -187,6 +203,31 @@ export default function AddScreen() {
 
   const set = (field) => (text) => setForm((f) => ({ ...f, [field]: text }));
 
+  const openPicker = async () => {
+    setPickerOpen(true);
+    if (calendarData) return;
+    const [schedules, me] = await Promise.all([
+      client.get('/api/schedules').then((r) => r.data).catch(() => []),
+      client.get('/api/me').then((r) => r.data).catch(() => null),
+    ]);
+    setCalendarData({ schedules, currentUser: me?.id || username, partnerName: me?.partner?.id });
+  };
+
+  // "Pick a date" opens the calendar right away; any other choice drops the picked time.
+  // The wait lets the option list's own Modal finish closing: iOS won't present a
+  // second Modal while one is still being dismissed.
+  const onTimeToEatChange = (value) => {
+    set('time_to_eat')(value);
+    if (value === 'pick_date') setTimeout(openPicker, 350);
+    else setPickedAt(null);
+  };
+
+  // Closed without picking anything: back to "No date"
+  const closePicker = () => {
+    setPickerOpen(false);
+    if (!pickedAt) setForm((f) => ({ ...f, time_to_eat: '' }));
+  };
+
   const pickMedia = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
@@ -214,12 +255,22 @@ export default function AddScreen() {
       setError(t('add.nameRequired'));
       return;
     }
+    const picksDate = itemType === 'restaurant' && form.time_to_eat === 'pick_date';
+    if (picksDate && !pickedAt) {
+      setError(t('add.pickDateRequired'));
+      return;
+    }
+    if (picksDate && pickedAt < new Date()) {
+      setError(t('schedule.past'));
+      return;
+    }
     setLoading(true);
     setError('');
 
     const base = {
       uuid: itemUuid,
       item_type: itemType,
+      wanted_by: wantedBy,
       item_name: form.item_name.trim(),
       quantity: Number(form.quantity) || 1,
       shop_name: form.shop_name.trim() || null,
@@ -241,6 +292,7 @@ export default function AddScreen() {
             cuisine_type: form.cuisine_type || null,
             address: form.address || null,
             time_to_eat: form.time_to_eat || null,
+            schedule: picksDate ? pickedAt.toISOString() : null,
           }
         : { category: form.category || null };
 
@@ -328,6 +380,26 @@ export default function AddScreen() {
             <Text style={styles.title}>{t('add.title')}</Text>
 
             <View style={styles.form}>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>{t('wantedBy.label')}</Text>
+                <View style={styles.whoPicker}>
+                  {WANTED_BY.map((who) => {
+                    const active = wantedBy === who.value;
+                    return (
+                      <Pressable
+                        key={who.key}
+                        style={[styles.whoOption, active && (who.key === 'boy' ? styles.whoBoyActive : styles.whoGirlActive)]}
+                        onPress={() => setWantedBy(who.value)}
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text style={[styles.whoIcon, !active && { opacity: 0.5 }, active && { transform: [{ scale: 1.15 }] }]}>{who.icon}</Text>
+                        <Text style={[styles.typeTabText, active && { color: '#fff' }]}>{t(`wantedBy.${who.key}`)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
               <View style={styles.typeTabs}>
                 {ITEM_TYPES.map((type) => (
                   <Pressable
@@ -407,11 +479,19 @@ export default function AddScreen() {
                     <Select
                       value={form.time_to_eat}
                       options={timeToEatOptions()}
-                      placeholder={t('add.timeToEatPlaceholder')}
-                      onChange={set('time_to_eat')}
+                      placeholder={t('add.noDate')}
+                      onChange={onTimeToEatChange}
                       style={styles.input}
                       textStyle={styles.inputText}
                     />
+                    {form.time_to_eat === 'pick_date' && (
+                      <Pressable style={[styles.input, styles.pickDate, pickedAt && styles.pickDatePicked]} onPress={openPicker}>
+                        <Text style={[styles.inputText, !pickedAt && { color: colors.textMuted }]}>
+                          📅 {pickedAt ? formatAt(pickedAt) : t('add.pickDateButton')}
+                        </Text>
+                        {pickedAt && <Text style={styles.pickDateChange}>{t('add.change')}</Text>}
+                      </Pressable>
+                    )}
                   </View>
                 </>
               )}
@@ -456,6 +536,23 @@ export default function AddScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {pickerOpen && (
+        <ScheduleModal
+          visible
+          restaurant={form.item_name.trim() ? { item_name: form.item_name.trim(), address: form.address } : null}
+          schedules={calendarData?.schedules || []}
+          currentUser={calendarData?.currentUser}
+          partnerName={calendarData?.partnerName}
+          initialWhen={pickedAt}
+          onPick={(when) => {
+            setPickedAt(when);
+            setPickerOpen(false);
+            setError('');
+          }}
+          onClose={closePicker}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -484,6 +581,23 @@ const styles = StyleSheet.create({
   backBtnText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
   title: { fontFamily: fonts.bold, fontSize: 24, letterSpacing: -0.5, color: '#fff', marginBottom: 32 },
   form: { gap: 20 },
+
+  // Who wants it: pink for her, blue for him
+  whoPicker: { flexDirection: 'row', gap: 12 },
+  whoOption: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+  },
+  whoGirlActive: { borderColor: colors.accent, backgroundColor: 'rgba(236, 72, 153, 0.14)' },
+  whoBoyActive: { borderColor: colors.boy, backgroundColor: 'rgba(59, 130, 246, 0.14)' },
+  whoIcon: { fontSize: 32, lineHeight: 38 },
 
   typeTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   typeTab: {
@@ -516,6 +630,10 @@ const styles = StyleSheet.create({
   },
   inputText: { color: colors.text, fontFamily: fonts.regular, fontSize: 16 },
   inputError: { borderColor: colors.danger },
+  // "Pick a date": opens the calendar popup, then shows the chosen time
+  pickDate: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  pickDatePicked: { borderColor: colors.accent },
+  pickDateChange: { fontFamily: fonts.semibold, fontSize: 13, color: colors.accent },
   textarea: { minHeight: 110, textAlignVertical: 'top', lineHeight: 25 },
 
   dropZone: {

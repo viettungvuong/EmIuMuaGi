@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ var (
 func RemovePartner(c *gin.Context) {
 	username := c.GetString("username")
 	if username == "" {
+		log.Printf("[partner] %s: no user in token", c.Request.URL.Path)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User identity not found in token"})
 		return
 	}
@@ -48,6 +50,9 @@ func RemovePartner(c *gin.Context) {
 			Update("partner_id", nil).Error
 	})
 
+	if err != nil {
+		log.Printf("[partner] remove %s: %v", username, err)
+	}
 	switch {
 	case err == nil:
 	case errors.Is(err, errNoSuchUser):
@@ -61,6 +66,7 @@ func RemovePartner(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[partner] remove %s: unlinked", username)
 	c.JSON(http.StatusOK, gin.H{"message": "Partner removed successfully"})
 }
 
@@ -68,6 +74,7 @@ func AddPartner(c *gin.Context) {
 	// Extract the user identity from the JWT claims already set by the middleware
 	username := c.GetString("username")
 	if username == "" {
+		log.Printf("[partner] %s: no user in token", c.Request.URL.Path)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User identity not found in token"})
 		return
 	}
@@ -151,6 +158,9 @@ func AddPartner(c *gin.Context) {
 		return nil
 	})
 
+	if err != nil {
+		log.Printf("[partner] add %s via invite %s: %v", username, inviteID, err)
+	}
 	switch {
 	case err == nil:
 	case errors.Is(err, errNoSuchUser):
@@ -173,6 +183,7 @@ func AddPartner(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[partner] add %s: linked with <%s> (already linked: %t)", username, partnerEmail, alreadyLinked)
 	c.JSON(http.StatusOK, gin.H{
 		"message":        "Partner linked successfully",
 		"partner_email":  partnerEmail,

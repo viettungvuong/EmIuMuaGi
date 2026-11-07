@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -69,6 +70,7 @@ func proxy(s *service) gin.HandlerFunc {
 
 func main() {
 	_ = godotenv.Load(".env")
+	setupLogging()
 
 	r := gin.Default()
 
@@ -79,6 +81,16 @@ func main() {
 		"http://localhost:5173",
 		"http://127.0.0.1:5173",
 		"https://viettungvuong.github.io",
+	}
+	// Checked only when the list above doesn't match. Any port on this machine is
+	// fine: Vite moves off 5173 when another project already holds it.
+	config.AllowOriginFunc = func(origin string) bool {
+		if u, err := url.Parse(origin); err == nil && u.Scheme == "http" &&
+			(u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1") {
+			return true
+		}
+		log.Printf("cors: rejected origin %s (add it to AllowOrigins in api-gateway/main.go)", origin)
+		return false
 	}
 	config.AllowCredentials = true
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
@@ -98,6 +110,8 @@ func main() {
 	r.Any("/api/items/*path", proxy(itemService))
 	r.Any("/api/history", proxy(itemService))
 	r.Any("/api/history/*path", proxy(itemService))
+	r.Any("/api/schedules", proxy(itemService))
+	r.Any("/api/schedules/*path", proxy(itemService))
 	r.Any("/api/parse/*path", proxy(aiService)) // WebSocket, ReverseProxy passes the upgrade through
 
 	// Fallback custom matcher just in case
@@ -107,7 +121,7 @@ func main() {
 			proxy(userService)(c)
 			return
 		}
-		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") {
+		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") || strings.HasPrefix(path, "/api/schedules") {
 			proxy(itemService)(c)
 			return
 		}

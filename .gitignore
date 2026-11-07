@@ -17,6 +17,9 @@ frontend/.env.local
 # Go
 .gocache/
 
+# Hourly backend logs (api-gateway/logfile.go)
+logs/
+
 # Editor
 .DS_Store
 .vscode/

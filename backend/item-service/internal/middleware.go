@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -17,6 +18,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := c.Cookie("access_token")
 		if err != nil || tokenString == "" {
+			log.Printf("[auth] %s %s: no access token cookie", c.Request.Method, c.Request.URL.Path)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid access token cookie"})
 			c.Abort()
 			return
@@ -28,6 +30,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			log.Printf("[auth] %s %s: invalid or expired access token: %v", c.Request.Method, c.Request.URL.Path, err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return

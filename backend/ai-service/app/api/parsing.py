@@ -31,7 +31,9 @@ class AddressResponse(BaseModel):
 @router.post("/address", response_model=AddressResponse)
 def address(req: AddressRequest):
     """First "265/234 Trường Chinh"-style address in `text`, or null."""
-    return AddressResponse(address=extract_address(req.text))
+    found = extract_address(req.text)
+    log.info("address: %r from %d chars of text", found, len(req.text))
+    return AddressResponse(address=found)
 
 # One live socket per item being added, keyed by the uuid the frontend
 # generated for it (the same uuid the item is saved with)
@@ -72,9 +74,11 @@ async def _answer_later(item_uuid: UUID, seq, url: str, kind: str, lookup) -> No
     reply = {"seq": seq, "url": url, "type": kind, "result": None}
     try:
         reply["result"] = await asyncio.get_running_loop().run_in_executor(_lookup_pool, lookup, url)
+        log.info("item %s: %s lookup for %s -> %s", item_uuid, kind, url, reply["result"])
     except (ValueError, ExtractorError, DownloadError, MapsLookupError) as e:
         # Not a video, private, blocked, page didn't load…
         reply["error"] = str(e).removeprefix("ERROR: ").splitlines()[0]
+        log.warning("item %s: %s lookup for %s failed: %s", item_uuid, kind, url, reply["error"])
     except Exception:
         log.exception("%s lookup failed for %s", kind, url)
         reply["error"] = "Lookup failed"
@@ -96,10 +100,12 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
     `seq` is echoed back so the client can ignore answers to links it has since
     replaced, which matters now that TikTok answers arrive out of order."""
     await ws.accept()
+    log.info("item %s: parse channel opened", item_uuid)
 
     # A newer connection for the same item (e.g. a reload) takes over the channel
     old = channels.get(item_uuid)
     if old is not None:
+        log.info("item %s: newer connection takes over the channel", item_uuid)
         with suppress(RuntimeError):
             await old.close()
     channels[item_uuid] = ws
@@ -110,6 +116,7 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
                 msg = await ws.receive_json()
                 url = str(msg["url"])
             except (ValueError, KeyError, TypeError):
+                log.warning("item %s: malformed message, expected {seq, url}", item_uuid)
                 await ws.send_json({"error": 'Expected {"seq": n, "url": "..."}'})
                 continue
 
@@ -121,12 +128,14 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
             else:
                 slow = None
             if slow:
+                log.info("item %s: seq %s, %s link %s, looking it up", item_uuid, seq, slow[0], url)
                 task = asyncio.create_task(_answer_later(item_uuid, seq, url, *slow))
                 _lookups.add(task)
                 task.add_done_callback(_lookups.discard)
                 continue
 
             parsed = parse_link(url)
+            log.info("item %s: seq %s, link %s -> %s", item_uuid, seq, url, parsed)
             await ws.send_json({
                 "seq": seq,
                 "url": url,
@@ -136,6 +145,7 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
     except WebSocketDisconnect:
         pass
     finally:
+        log.info("item %s: parse channel closed", item_uuid)
         # Only drop the channel if it hasn't already been taken over
         if channels.get(item_uuid) is ws:
             del channels[item_uuid]

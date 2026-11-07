@@ -68,6 +68,12 @@ func InitDB() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
+	// Usernames are case insensitive, so "Tung" and "tung" can't both exist. Not
+	// fatal: older rows may already hold such a pair, which has to be fixed by hand.
+	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_lower_id ON users (lower(id))").Error; err != nil {
+		log.Println("Could not add the case-insensitive username index:", err)
+	}
+
 	log.Println("User Service database connected and migrated successfully.")
 }
 

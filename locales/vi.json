@@ -28,6 +28,40 @@
     "restaurant": "Nhà Hàng",
     "others": "Khác"
   },
+  "wantedBy": {
+    "label": "Ai muốn mua nè?",
+    "girl": "Em",
+    "boy": "Anh"
+  },
+  "schedule": {
+    "button": "Lên lịch",
+    "title": "Hẹn hò đi ăn",
+    "calendar": "Lịch hẹn",
+    "next": "Hẹn sắp tới",
+    "noneYet": "Chưa có hẹn nào. Chọn một quán rồi bấm Lên lịch nha.",
+    "empty": "Ngày này chưa có hẹn 💤",
+    "weekdays": "T2 T3 T4 T5 T6 T7 CN",
+    "you": "Bạn",
+    "time": "Giờ",
+    "breakfast": "Sáng",
+    "lunch": "Trưa",
+    "dinner": "Tối",
+    "earlier": "Sớm hơn 15 phút",
+    "later": "Muộn hơn 15 phút",
+    "pick": "✓ Chọn {time} · {date}",
+    "book": "💕 Hẹn {time} · {date}",
+    "past": "Giờ này qua mất rùi",
+    "failed": "Không lưu được lịch hẹn. Thử lại nha.",
+    "cancel": "Huỷ hẹn",
+    "close": "Đóng",
+    "prevMonth": "Tháng trước",
+    "nextMonth": "Tháng sau",
+    "now": "ngay bây giờ",
+    "today": "hôm nay",
+    "tomorrow": "ngày mai",
+    "inHours": "còn {n} tiếng",
+    "inDays": "còn {n} ngày"
+  },
   "auth": {
     "appName": "EmIuMuaGi",
     "login": "Đăng Nhập",
@@ -83,7 +117,14 @@
     "addLabel": "Thêm mục mới",
     "confirmBuy": "Có chắc anh đã mua chưaaaaaa 🧐",
     "notYet": "Chưa nha",
-    "yesBought": "Đã mua rùii"
+    "yesBought": "Đã mua rùii",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "boughtStatus": "✓✓ Đã mua",
+    "whoseItems": "Đồ của ai",
+    "both": "Cả hai",
+    "mine": "Của mình",
+    "partners": "Của {name}"
   },
   "add": {
     "title": "Thêm Mục Mới",
@@ -117,9 +158,12 @@
     "address": "Địa chỉ",
     "addressPlaceholder": "Số nhà, đường, quận…",
     "timeToEat": "Thời gian ăn",
-    "timeToEatPlaceholder": "Chọn cách hẹn giờ…",
+    "noDate": "Không chọn ngày",
     "pickDate": "Chọn ngày",
     "autoSchedule": "Tự động lên lịch",
+    "pickDateButton": "Chọn ngày giờ",
+    "change": "Đổi",
+    "pickDateRequired": "Chọn ngày giờ hẹn trước nha.",
     "category": "Danh mục",
     "categoryPlaceholder": "Nhập danh mục…",
     "media": "Ảnh & Video",
@@ -257,6 +301,13 @@
     "API route not found on gateway": "Không tìm thấy đường dẫn API",
     "user-service is unavailable": "Máy chủ tài khoản đang không hoạt động",
     "item-service is unavailable": "Máy chủ danh sách đang không hoạt động",
-    "ai-service is unavailable": "Máy chủ phân tích link đang không hoạt động"
+    "ai-service is unavailable": "Máy chủ phân tích link đang không hoạt động",
+    "Failed to retrieve schedules": "Không tải được lịch hẹn",
+    "Only restaurants can be scheduled": "Chỉ lên lịch được cho nhà hàng thôi",
+    "That time has already passed": "Giờ này qua mất rùi",
+    "Failed to save the schedule": "Không lưu được lịch hẹn",
+    "Schedule not found": "Lịch hẹn này không còn nữa",
+    "Only whoever booked this date can cancel it": "Chỉ người hẹn mới huỷ được",
+    "Failed to cancel the schedule": "Không huỷ được lịch hẹn"
   }
 }

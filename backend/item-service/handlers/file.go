@@ -44,12 +44,14 @@ func UploadItemFiles(c *gin.Context) {
 	// Parse the form first
 	form, err := c.MultipartForm()
 	if err != nil {
+		log.Printf("[upload] item %s: could not parse form: %v", itemID, err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}
 
 	formFiles := form.File["files"]
 	if len(formFiles) == 0 {
+		log.Printf("[upload] item %s: no files in the request", itemID)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No files provided"})
 		return
 	}
@@ -60,6 +62,7 @@ func UploadItemFiles(c *gin.Context) {
 	for _, fh := range formFiles {
 		data, err := readFileHeader(fh)
 		if err != nil {
+			log.Printf("[upload] item %s: could not read %s: %v", itemID, fh.Filename, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read file"})
 			return
 		}
@@ -78,9 +81,12 @@ func UploadItemFiles(c *gin.Context) {
 
 	destDir := filepath.Join(uploadDir, itemID)
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		log.Printf("[upload] Failed to create dir: %v", err)
+		log.Printf("[upload] item %s: could not create %s: %v", itemID, destDir, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store files"})
 		return
 	}
+
+	log.Printf("[upload] item %s: saving %d file(s) for %s", itemID, len(payloads), c.GetString("username"))
 
 	// ── Step 3: Respond with the list of Task IDs ──
 	c.JSON(http.StatusAccepted, gin.H{
@@ -159,7 +165,7 @@ func saveFile(dir string, p filePayload) (string, error) {
 	defer f.Close()
 
 	_, err = f.Write(p.data)
-	return dest, nil
+	return dest, err
 }
 
 func Deletefile(c *gin.Context) {
@@ -189,11 +195,12 @@ func TaskStatus(c *gin.Context) {
 
 	status, exists := uploadTasks.Load(taskID)
 	if !exists {
+		log.Printf("[upload] task %s: not found (finished and cleared, or never existed)", taskID)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 
-	log.Printf("Polled for status of %s", taskID)
+	log.Printf("[upload] task %s: polled, %v", taskID, status)
 
 	c.JSON(http.StatusOK, gin.H{
 		"task_id": taskID,

@@ -80,6 +80,14 @@ func main() {
 			history.GET("", handlers.GetHistories)
 			history.POST("/:history_id/review", handlers.AddReview)
 		}
+
+		// Meal dates at restaurants, shown on the calendar popup
+		schedules := api.Group("/schedules")
+		{
+			schedules.GET("", handlers.GetSchedules)
+			schedules.POST("", handlers.CreateSchedule)
+			schedules.DELETE("/:schedule_id", handlers.DeleteSchedule)
+		}
 	}
 
 	// The API gateway starts this service with -port; when that port is taken the

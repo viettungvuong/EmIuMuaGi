@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -40,6 +41,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				if err == nil {
 					// Set the new cookie transparently
 					c.SetCookie("access_token", newAccessToken, 30*60, "/", "", false, true)
+					log.Printf("[auth] %s: access token expired, renewed it for %s", c.Request.URL.Path, refreshClaims.Username)
 					c.Set("username", refreshClaims.Username)
 					c.Next()
 					return
@@ -48,6 +50,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Both tokens failed
+		log.Printf("[auth] %s %s: not signed in (no valid access or refresh token)", c.Request.Method, c.Request.URL.Path)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed. Please sign in again."})
 		c.Abort()
 	}

@@ -40,7 +40,8 @@ export default function AuthPage({ setIsAuth }) {
       if (mode === 'login') {
         const response = await client.post('/api/auth/login', { username, password });
         if (response.data.success || response.status === 200) {
-          localStorage.setItem('username', username);
+          // The server's spelling: usernames are case insensitive
+          localStorage.setItem('username', response.data.username ?? username);
           setIsAuth(true); // Notify App component
           navigate('/');
         }

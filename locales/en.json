@@ -28,6 +28,40 @@
     "restaurant": "Restaurants",
     "others": "Others"
   },
+  "wantedBy": {
+    "label": "Who wants it?",
+    "girl": "Her",
+    "boy": "Him"
+  },
+  "schedule": {
+    "button": "Schedule",
+    "title": "Meal date planner",
+    "calendar": "Calendar",
+    "next": "Next date",
+    "noneYet": "No dates planned yet. Pick a restaurant and tap Schedule.",
+    "empty": "Nothing planned this day 💤",
+    "weekdays": "Mo Tu We Th Fr Sa Su",
+    "you": "You",
+    "time": "Time",
+    "breakfast": "Morning",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "earlier": "15 minutes earlier",
+    "later": "15 minutes later",
+    "pick": "✓ Pick {time} · {date}",
+    "book": "💕 Book {time} · {date}",
+    "past": "That time has already passed",
+    "failed": "Couldn't save the date. Please try again.",
+    "cancel": "Cancel this date",
+    "close": "Close",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "now": "now",
+    "today": "today",
+    "tomorrow": "tomorrow",
+    "inHours": "in {n}h",
+    "inDays": "in {n} days"
+  },
   "auth": {
     "appName": "My Love Wants Whaaat",
     "login": "Log In",
@@ -83,7 +117,14 @@
     "addLabel": "Add new item",
     "confirmBuy": "Are you sure you bought it? 🧐",
     "notYet": "Not yet",
-    "yesBought": "Bought it!"
+    "yesBought": "Bought it!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "boughtStatus": "✓✓ Bought",
+    "whoseItems": "Whose items",
+    "both": "Both",
+    "mine": "Mine",
+    "partners": "{name}'s"
   },
   "add": {
     "title": "Add New Item",
@@ -117,9 +158,12 @@
     "address": "Address",
     "addressPlaceholder": "Number, street, district…",
     "timeToEat": "When to eat",
-    "timeToEatPlaceholder": "Choose how to schedule…",
+    "noDate": "No date",
     "pickDate": "Pick a date",
     "autoSchedule": "Schedule automatically",
+    "pickDateButton": "Choose a day and time",
+    "change": "Change",
+    "pickDateRequired": "Pick a day and time for the date first.",
     "category": "Category",
     "categoryPlaceholder": "Enter a category…",
     "media": "Photos & Videos",
@@ -257,6 +301,13 @@
     "API route not found on gateway": "API route not found",
     "user-service is unavailable": "The account server is down",
     "item-service is unavailable": "The list server is down",
-    "ai-service is unavailable": "The link reader is down"
+    "ai-service is unavailable": "The link reader is down",
+    "Failed to retrieve schedules": "Couldn't load the calendar",
+    "Only restaurants can be scheduled": "Only restaurants can be scheduled",
+    "That time has already passed": "That time has already passed",
+    "Failed to save the schedule": "Couldn't save the date",
+    "Schedule not found": "That date doesn't exist anymore",
+    "Only whoever booked this date can cancel it": "Only whoever booked this date can cancel it",
+    "Failed to cancel the schedule": "Couldn't cancel the date"
   }
 }

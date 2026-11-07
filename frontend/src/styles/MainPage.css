@@ -120,48 +120,158 @@
 .empty-icon { font-size: 3rem; }
 .empty-text { font-size: 1rem; }
 
-.items-list {
-  list-style: none;
+/* The list as a conversation: your items on the right, your partner's on the
+   left. Bottom padding keeps the newest bubble clear of the + button. */
+.chat {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  padding-bottom: 96px;
 }
 
-.item-card {
+.chat-day {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin: 20px 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.chat-day::before,
+.chat-day::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.chat-day span {
+  padding: 4px 12px;
+  border-radius: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  animation: item-in 0.35s cubic-bezier(0.4,0,0.2,1) both;
 }
 
-.item-card:hover {
-  border-color: rgba(236, 72, 153, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+.chat-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.item-card.bought {
-  opacity: 0.6;
+.chat-row.run-start { margin-top: 14px; }
+.chat-row.mine { justify-content: flex-end; }
+
+/* The partner's initial, on the last bubble of their run */
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  margin-bottom: 20px; /* level with the bubble, above its time */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
 }
 
-.item-card.bought .item-name {
+.chat-row.run-end .chat-avatar {
+  background: linear-gradient(135deg, var(--partner), #a78bfa);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+
+.bubble-col {
+  display: flex;
+  flex-direction: column;
+  max-width: min(78%, 520px);
+  min-width: 0;
+}
+
+.mine .bubble-col { align-items: flex-end; }
+
+.bubble {
+  padding: 12px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: bubble-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(236, 72, 153, 0.12);
+}
+
+.mine .bubble {
+  background: linear-gradient(135deg, #fdd3e5, #fde7f1);
+  border-color: rgba(236, 72, 153, 0.25);
+  animation-name: bubble-in-right;
+}
+
+/* A run sits together: flatter corners on the sender's side, a tail on its last bubble */
+.theirs:not(.run-start) .bubble { border-top-left-radius: 8px; }
+.theirs:not(.run-end) .bubble { border-bottom-left-radius: 8px; }
+.theirs.run-end .bubble { border-bottom-left-radius: 4px; }
+.mine:not(.run-start) .bubble { border-top-right-radius: 8px; }
+.mine:not(.run-end) .bubble { border-bottom-right-radius: 8px; }
+.mine.run-end .bubble { border-bottom-right-radius: 4px; }
+
+.bubble.bought { opacity: 0.6; }
+
+.bubble.bought .item-name {
   text-decoration: line-through;
   color: var(--text-muted);
 }
 
-@keyframes item-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+.bubble-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 
-.item-info {
-  flex: 1;
-  min-width: 0;
+.bubble-actions .buy-btn,
+.bubble-actions .schedule-btn {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.bubble-actions .delete-btn {
+  padding: 4px 8px;
+  font-size: 1rem;
+  margin-left: auto;
+}
+
+/* Time under the bubble, and a "read receipt" once bought */
+.bubble-foot {
+  display: flex;
+  gap: 8px;
+  margin: 4px 6px 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.bubble-bought {
+  color: var(--success);
+  font-weight: 600;
+}
+
+@keyframes bubble-in-right {
+  from { opacity: 0; transform: translateX(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes bubble-in-left {
+  from { opacity: 0; transform: translateX(-16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 .item-header-row {
@@ -170,6 +280,30 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 4px;
+}
+
+/* Who wants it: pink for her, blue for him */
+.item-who {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.item-who.girl {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
+.item-who.boy {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .item-type-badge {
@@ -207,13 +341,6 @@
   font-weight: 600;
 }
 
-/* Marks a wish that belongs to your other half */
-.item-owner {
-  font-size: 0.78rem;
-  color: var(--accent-2);
-  font-weight: 600;
-}
-
 .item-link {
   display: inline-block;
   margin-top: 6px;
@@ -224,13 +351,6 @@
 }
 
 .item-link:hover { opacity: 0.75; text-decoration: underline; }
-
-.item-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
 
 .buy-btn {
   background: rgba(16, 185, 129, 0.1);
@@ -250,14 +370,87 @@
   border-color: rgba(16, 185, 129, 0.5);
 }
 
-.bought-badge {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+/* Opens the calendar popup on a restaurant */
+.schedule-btn {
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid rgba(236, 72, 153, 0.3);
   border-radius: 8px;
-  color: #10b981;
+  color: var(--accent);
+  font-family: inherit;
   font-size: 0.82rem;
   font-weight: 600;
+  cursor: pointer;
   padding: 8px 12px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.schedule-btn:hover {
+  background: rgba(236, 72, 153, 0.16);
+  border-color: var(--accent);
+}
+
+.item-next-date {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(236, 72, 153, 0.1);
+  padding: 1px 8px;
+  border-radius: 20px;
+}
+
+/* The Restaurant tab's next date, opens the calendar */
+.date-banner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(139, 92, 246, 0.1));
+  font-family: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.date-banner:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.date-banner-icon { font-size: 1.8rem; }
+
+.date-banner-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.9rem;
+}
+
+.date-banner-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.date-banner-when {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.date-banner-cta {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -334,6 +527,41 @@
 .search-bar::placeholder {
   color: var(--text-muted);
 }
+
+/* Whose items: both, yours (pink) or your partner's (violet), like the chat sides */
+.who-filter {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.who-filter-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.who-filter-btn:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+.who-filter-btn.active { color: #fff; }
+.who-filter-btn.all.active { background: linear-gradient(135deg, var(--accent), var(--partner)); box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3); }
+.who-filter-btn.me.active { background: var(--accent); box-shadow: 0 2px 10px rgba(236, 72, 153, 0.35); }
+.who-filter-btn.partner.active { background: var(--partner); box-shadow: 0 2px 10px rgba(139, 92, 246, 0.35); }
 
 .filter-options {
   display: flex;
@@ -501,21 +729,8 @@
     padding: 24px 16px;
   }
   
-  .item-card {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px;
-    gap: 12px;
-  }
-  
-  .item-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .buy-btn {
-    flex: 1;
-    text-align: center;
+  .bubble-col {
+    max-width: 86%;
   }
  
   .main-title {

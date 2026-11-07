@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,7 @@ func AddReview(c *gin.Context) {
 	hUUID, err := uuid.Parse(historyId)
 	// try parse to uuid
 	if err != nil {
+		log.Printf("[review] %q: invalid history id", historyId)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid history ID format"})
 		return
 	}
@@ -24,6 +26,7 @@ func AddReview(c *gin.Context) {
 	// try find History object based on param
 	var history models.History
 	if err := database.DB.First(&history, hUUID).Error; err != nil {
+		log.Printf("[review] %s: purchase not found (%v)", hUUID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "History record not found"})
 		return
 	}
@@ -39,6 +42,7 @@ func AddReview(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		log.Printf("[review] %s: invalid request: %v", hUUID, err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -46,10 +50,12 @@ func AddReview(c *gin.Context) {
 	// A purchase is rated once; a second rating would list it twice in history
 	var existing int64
 	if err := database.DB.Model(&models.Review{}).Where("history_id = ?", hUUID).Count(&existing).Error; err != nil {
+		log.Printf("[review] %s: could not check for an earlier rating: %v", hUUID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	if existing > 0 {
+		log.Printf("[review] %s: already rated", hUUID)
 		c.JSON(http.StatusConflict, gin.H{"error": "This purchase has already been rated"})
 		return
 	}
@@ -62,9 +68,12 @@ func AddReview(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&review).Error; err != nil {
+		log.Printf("[review] %s: could not save: %v", hUUID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	log.Printf("[review] %s (item #%d) rated %d by %s", hUUID, history.ItemID, review.Score, c.GetString("username"))
 
 	c.JSON(http.StatusCreated, review)
 }

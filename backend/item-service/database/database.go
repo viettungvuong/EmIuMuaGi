@@ -54,6 +54,11 @@ func InitDB() {
 		log.Fatalf("Failed to connect to database %s: %v", dbName, err)
 	}
 
+	// Items from before wanted_by existed were all hers, so they take 0 (girl)
+	if err := DB.Exec(`ALTER TABLE IF EXISTS items
+		ADD COLUMN IF NOT EXISTS wanted_by SMALLINT NOT NULL DEFAULT 0 CHECK (wanted_by IN (0, 1))`).Error; err != nil {
+		log.Fatal("Failed to add items.wanted_by:", err)
+	}
 
 	err = DB.AutoMigrate(
 		&models.Item{},
@@ -63,6 +68,7 @@ func InitDB() {
 		&models.Restaurant{},
 		&models.History{},
 		&models.Review{},
+		&models.Schedule{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)

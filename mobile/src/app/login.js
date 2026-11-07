@@ -45,7 +45,8 @@ export default function LoginScreen() {
       if (mode === 'login') {
         const response = await client.post('/api/auth/login', { username, password });
         if (response.data.success || response.status === 200) {
-          await signIn(username); // the layout then shows the list
+          // The server's spelling (usernames are case insensitive); the layout then shows the list
+          await signIn(response.data.username ?? username);
         }
       } else if (mode === 'signup') {
         // This only emails a code; the account is created once the code is entered

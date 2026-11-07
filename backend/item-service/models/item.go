@@ -18,11 +18,18 @@ type Item struct {
 	CreatedAt       time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	ItemType        string         `gorm:"size:50;not null" json:"item_type"`
 	Bought          bool           `gorm:"default:false;not null" json:"bought"`
+	WantedBy        int            `gorm:"type:smallint;default:0;not null" json:"wanted_by"` // who wants it: WantedByGirl / WantedByBoy
 	ItemMediaFolder *string        `gorm:"size:4096" json:"item_media_folder"`
 	Owner           string         `gorm:"size:255" json:"owner"`
 	DeletedAt       *time.Time     `gorm:"default:null" json:"deleted_at,omitempty"`
 	Metadata        map[string]any `gorm:"type:jsonb;serializer:json" json:"metadata,omitempty"`
 }
+
+// Item.WantedBy values: which of the couple wants the item
+const (
+	WantedByGirl = 0
+	WantedByBoy  = 1
+)
 
 type Clothes struct {
 	ID    uint    `gorm:"primaryKey" json:"id"`

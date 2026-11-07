@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -40,12 +41,20 @@ func sendPushNotification(title string, message string) {
 	}()
 }
 
-// GetItems retrieves all items with their specific type details
-// @Summary List all items
-// @Description Get a list of all items including clothes, food_and_drink, others, and restaurant
+// likeEscaper keeps the search text literal inside ILIKE: % and _ are wildcards there
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// GetItems lists the caller's and their partner's items, oldest first like a
+// conversation, filtered in SQL by the list's controls
+// @Summary List items
+// @Description Items of the caller and their partner with their type details, oldest first
 // @Tags items
 // @Produce json
 // @Security BearerAuth
+// @Param type query string false "Only this item type (clothes, food_and_drink, restaurant, others)"
+// @Param q query string false "Only items whose name contains this, ignoring case"
+// @Param hide_bought query bool false "Leave out items already bought"
+// @Param who query string false "Whose items: me (the caller's) or partner (their partner's); both when left out"
 // @Success 200 {array} models.AnyItem
 // @Router /items [get]
 func GetItems(c *gin.Context) {
@@ -72,10 +81,38 @@ func GetItems(c *gin.Context) {
 		log.Printf("Could not resolve partner, showing own items only: %v", err)
 	}
 
+	// Only fixed SQL fragments are joined here; every value goes in as a parameter
+	where := []string{"i.owner IN ?", "i.deleted_at IS NULL"}
+	args := []any{owners}
+	itemType := c.Query("type")
+	if itemType != "" && itemType != "all" {
+		where = append(where, "i.item_type = ?")
+		args = append(args, itemType)
+	}
+	search := strings.TrimSpace(c.Query("q"))
+	if search != "" {
+		where = append(where, `i.item_name ILIKE ? ESCAPE '\'`)
+		args = append(args, "%"+likeEscaper.Replace(search)+"%")
+	}
+	hideBought, _ := strconv.ParseBool(c.Query("hide_bought"))
+	if hideBought {
+		where = append(where, "NOT i.bought")
+	}
+	// Owners are already just the couple, so "not mine" is the partner's
+	who := c.Query("who")
+	switch who {
+	case "me":
+		where = append(where, "i.owner = ?")
+		args = append(args, c.GetString("username"))
+	case "partner":
+		where = append(where, "i.owner <> ?")
+		args = append(args, c.GetString("username"))
+	}
+
 	var results []PolledItem
 
 	err = database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
@@ -85,11 +122,12 @@ func GetItems(c *gin.Context) {
 		LEFT JOIN food_and_drinks f ON i.id = f.id
 		LEFT JOIN others o ON i.id = o.id
 		LEFT JOIN restaurants r ON i.id = r.id
-		WHERE i.owner IN ? AND i.deleted_at IS NULL
-		ORDER BY i.created_at DESC
-	`, owners).Scan(&results).Error
+		WHERE `+strings.Join(where, " AND ")+`
+		ORDER BY i.created_at, i.id
+	`, args...).Scan(&results).Error
 
 	if err != nil {
+		log.Printf("[items] list for %v: %v", owners, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve items"})
 		return
 	}
@@ -124,6 +162,7 @@ func GetItems(c *gin.Context) {
 		responses = append(responses, resp)
 	}
 
+	log.Printf("[items] listed %d items for %v (type=%q q=%q hide_bought=%t who=%q)", len(responses), owners, itemType, search, hideBought, who)
 	c.JSON(http.StatusOK, responses)
 }
 
@@ -144,12 +183,26 @@ func extractMetadata(item models.Item){
 func CreateItem(c *gin.Context) {
 	var input models.AnyItem
 	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("[items] create by %s: invalid request: %v", c.GetString("username"), err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if input.Quantity == 0 {
 		input.Quantity = 1
+	}
+
+	if input.WantedBy != models.WantedByGirl && input.WantedBy != models.WantedByBoy {
+		log.Printf("[items] create by %s: invalid wanted_by %d", c.GetString("username"), input.WantedBy)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "wanted_by must be 0 (girl) or 1 (boy)"})
+		return
+	}
+
+	// A restaurant's picked date also goes on the calendar, so it can't be in the past
+	if input.ItemType == "restaurant" && input.Schedule != nil && input.Schedule.Before(time.Now().Add(-scheduleGrace)) {
+		log.Printf("[items] create by %s: picked date %s has already passed", c.GetString("username"), input.Schedule.Format(time.RFC3339))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "That time has already passed"})
+		return
 	}
 
 	tx := database.DB.Begin()
@@ -159,6 +212,7 @@ func CreateItem(c *gin.Context) {
 	item.Owner = c.GetString("username")
 
 	if err := tx.Create(&item).Error; err != nil {
+		log.Printf("[items] create %q by %s: could not create base item: %v", item.ItemName, item.Owner, err)
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create base item"})
 		return
@@ -167,6 +221,7 @@ func CreateItem(c *gin.Context) {
 	if item.ItemType == "clothes" {
 		cItem := models.Clothes{ID: item.ID, Size: input.Size, Color: input.Color, Brand: input.Brand}
 		if err := tx.Create(&cItem).Error; err != nil {
+			log.Printf("[items] create %q by %s: could not create clothes item: %v", item.ItemName, item.Owner, err)
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create clothes item"})
 			return
@@ -174,6 +229,7 @@ func CreateItem(c *gin.Context) {
 	} else if item.ItemType == "food_and_drink" {
 		fItem := models.FoodAndDrink{ID: item.ID, Sugar: input.Sugar, Size: input.Size, Notes: input.Notes, Toppings: input.Toppings}
 		if err := tx.Create(&fItem).Error; err != nil {
+			log.Printf("[items] create %q by %s: could not create food_and_drink item: %v", item.ItemName, item.Owner, err)
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food_and_drink item"})
 			return
@@ -181,6 +237,7 @@ func CreateItem(c *gin.Context) {
 	} else if item.ItemType == "others" {
 		oItem := models.Others{ID: item.ID, Category: input.Category, Notes: input.Notes}
 		if err := tx.Create(&oItem).Error; err != nil {
+			log.Printf("[items] create %q by %s: could not create others item: %v", item.ItemName, item.Owner, err)
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create others item"})
 			return
@@ -188,17 +245,33 @@ func CreateItem(c *gin.Context) {
 	} else if item.ItemType == "restaurant" {
 		rItem := models.Restaurant{ID: item.ID, MainFood: input.MainFood, CuisineType: input.CuisineType, Address: input.Address, TimeToEat: input.TimeToEat, Schedule: input.Schedule}
 		if err := tx.Create(&rItem).Error; err != nil {
+			log.Printf("[items] create %q by %s: could not create restaurant item: %v", item.ItemName, item.Owner, err)
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create restaurant item"})
 			return
 		}
+		// "Pick a date": book it on the couple's calendar along with the restaurant
+		if input.Schedule != nil {
+			schedule := models.Schedule{ScheduledAt: *input.Schedule, RestaurantID: item.ID, Username: item.Owner}
+			if err := tx.Create(&schedule).Error; err != nil {
+				log.Printf("[items] create %q by %s: could not book its date: %v", item.ItemName, item.Owner, err)
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the schedule"})
+				return
+			}
+			log.Printf("[schedule] #%d: %s booked %q for %s while adding it", schedule.ID, item.Owner, item.ItemName, schedule.ScheduledAt.Format(time.RFC3339))
+		}
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		log.Printf("[items] create %q by %s: could not commit: %v", item.ItemName, item.Owner, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item"})
+		return
+	}
 
 	input.Item = item
 	sendPushNotification("Mới mún mua thêm đồ nè! 🛍️", "Vừa thêm vào danh sách: "+item.ItemName)
-	log.Printf("Added new item %s\n", item.ItemName)
+	log.Printf("[items] created #%d %q (%s, wanted_by %d) by %s", item.ID, item.ItemName, item.ItemType, item.WantedBy, item.Owner)
 	c.JSON(http.StatusCreated, input)
 }
 
@@ -208,12 +281,14 @@ func DeleteItem(c *gin.Context) {
 	var item models.Item
 
 	if err := database.DB.Where("id = ? AND deleted_at IS NULL", id).First(&item).Error; err != nil {
+		log.Printf("[items] delete #%s by %s: not found (%v)", id, currentUser, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 		return
 	}
 
 	// Only the person whose list it is can remove an item
 	if item.Owner != currentUser {
+		log.Printf("[items] delete #%s by %s: refused, it belongs to %s", id, currentUser, item.Owner)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not allowed to delete this item"})
 		return
 	}
@@ -222,11 +297,12 @@ func DeleteItem(c *gin.Context) {
 	// the nightly purge can clear both once the retention window has passed
 	now := time.Now()
 	if err := database.DB.Model(&item).Update("deleted_at", now).Error; err != nil {
+		log.Printf("[items] delete #%s by %s: %v", id, currentUser, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item"})
 		return
 	}
 
-	log.Printf("Deleted %s\n", item.ItemName)
+	log.Printf("[items] deleted #%d %q by %s", item.ID, item.ItemName, currentUser)
 
 	c.Status(http.StatusNoContent)
 }
@@ -241,10 +317,11 @@ func addHistory(ctx context.Context, item_id uint) uuid.UUID {
 	result := database.DB.WithContext(ctx).Create(&h)
 
 	if result.Error != nil {
+		log.Printf("[history] could not record purchase of item #%d: %v", item_id, result.Error)
 		return uuid.Nil
 	}
 
-	fmt.Printf("Add history for %+v successfully\n", item_id)
+	log.Printf("[history] recorded purchase %s of item #%d", h.ID, item_id)
 
 	return h.ID
 }
@@ -258,7 +335,12 @@ func MarkItemAsBought(c *gin.Context) {
 	}
 
 	item.Bought = true
-	database.DB.Save(&item)
+	if err := database.DB.Save(&item).Error; err != nil {
+		log.Printf("[items] mark #%s bought by %s: %v", id, c.GetString("username"), err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark item as bought"})
+		return
+	}
+	log.Printf("[items] #%d %q marked bought by %s", item.ID, item.ItemName, c.GetString("username"))
 
 	// Automatically create a history entry
 	historyId := addHistory(c.Request.Context(), item.ID)
@@ -281,8 +363,8 @@ func MarkItemAsBought(c *gin.Context) {
 		Schedule    *time.Time `gorm:"column:schedule"`
 	}
 
-	database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner,
+	if err := database.DB.Raw(`
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
@@ -293,7 +375,9 @@ func MarkItemAsBought(c *gin.Context) {
 		LEFT JOIN others o ON i.id = o.id
 		LEFT JOIN restaurants r ON i.id = r.id
 		WHERE i.id = ? AND i.deleted_at IS NULL
-	`, id).Scan(&res)
+	`, id).Scan(&res).Error; err != nil {
+		log.Printf("[items] mark #%s bought: could not reload it: %v", id, err)
+	}
 
 	resp := models.AnyItem{Item: res.Item, Additional: map[string]any{
 		"HistoryID": historyId,

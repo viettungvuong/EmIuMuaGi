@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -39,11 +38,11 @@ func GetHistories(c *gin.Context) {
 	`, owners).Scan(&res).Error
 
 	if err != nil {
-		fmt.Printf("Error fetching histories: %v\n", err)
+		log.Printf("[history] list for %v: %v", owners, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve histories"})
 		return
 	}
 
-	fmt.Printf("Fetched %d history records\n", len(res))
+	log.Printf("[history] listed %d purchases for %v", len(res), owners)
 	c.JSON(http.StatusOK, res)
 }

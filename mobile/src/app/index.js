@@ -1,7 +1,8 @@
 // frontend/src/pages/MainPage.jsx
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Linking,
@@ -18,10 +19,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WEB_URL } from '../api/config';
 import { useAuth } from '../auth';
-import { t, useLanguage } from '../i18n';
+import { dateLocale, t, useLanguage } from '../i18n';
 import { RatingForm } from '../components/RatingModal';
+import ScheduleModal from '../components/ScheduleModal';
+import { byTime, formatWhen, relativeWhen } from '../schedule';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
-import { colors, fonts, formatDate, radius } from '../theme';
+import { colors, fonts, radius } from '../theme';
 
 const ITEM_TYPES = ['clothes', 'food_and_drink', 'restaurant', 'others'];
 const typeLabel = (type) => (ITEM_TYPES.includes(type) ? t(`types.${type}`) : type);
@@ -34,6 +37,54 @@ const SWIPE_TRIGGER = 100;
 // What the backend sends as the history ID when it couldn't record the purchase
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
+// How long the search box has to sit still before the server is asked
+const SEARCH_DEBOUNCE_MS = 300;
+
+// Item times are shown in Vietnam time, like the rest of the app. It is UTC+7
+// all year (no daylight saving), so its calendar day is the UTC day 7 hours on.
+const VN_TIME = 'Asia/Ho_Chi_Minh';
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const dayOf = (date) => new Date(new Date(date).getTime() + VN_OFFSET_MS).toISOString().slice(0, 10); // '2026-11-07'
+
+// 'Today', 'Yesterday', or 'Saturday, November 1'
+function dayLabel(day) {
+  if (day === dayOf(Date.now())) return t('main.today');
+  if (day === dayOf(Date.now() - DAY_MS)) return t('main.yesterday');
+  const [year, month, date] = day.split('-').map(Number);
+  // Noon UTC is the same calendar day in Vietnam
+  return new Date(Date.UTC(year, month - 1, date, 12)).toLocaleDateString(dateLocale(), {
+    timeZone: VN_TIME,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    ...(year !== new Date().getFullYear() && { year: 'numeric' }),
+  });
+}
+
+// The list as a conversation (items come oldest first): a separator whenever the
+// day changes, and for each bubble whether it opens or closes a run of one
+// person's items, so a run sits close together with the avatar on its last bubble
+// (mirrors chatRows in the web app's MainPage)
+function chatRows(items) {
+  const rows = [];
+  items.forEach((item, i) => {
+    const day = dayOf(item.created_at);
+    const prev = items[i - 1];
+    const next = items[i + 1];
+    const newDay = !prev || dayOf(prev.created_at) !== day;
+    if (newDay) rows.push({ kind: 'day', key: `day-${day}`, label: dayLabel(day) });
+    rows.push({
+      kind: 'item',
+      key: item.id,
+      item,
+      runStart: newDay || prev.owner !== item.owner,
+      runEnd: !next || next.owner !== item.owner || dayOf(next.created_at) !== day,
+    });
+  });
+  return rows;
+}
+
 function subInfo(item) {
   if (item.item_type === 'clothes') {
     return [item.size, item.color, item.brand].filter(Boolean).join(' · ');
@@ -43,7 +94,9 @@ function subInfo(item) {
     return [item.size, item.sugar && t('main.sugar', { sugar: item.sugar }), toppings].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'restaurant') {
-    return [item.main_food, item.cuisine_type, item.address, item.time_to_eat].filter(Boolean).join(' · ');
+    // The picked date shows as its own chip, so "pick_date" isn't printed here
+    const timeToEat = item.time_to_eat === 'auto_schedule' ? t('add.autoSchedule') : null;
+    return [item.main_food, item.cuisine_type, item.address, timeToEat].filter(Boolean).join(' · ');
   }
   if (item.item_type === 'others') {
     return item.category || '';
@@ -58,26 +111,52 @@ export default function MainScreen() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // The list's controls, applied by the server (GET /api/items?type=&q=&hide_bought=)
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [search, setSearch] = useState(''); // searchQuery once typing pauses
   const [hideBought, setHideBought] = useState(false);
+  const [who, setWho] = useState('all'); // whose items: 'all', 'me' or 'partner'
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmItemId, setConfirmItemId] = useState(null);
   const [buying, setBuying] = useState(false);
   // The purchase just made, while its rating form is open: { historyId, name }
   const [ratingPurchase, setRatingPurchase] = useState(null);
+  // The couple's meal dates, oldest first, and the calendar popup while open:
+  // { restaurant } to book one, { restaurant: null } to just look
+  const [schedules, setSchedules] = useState([]);
+  const [calendar, setCalendar] = useState(null);
+  // Only with a partner linked: after unlinking, "partner's items" would always be empty
+  const whoFilter = userData?.partner ? who : 'all';
+  const requestRef = useRef(0); // only the latest list request's answer is shown
+  const scrollRef = useRef(null);
+  const scrollToEndRef = useRef(false); // set when a fresh list arrives
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
+    const request = ++requestRef.current;
+    const params = {};
+    if (filterType !== 'all') params.type = filterType;
+    if (search) params.q = search;
+    if (hideBought) params.hide_bought = true;
+    if (whoFilter !== 'all') params.who = whoFilter;
+
     try {
-      const { data } = await client.get('/api/items');
+      const { data } = await client.get('/api/items', { params });
+      if (request !== requestRef.current) return; // the controls changed meanwhile
+      scrollToEndRef.current = true;
       setItems(data);
     } catch (err) {
       console.error('Failed to fetch items:', err);
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
-  };
+  }, [filterType, search, hideBought, whoFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchQuery.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchUserData = async () => {
     try {
@@ -88,17 +167,40 @@ export default function MainScreen() {
     }
   };
 
-  // Every time the screen shows, so a newly added item appears on returning from Add
+  const fetchSchedules = async () => {
+    try {
+      const { data } = await client.get('/api/schedules');
+      setSchedules(data);
+    } catch (err) {
+      console.error('Failed to fetch schedules:', err);
+    }
+  };
+
+  // Every time the screen shows, so a newly added item appears on returning from
+  // Add; the list also reloads whenever its controls change
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+      fetchSchedules();
+    }, []),
+  );
   useFocusEffect(
     useCallback(() => {
       fetchItems();
-      fetchUserData();
-    }, []),
+    }, [fetchItems]),
   );
+
+  // Like a chat, a freshly loaded list opens on its newest message. The partner
+  // card above can still push the list down until it loads, so keep at it.
+  const onContentSizeChange = () => {
+    if (!scrollToEndRef.current) return;
+    scrollRef.current?.scrollToEnd({ animated: false });
+    if (userData) scrollToEndRef.current = false;
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchItems(), fetchUserData()]);
+    await Promise.all([fetchItems(), fetchUserData(), fetchSchedules()]);
     setRefreshing(false);
   };
 
@@ -106,6 +208,7 @@ export default function MainScreen() {
     try {
       await client.delete(`/api/items/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
+      setSchedules((prev) => prev.filter((s) => s.restaurant_id !== id));
     } catch (err) {
       console.error('Failed to delete item:', err);
     }
@@ -118,7 +221,8 @@ export default function MainScreen() {
 
     try {
       const { data } = await client.patch(`/api/items/${id}/bought`);
-      setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+      // With "hide bought" on, the server would no longer list it
+      setItems((prev) => (hideBought ? prev.filter((i) => i.id !== id) : prev.map((i) => (i.id === id ? data : i))));
       // The dialog stays open and turns into the rating form. Ratings belong to
       // the purchase (its history entry), which the backend just created;
       // "Để sau" leaves it for the history screen.
@@ -146,6 +250,11 @@ export default function MainScreen() {
   };
 
   const currentUser = userData?.id || username;
+
+  // Upcoming dates: the very next one, and each restaurant's next one
+  const now = new Date();
+  const upcoming = schedules.filter((s) => new Date(s.scheduled_at) >= now);
+  const nextDate = upcoming[0];
   const inviteLink = `${WEB_URL}/partner/${userData?.invite_link || ''}`;
 
   const copyInviteLink = async () => {
@@ -155,15 +264,8 @@ export default function MainScreen() {
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  const filteredItems = items
-    .filter((item) => {
-      const matchesFilter = filterType === 'all' || item.item_type === filterType;
-      const matchesSearch = item.item_name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesHide = hideBought ? !item.bought : true;
-      return matchesFilter && matchesSearch && matchesHide;
-    })
-    // Not bought first, then newest first
-    .sort((a, b) => (a.bought === b.bought ? new Date(b.created_at) - new Date(a.created_at) : a.bought ? 1 : -1));
+  // An empty answer to a filtered list means "no match", not "nothing added yet"
+  const filtering = filterType !== 'all' || Boolean(search) || hideBought || whoFilter !== 'all';
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
@@ -176,6 +278,8 @@ export default function MainScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
+        onContentSizeChange={onContentSizeChange}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
@@ -216,7 +320,7 @@ export default function MainScreen() {
               )}
             </View>
 
-            {items.length === 0 ? (
+            {items.length === 0 && !filtering ? (
               <EmptyState icon="🧐" text={t('main.empty')} />
             ) : (
               <>
@@ -228,6 +332,28 @@ export default function MainScreen() {
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                   />
+                  {/* Whose items, once there's a partner to tell apart */}
+                  {!!userData?.partner && (
+                    <View style={styles.whoFilter} accessibilityRole="radiogroup" accessibilityLabel={t('main.whoseItems')}>
+                      {[
+                        ['all', '💞', t('main.both'), styles.whoFilterAll],
+                        ['me', '🙋', t('main.mine'), styles.whoFilterMe],
+                        ['partner', '💜', t('main.partners', { name: userData.partner.id }), styles.whoFilterPartner],
+                      ].map(([value, icon, label, activeStyle]) => (
+                        <Pressable
+                          key={value}
+                          style={[styles.whoFilterBtn, who === value && activeStyle]}
+                          onPress={() => setWho(value)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: who === value }}
+                        >
+                          <Text style={[styles.whoFilterText, who === value && { color: '#fff' }]} numberOfLines={1}>
+                            {icon} {label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTabs}>
                     {[['all', t('types.all')], ...ITEM_TYPES.map((type) => [type, typeLabel(type)])].map(([type, label]) => (
                       <Pressable
@@ -247,19 +373,51 @@ export default function MainScreen() {
                   </Pressable>
                 </View>
 
-                {filteredItems.length === 0 ? (
+                {filterType === 'restaurant' && (
+                  <Pressable style={styles.dateBanner} onPress={() => setCalendar({ restaurant: null })}>
+                    <Text style={styles.dateBannerIcon}>📅</Text>
+                    <View style={styles.dateBannerText}>
+                      {nextDate ? (
+                        <>
+                          <Text style={styles.dateBannerLabel}>{t('schedule.next')}</Text>
+                          <Text style={styles.itemName} numberOfLines={1}>{nextDate.restaurant_name}</Text>
+                          <Text style={styles.dateBannerWhen}>
+                            {formatWhen(nextDate)} · {relativeWhen(new Date(nextDate.scheduled_at), now)}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text style={styles.subInfo}>{t('schedule.noneYet')}</Text>
+                      )}
+                    </View>
+                    <Text style={styles.dateBannerCta}>{t('schedule.calendar')} ›</Text>
+                  </Pressable>
+                )}
+
+                {items.length === 0 ? (
                   <EmptyState icon="😅" text={t('main.noMatch')} />
                 ) : (
-                  <View style={styles.list}>
-                    {filteredItems.map((item) => (
-                      <ItemCard
-                        key={item.id}
-                        item={item}
-                        currentUser={currentUser}
-                        onBuy={() => setConfirmItemId(item.id)}
-                        onDelete={() => handleDelete(item.id)}
-                      />
-                    ))}
+                  <View>
+                    {chatRows(items).map((row) =>
+                      row.kind === 'day' ? (
+                        <View key={row.key} style={styles.chatDay}>
+                          <View style={styles.chatDayLine} />
+                          <Text style={styles.chatDayText}>{row.label}</Text>
+                          <View style={styles.chatDayLine} />
+                        </View>
+                      ) : (
+                        <ChatBubble
+                          key={row.key}
+                          item={row.item}
+                          mine={row.item.owner === currentUser}
+                          runStart={row.runStart}
+                          runEnd={row.runEnd}
+                          nextDate={row.item.item_type === 'restaurant' ? upcoming.find((s) => s.restaurant_id === row.item.id) : null}
+                          onSchedule={() => setCalendar({ restaurant: row.item })}
+                          onBuy={() => setConfirmItemId(row.item.id)}
+                          onDelete={() => handleDelete(row.item.id)}
+                        />
+                      ),
+                    )}
                   </View>
                 )}
               </>
@@ -271,6 +429,23 @@ export default function MainScreen() {
       <Pressable style={styles.fab} onPress={() => router.push('/add')} accessibilityLabel={t('main.addLabel')}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
+
+      {/* Mounted only while open, so each opening starts on today */}
+      {calendar && (
+        <ScheduleModal
+          visible
+          restaurant={calendar.restaurant}
+          schedules={schedules}
+          currentUser={currentUser}
+          partnerName={userData?.partner?.id}
+          onCreated={(schedule) => {
+            setSchedules((prev) => [...prev, schedule].sort(byTime));
+            setCalendar(null);
+          }}
+          onDeleted={(id) => setSchedules((prev) => prev.filter((s) => s.id !== id))}
+          onClose={() => setCalendar(null)}
+        />
+      )}
 
       {/* One dialog: "did you buy it?", then the rating form */}
       <ModalCard
@@ -303,10 +478,14 @@ export default function MainScreen() {
   );
 }
 
-function ItemCard({ item, currentUser, onBuy, onDelete }) {
+// One item as a chat message: yours on the right, your partner's on the left
+// with their initial, closing a run of their items (MainPage's ChatBubble on the web)
+function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy, onDelete }) {
   const info = subInfo(item);
+  const time = new Date(item.created_at).toLocaleTimeString(dateLocale(), { timeZone: VN_TIME, hour: '2-digit', minute: '2-digit' });
+  const showActions = !item.bought || item.item_type === 'restaurant' || mine;
 
-  // Swipe left to buy: the card slides over a green strip, and letting go past
+  // Swipe left to buy: the bubble slides over a green strip, and letting go past
   // SWIPE_TRIGGER opens the same "did you buy it?" dialog as the button
   // (onBuy is kept from the first render: it only opens the dialog for this item's id)
   const [translateX] = useState(() => new Animated.Value(0));
@@ -326,24 +505,24 @@ function ItemCard({ item, currentUser, onBuy, onDelete }) {
   });
   const actionOpacity = translateX.interpolate({ inputRange: [-SWIPE_TRIGGER, 0], outputRange: [1, 0], extrapolate: 'clamp' });
 
-  if (item.bought) return <CardBody item={item} info={info} currentUser={currentUser} onBuy={onBuy} onDelete={onDelete} />;
+  // A run sits together: flatter corners on the sender's side, a tail on its last bubble
+  const side = mine ? 'Right' : 'Left';
+  const corners = {
+    [`borderTop${side}Radius`]: runStart ? 20 : 8,
+    [`borderBottom${side}Radius`]: runEnd ? 4 : 8,
+  };
+  const Surface = mine ? LinearGradient : View;
+  const surfaceProps = mine ? { colors: ['#fdd3e5', '#fde7f1'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } : {};
 
-  return (
-    <View>
-      <Animated.View style={[styles.swipeAction, { opacity: actionOpacity }]}>
-        <Text style={styles.swipeActionText}>✓ {t('main.bought')}</Text>
-      </Animated.View>
-      <Animated.View style={{ transform: [{ translateX }] }} {...swipe.panHandlers}>
-        <CardBody item={item} info={info} currentUser={currentUser} onBuy={onBuy} onDelete={onDelete} />
-      </Animated.View>
-    </View>
-  );
-}
-
-function CardBody({ item, info, currentUser, onBuy, onDelete }) {
-  return (
-    <View style={[styles.card, item.bought && { opacity: 0.6 }]}>
-      <View style={styles.cardHeader}>
+  const bubble = (
+    <Surface {...surfaceProps} style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs, corners, item.bought && { opacity: 0.6 }]}>
+      <View style={styles.bubbleHeader}>
+        <View
+          style={[styles.who, item.wanted_by === 1 ? styles.whoBoy : styles.whoGirl]}
+          accessibilityLabel={t(`wantedBy.${item.wanted_by === 1 ? 'boy' : 'girl'}`)}
+        >
+          <Text style={styles.whoIcon}>{item.wanted_by === 1 ? '👦' : '👧'}</Text>
+        </View>
         <Text style={[styles.itemName, item.bought && styles.itemNameBought]}>{item.item_name}</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{typeLabel(item.item_type)}</Text>
@@ -352,12 +531,13 @@ function CardBody({ item, info, currentUser, onBuy, onDelete }) {
 
       {!!info && <Text style={styles.subInfo}>{info}</Text>}
 
-      <View style={styles.meta}>
-        {item.owner && item.owner !== currentUser && <Text style={styles.metaAccent}>💌 {item.owner}</Text>}
-        {!!item.shop_name && <Text style={styles.metaText}>🏪 {item.shop_name}</Text>}
-        {item.quantity > 1 && <Text style={styles.metaAccent}>x{item.quantity}</Text>}
-        <Text style={styles.metaText}>{formatDate(item.created_at)}</Text>
-      </View>
+      {(!!item.shop_name || item.quantity > 1 || !!nextDate) && (
+        <View style={styles.meta}>
+          {!!item.shop_name && <Text style={styles.metaText}>🏪 {item.shop_name}</Text>}
+          {item.quantity > 1 && <Text style={styles.metaAccent}>x{item.quantity}</Text>}
+          {!!nextDate && <Text style={styles.nextDateChip}>📅 {formatWhen(nextDate)}</Text>}
+        </View>
+      )}
 
       {!!item.buy_url && (
         <Text style={styles.itemLink} onPress={() => Linking.openURL(item.buy_url)}>
@@ -365,21 +545,52 @@ function CardBody({ item, info, currentUser, onBuy, onDelete }) {
         </Text>
       )}
 
-      <View style={styles.actions}>
+      {showActions && (
+        <View style={styles.bubbleActions}>
+          {!item.bought && (
+            <Pressable style={styles.buyBtn} onPress={onBuy} accessibilityLabel={t('main.boughtLabel')}>
+              <Text style={styles.buyBtnText}>{t('main.bought')}</Text>
+            </Pressable>
+          )}
+          {item.item_type === 'restaurant' && (
+            <Pressable style={styles.scheduleBtn} onPress={onSchedule} accessibilityLabel={t('schedule.button')}>
+              <Text style={styles.scheduleBtnText}>📅 {t('schedule.button')}</Text>
+            </Pressable>
+          )}
+          {mine && (
+            <Pressable style={styles.deleteBtn} onPress={onDelete} accessibilityLabel={t('main.deleteLabel')}>
+              <Text style={styles.deleteBtnText}>🗑</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+    </Surface>
+  );
+
+  return (
+    <View style={[styles.chatRow, mine && styles.chatRowMine, runStart && styles.chatRowRunStart]}>
+      {!mine && (
+        <View style={[styles.chatAvatar, runEnd && styles.chatAvatarShown]} accessibilityLabel={item.owner}>
+          {runEnd && <Text style={styles.chatAvatarText}>{item.owner.charAt(0).toUpperCase()}</Text>}
+        </View>
+      )}
+      <View style={[styles.bubbleCol, mine && { alignItems: 'flex-end' }]}>
         {item.bought ? (
-          <View style={styles.boughtBadge}>
-            <Text style={styles.boughtBadgeText}>✓</Text>
-          </View>
+          bubble
         ) : (
-          <Pressable style={styles.buyBtn} onPress={onBuy} accessibilityLabel={t('main.boughtLabel')}>
-            <Text style={styles.buyBtnText}>{t('main.bought')}</Text>
-          </Pressable>
+          <View>
+            <Animated.View style={[styles.swipeAction, { opacity: actionOpacity }]}>
+              <Text style={styles.swipeActionText}>✓</Text>
+            </Animated.View>
+            <Animated.View style={{ transform: [{ translateX }] }} {...swipe.panHandlers}>
+              {bubble}
+            </Animated.View>
+          </View>
         )}
-        {item.owner === currentUser && (
-          <Pressable style={styles.deleteBtn} onPress={onDelete} accessibilityLabel={t('main.deleteLabel')}>
-            <Text style={styles.deleteBtnText}>🗑</Text>
-          </Pressable>
-        )}
+        <View style={styles.bubbleFoot}>
+          <Text style={styles.bubbleFootText}>{time}</Text>
+          {item.bought && <Text style={[styles.bubbleFootText, styles.bubbleBought]}>{t('main.boughtStatus')}</Text>}
+        </View>
       </View>
     </View>
   );
@@ -448,6 +659,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
   },
+  // Whose items: both, yours (pink) or your partner's (violet), like the chat sides
+  whoFilter: {
+    flexDirection: 'row',
+    gap: 4,
+    padding: 4,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  whoFilterBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, paddingHorizontal: 6, borderRadius: 20 },
+  whoFilterAll: { backgroundColor: colors.accent2 },
+  whoFilterMe: { backgroundColor: colors.accent },
+  whoFilterPartner: { backgroundColor: colors.partner },
+  whoFilterText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.textMuted },
   filterTabs: { gap: 8, paddingBottom: 4 },
   filterTab: {
     paddingVertical: 8,
@@ -489,26 +715,55 @@ const styles = StyleSheet.create({
   checkmark: { color: '#fff', fontSize: 11, lineHeight: 13, fontFamily: fonts.bold },
   hideBoughtText: { fontFamily: fonts.regular, fontSize: 13.6, color: colors.textMuted },
 
-  list: { gap: 12 },
-  card: {
-    backgroundColor: colors.surface,
+  // The list as a conversation: your items on the right, your partner's on the left
+  chatDay: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20, marginBottom: 6 },
+  chatDayLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  chatDayText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11.5,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: 16,
-    gap: 4,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
   },
+  chatRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
+  chatRowMine: { justifyContent: 'flex-end' },
+  chatRowRunStart: { marginTop: 14 },
+  // The partner's initial, on the last bubble of their run, level with the bubble above its time
+  chatAvatar: { width: 30, height: 30, borderRadius: 15, marginBottom: 20, alignItems: 'center', justifyContent: 'center' },
+  chatAvatarShown: { backgroundColor: colors.partner, boxShadow: '0 2px 8px rgba(139, 92, 246, 0.35)' },
+  chatAvatarText: { fontFamily: fonts.bold, fontSize: 13, color: '#fff' },
+  bubbleCol: { maxWidth: '82%', flexShrink: 1 },
+  bubble: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, gap: 4 },
+  bubbleMine: { borderColor: 'rgba(236, 72, 153, 0.25)' },
+  bubbleTheirs: { backgroundColor: colors.surface, borderColor: colors.border },
+  bubbleHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  bubbleActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  // Time under the bubble, and a "read receipt" once bought
+  bubbleFoot: { flexDirection: 'row', gap: 8, marginTop: 4, marginHorizontal: 6 },
+  bubbleFootText: { fontFamily: fonts.regular, fontSize: 11, color: colors.textMuted },
+  bubbleBought: { fontFamily: fonts.semibold, color: colors.success },
   swipeAction: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'flex-end',
     justifyContent: 'center',
-    paddingRight: 24,
+    paddingRight: 18,
     backgroundColor: colors.success,
-    borderRadius: radius.lg,
+    borderRadius: 20,
   },
-  swipeActionText: { fontFamily: fonts.bold, fontSize: 15, color: '#fff' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
-  itemName: { fontFamily: fonts.bold, fontSize: 17, color: colors.text, flexShrink: 1 },
+  swipeActionText: { fontFamily: fonts.bold, fontSize: 18, color: '#fff' },
+  // Who wants it: pink for her, blue for him
+  who: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  whoGirl: { backgroundColor: 'rgba(236, 72, 153, 0.12)', borderColor: 'rgba(236, 72, 153, 0.35)' },
+  whoBoy: { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.35)' },
+  whoIcon: { fontSize: 16, lineHeight: 20 },
+  itemName: { fontFamily: fonts.bold, fontSize: 16, color: colors.text, flexShrink: 1 },
   itemNameBought: { textDecorationLine: 'line-through', color: colors.textMuted },
   badge: {
     paddingVertical: 2,
@@ -524,28 +779,55 @@ const styles = StyleSheet.create({
   metaText: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textMuted },
   metaAccent: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.accent2 },
   itemLink: { marginTop: 6, fontFamily: fonts.regular, fontSize: 12.5, color: colors.accent2 },
-  actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8 },
   buyBtn: {
-    flex: 1,
     alignItems: 'center',
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.3)',
     borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
-  buyBtnText: { fontFamily: fonts.semibold, fontSize: 13, color: '#2f552f' },
-  boughtBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  buyBtnText: { fontFamily: fonts.semibold, fontSize: 12.5, color: '#2f552f' },
+  scheduleBtn: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(236, 72, 153, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: 'rgba(236, 72, 153, 0.3)',
     borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
-  boughtBadgeText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.success },
-  deleteBtn: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8 },
+  scheduleBtnText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.accent },
+  nextDateChip: {
+    fontFamily: fonts.semibold,
+    fontSize: 12.5,
+    color: colors.accent,
+    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+    paddingVertical: 1,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  // The Restaurant tab's next date, opens the calendar
+  dateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.25)',
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+  },
+  dateBannerIcon: { fontSize: 28 },
+  dateBannerText: { flex: 1, gap: 1 },
+  dateBannerLabel: { fontFamily: fonts.semibold, fontSize: 11, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  dateBannerWhen: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.accent },
+  dateBannerCta: { fontFamily: fonts.bold, fontSize: 13, color: colors.accent },
+  deleteBtn: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8, marginLeft: 'auto' },
   deleteBtnText: { fontSize: 17.6, color: colors.textMuted },
 
   fab: {

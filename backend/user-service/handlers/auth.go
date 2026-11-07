@@ -34,8 +34,15 @@ type VerifySignupRequest struct {
 
 const minPasswordLength = 6
 
+// Usernames are case insensitive: "Tung" and "tung" are one account. New ones are
+// stored lowercased; lookups go through lower(id) so older mixed-case IDs still match.
+func normalizeUsername(username string) string {
+	return strings.ToLower(strings.TrimSpace(username))
+}
+
 func passwordTooShort(c *gin.Context, password string) bool {
 	if utf8.RuneCountInString(password) < minPasswordLength {
+		log.Printf("[auth] %s: password too short", c.Request.URL.Path)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 6 characters"})
 		return true
 	}
@@ -69,22 +76,26 @@ type ChangePasswordRequest struct {
 func SignUp(c *gin.Context) {
 	var req SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[auth] signup: invalid request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 	if passwordTooShort(c, req.Password) {
 		return
 	}
+	req.Username = normalizeUsername(req.Username)
 
 	// Turn away a taken username or email now, not after the user has fetched the code
 	var taken int64
 	if err := database.DB.Model(&models.User{}).
-		Where("id = ? OR email = ?", req.Username, req.Email).
+		Where("lower(id) = ? OR email = ?", req.Username, req.Email).
 		Count(&taken).Error; err != nil {
+		log.Printf("[auth] signup %s: could not check username and email: %v", req.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not check username and email"})
 		return
 	}
 	if taken > 0 {
+		log.Printf("[auth] signup %s <%s>: username or email already taken", req.Username, req.Email)
 		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already exists"})
 		return
 	}
@@ -94,6 +105,7 @@ func SignUp(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send OTP: " + err.Error()})
 		return
 	}
+	log.Printf("[auth] signup %s <%s>: OTP emailed", req.Username, req.Email)
 	c.JSON(http.StatusCreated, gin.H{"message": "OTP sent successfully"})
 }
 
@@ -112,12 +124,14 @@ func SignUp(c *gin.Context) {
 func VerifySignUp(c *gin.Context) {
 	var req VerifySignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[auth] signup verify: invalid request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 	if passwordTooShort(c, req.Password) {
 		return
 	}
+	req.Username = normalizeUsername(req.Username)
 
 	ok, err := VerifyOTP(req.Email, req.OTP)
 	if err != nil {
@@ -126,12 +140,14 @@ func VerifySignUp(c *gin.Context) {
 		return
 	}
 	if !ok {
+		log.Printf("[auth] signup verify %s <%s>: wrong or expired OTP", req.Username, req.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired OTP"})
 		return
 	}
 
 	hashedPassword, err := internal.HashPassword(req.Password)
 	if err != nil {
+		log.Printf("[auth] signup verify %s: could not hash password: %v", req.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash password"})
 		return
 	}
@@ -143,10 +159,12 @@ func VerifySignUp(c *gin.Context) {
 	} // create new object
 
 	if err := database.DB.Create(&user).Error; err != nil {
+		log.Printf("[auth] signup verify %s <%s>: could not create user: %v", req.Username, req.Email, err)
 		c.JSON(http.StatusConflict, gin.H{"error": "Username or Email already exists"})
 		return
 	}
 
+	log.Printf("[auth] signup %s <%s>: account created", user.ID, user.Email)
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
@@ -163,23 +181,27 @@ func VerifySignUp(c *gin.Context) {
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[auth] login: invalid request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
 	var user models.User
-	if err := database.DB.Where("id = ?", req.Username).First(&user).Error; err != nil {
+	if err := database.DB.Where("lower(id) = ?", normalizeUsername(req.Username)).First(&user).Error; err != nil {
+		log.Printf("[auth] login %q: user not found (%v)", req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
 	if !internal.CheckPasswordHash(req.Password, user.Password) {
+		log.Printf("[auth] login %s: wrong password", user.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}
 
 	tokens, err := internal.GenerateTokens(user.ID)
 	if err != nil {
+		log.Printf("[auth] login %s: could not generate tokens: %v", user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
@@ -188,15 +210,18 @@ func Login(c *gin.Context) {
 	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
 	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
+	log.Printf("[auth] login %s: logged in", user.ID)
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"token":   tokens,
+		"message":  "Login successful",
+		"token":    tokens,
+		"username": user.ID, // as stored, whatever case it was typed in
 	})
 }
 
 func RefreshToken(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token") // extract from cookie
 	if err != nil {
+		log.Printf("[auth] refresh: no refresh token cookie")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
 		return
 	}
@@ -207,12 +232,14 @@ func RefreshToken(c *gin.Context) {
 	})
 
 	if err != nil || !token.Valid {
+		log.Printf("[auth] refresh: invalid or expired refresh token: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
 	accessToken, accessExp, err := internal.GenerateAccessToken(claims.Username)
 	if err != nil {
+		log.Printf("[auth] refresh %s: could not generate access token: %v", claims.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
 		return
 	}
@@ -227,9 +254,12 @@ func RefreshToken(c *gin.Context) {
 		RefreshExpiresAt: claims.ExpiresAt.Time,
 	}
 	if err := database.DB.Create(&newToken).Error; err != nil {
+		log.Printf("[auth] refresh %s: could not save token: %v", claims.Username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save token to database"})
 		return
 	}
+
+	log.Printf("[auth] refresh %s: new access token issued", claims.Username)
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,
@@ -273,6 +303,7 @@ func CheckSignedIn(c *gin.Context) {
 func ChangePassword(c *gin.Context) {
 	var req ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("[auth] change password: invalid request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
@@ -285,6 +316,7 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	if req.OldPassword == "" || req.NewPassword == "" {
+		log.Printf("[auth] change password: old or new password missing")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Both oldPassword and newPassword are required"})
 		return
 	}
@@ -326,18 +358,21 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	if username == "" {
+		log.Printf("[auth] change password: not signed in (no valid access or refresh token)")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 		return
 	}
 
 	var user models.User
 	if err := database.DB.Where("id = ?", username).First(&user).Error; err != nil {
+		log.Printf("[auth] change password %s: user not found (%v)", username, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
 	// Verify oldPassword against hashed password stored in the database
 	if !internal.CheckPasswordHash(req.OldPassword, user.Password) {
+		log.Printf("[auth] change password %s: wrong old password", user.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect old password"})
 		return
 	}
@@ -345,14 +380,18 @@ func ChangePassword(c *gin.Context) {
 	// Only set new password if old password was correct
 	hashedNewPassword, err := internal.HashPassword(req.NewPassword)
 	if err != nil {
+		log.Printf("[auth] change password %s: could not hash new password: %v", user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not hash new password"})
 		return
 	}
 
 	if err := database.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("password", hashedNewPassword).Error; err != nil {
+		log.Printf("[auth] change password %s: could not update password: %v", user.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update password"})
 		return
 	}
+
+	log.Printf("[auth] change password %s: password changed", user.ID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }
@@ -368,6 +407,7 @@ func SignOut(c *gin.Context) {
 	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
+	log.Printf("[auth] logout: signed out (had access token: %t)", accessToken != "")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Signed out successfully",
 	})
@@ -375,8 +415,11 @@ func SignOut(c *gin.Context) {
 
 // make token expire
 func invalidateToken(accessToken string) {
-	database.DB.Model(&models.Token{}).Where("access_token = ?", accessToken).Updates(map[string]interface{}{
+	err := database.DB.Model(&models.Token{}).Where("access_token = ?", accessToken).Updates(map[string]interface{}{
 		"access_expires_at":  time.Now(),
 		"refresh_expires_at": time.Now(),
-	})
+	}).Error
+	if err != nil {
+		log.Printf("[auth] logout: could not expire token: %v", err)
+	}
 }

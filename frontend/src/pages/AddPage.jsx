@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
+import ScheduleModal from '../components/ScheduleModal';
 import { t } from '../i18n';
+import { formatAt } from '../schedule';
 import '../styles/AddPage.css';
 
 const ITEM_TYPES = [
@@ -9,6 +11,12 @@ const ITEM_TYPES = [
   { value: 'food_and_drink', icon: '🧋' },
   { value: 'restaurant',     icon: '🍜' },
   { value: 'others',         icon: '📦' },
+];
+
+// items.wanted_by: which of the couple wants it
+const WANTED_BY = [
+  { value: 0, key: 'girl', icon: '👧' },
+  { value: 1, key: 'boy',  icon: '👦' },
 ];
 
 // How long the link has to stay unchanged before it is sent to the parser
@@ -64,6 +72,7 @@ export default function AddPage() {
   // Made up front: names the parser channel now, saved as the item's uuid later
   const [itemUuid] = useState(newUuid);
   const [itemType, setItemType] = useState('clothes');
+  const [wantedBy, setWantedBy] = useState(0);
   const [form, setForm] = useState({
     item_name: '', quantity: 1, shop_name: '', buy_url: '',
     // clothes
@@ -75,6 +84,11 @@ export default function AddPage() {
     // others
     category: '',
   });
+  // "Pick a date": the chosen time, booked on the calendar along with the restaurant
+  const [pickedAt, setPickedAt] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // What the picker shows: the couple's dates and who's who, fetched on first open
+  const [calendarData, setCalendarData] = useState(null);
   const [mediaFiles, setMediaFiles] = useState([]); // { file, preview, type }
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -173,6 +187,29 @@ export default function AddPage() {
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  const openPicker = async () => {
+    setPickerOpen(true);
+    if (calendarData) return;
+    const [schedules, me] = await Promise.all([
+      client.get('/api/schedules').then((r) => r.data).catch(() => []),
+      client.get('/api/me').then((r) => r.data).catch(() => null),
+    ]);
+    setCalendarData({ schedules, currentUser: me?.id || localStorage.getItem('username'), partnerName: me?.partner?.id });
+  };
+
+  // "Pick a date" opens the calendar right away; any other choice drops the picked time
+  const onTimeToEatChange = (e) => {
+    set('time_to_eat')(e);
+    if (e.target.value === 'pick_date') openPicker();
+    else setPickedAt(null);
+  };
+
+  // Closed without picking anything: back to "No date"
+  const closePicker = useCallback(() => {
+    setPickerOpen(false);
+    if (!pickedAt) setForm((f) => ({ ...f, time_to_eat: '' }));
+  }, [pickedAt]);
+
   const addFiles = useCallback((files) => {
     const accepted = Array.from(files).filter((f) =>
       f.type.startsWith('image/') || f.type.startsWith('video/')
@@ -201,12 +238,16 @@ export default function AddPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.item_name.trim()) { setError(t('add.nameRequired')); return; }
+    const picksDate = itemType === 'restaurant' && form.time_to_eat === 'pick_date';
+    if (picksDate && !pickedAt) { setError(t('add.pickDateRequired')); return; }
+    if (picksDate && pickedAt < new Date()) { setError(t('schedule.past')); return; }
     setLoading(true);
     setError('');
 
     const base = {
       uuid: itemUuid,
       item_type: itemType,
+      wanted_by: wantedBy,
       item_name: form.item_name.trim(),
       quantity: Number(form.quantity) || 1,
       shop_name: form.shop_name.trim() || null,
@@ -228,6 +269,7 @@ export default function AddPage() {
             cuisine_type: form.cuisine_type || null,
             address: form.address || null,
             time_to_eat: form.time_to_eat || null,
+            schedule: picksDate ? pickedAt.toISOString() : null,
           }
         : { category: form.category || null };
 
@@ -295,6 +337,25 @@ export default function AddPage() {
         <h1 className="add-title">{t('add.title')}</h1>
 
         <form onSubmit={handleSubmit} className="add-form">
+
+          {/* Who wants it */}
+          <div className="field-group">
+            <span className="field-label">{t('wantedBy.label')}</span>
+            <div className="who-picker">
+              {WANTED_BY.map((who) => (
+                <button
+                  key={who.key}
+                  type="button"
+                  className={`who-option ${who.key} ${wantedBy === who.value ? 'active' : ''}`}
+                  onClick={() => setWantedBy(who.value)}
+                  aria-pressed={wantedBy === who.value}
+                >
+                  <span className="who-icon">{who.icon}</span>
+                  {t(`wantedBy.${who.key}`)}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Type selector */}
           <div className="type-tabs">
@@ -412,11 +473,17 @@ export default function AddPage() {
               </div>
               <div className="field-group">
                 <label className="field-label">{t('add.timeToEat')}</label>
-                <select className="field-input" value={form.time_to_eat} onChange={set('time_to_eat')}>
-                  <option value="">{t('add.timeToEatPlaceholder')}</option>
+                <select className="field-input" value={form.time_to_eat} onChange={onTimeToEatChange}>
+                  <option value="">{t('add.noDate')}</option>
                   <option value="pick_date">{t('add.pickDate')}</option>
                   <option value="auto_schedule">{t('add.autoSchedule')}</option>
                 </select>
+                {form.time_to_eat === 'pick_date' && (
+                  <button type="button" className={`field-input pick-date-btn ${pickedAt ? 'picked' : ''}`} onClick={openPicker}>
+                    <span>📅 {pickedAt ? formatAt(pickedAt) : t('add.pickDateButton')}</span>
+                    {pickedAt && <span className="pick-date-change">{t('add.change')}</span>}
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -489,6 +556,22 @@ export default function AddPage() {
           </button>
         </form>
       </div>
+
+      {pickerOpen && (
+        <ScheduleModal
+          restaurant={form.item_name.trim() ? { item_name: form.item_name.trim(), address: form.address } : null}
+          schedules={calendarData?.schedules || []}
+          currentUser={calendarData?.currentUser}
+          partnerName={calendarData?.partnerName}
+          initialWhen={pickedAt}
+          onPick={(when) => {
+            setPickedAt(when);
+            setPickerOpen(false);
+            setError('');
+          }}
+          onClose={closePicker}
+        />
+      )}
     </div>
   );
 }

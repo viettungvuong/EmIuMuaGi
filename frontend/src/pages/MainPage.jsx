@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 import RatingModal from "../components/RatingModal";
+import ScheduleModal from "../components/ScheduleModal";
 import { dateLocale, t } from "../i18n";
+import { byTime, formatWhen, relativeWhen } from "../schedule";
 import "../styles/MainPage.css";
 
 const ITEM_TYPES = ["clothes", "food_and_drink", "restaurant", "others"];
@@ -11,6 +13,53 @@ const TYPE_COLOR = "#cb1d7aff";
 
 // What the backend sends as the history ID when it couldn't record the purchase
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+
+// How long the search box has to sit still before the server is asked
+const SEARCH_DEBOUNCE_MS = 300;
+
+// Item times are shown in Vietnam time, like the rest of the app. It is UTC+7
+// all year (no daylight saving), so its calendar day is the UTC day 7 hours on.
+const VN_TIME = "Asia/Ho_Chi_Minh";
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const dayOf = (date) => new Date(new Date(date).getTime() + VN_OFFSET_MS).toISOString().slice(0, 10); // "2026-11-07"
+
+// "Today", "Yesterday", or "Saturday, November 1"
+function dayLabel(day) {
+  if (day === dayOf(Date.now())) return t("main.today");
+  if (day === dayOf(Date.now() - DAY_MS)) return t("main.yesterday");
+  const [year, month, date] = day.split("-").map(Number);
+  // Noon UTC is the same calendar day in Vietnam
+  return new Date(Date.UTC(year, month - 1, date, 12)).toLocaleDateString(dateLocale(), {
+    timeZone: VN_TIME,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    ...(year !== new Date().getFullYear() && { year: "numeric" }),
+  });
+}
+
+// The list as a conversation (items come oldest first): a separator whenever the
+// day changes, and for each bubble whether it opens or closes a run of one
+// person's items, so a run sits close together with the avatar on its last bubble
+function chatRows(items) {
+  const rows = [];
+  items.forEach((item, i) => {
+    const day = dayOf(item.created_at);
+    const prev = items[i - 1];
+    const next = items[i + 1];
+    const newDay = !prev || dayOf(prev.created_at) !== day;
+    if (newDay) rows.push({ kind: "day", key: `day-${day}`, label: dayLabel(day) });
+    rows.push({
+      kind: "item",
+      key: item.id,
+      item,
+      runStart: newDay || prev.owner !== item.owner,
+      runEnd: !next || next.owner !== item.owner || dayOf(next.created_at) !== day,
+    });
+  });
+  return rows;
+}
 
 function ItemSubInfo({ item }) {
   if (item.item_type === "clothes") {
@@ -37,7 +86,7 @@ function ItemSubInfo({ item }) {
       item.main_food,
       item.cuisine_type,
       item.address,
-      item.time_to_eat,
+      item.time_to_eat === "auto_schedule" ? t("add.autoSchedule") : null,
     ].filter(Boolean);
     return parts.length ? (
       <p className="item-subinfo">{parts.join(" · ")}</p>
@@ -49,29 +98,143 @@ function ItemSubInfo({ item }) {
   return null;
 }
 
+// One item as a chat message: yours on the right, your partner's on the left
+// with their initial, closing a run of their items
+function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy, onDelete }) {
+  const typeLabel = ITEM_TYPES.includes(item.item_type) ? t(`types.${item.item_type}`) : item.item_type;
+  const time = new Date(item.created_at).toLocaleTimeString(dateLocale(), {
+    timeZone: VN_TIME,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <div className={`chat-row ${mine ? "mine" : "theirs"} ${runStart ? "run-start" : ""} ${runEnd ? "run-end" : ""}`}>
+      {!mine && (
+        <span className="chat-avatar" title={item.owner}>
+          {runEnd && item.owner.charAt(0).toUpperCase()}
+        </span>
+      )}
+      <div className="bubble-col">
+        <div className={`bubble ${item.bought ? "bought" : ""}`}>
+          <div className="item-header-row">
+            <span
+              className={`item-who ${item.wanted_by === 1 ? "boy" : "girl"}`}
+              title={t(`wantedBy.${item.wanted_by === 1 ? "boy" : "girl"}`)}
+            >
+              {item.wanted_by === 1 ? "👦" : "👧"}
+            </span>
+            <h3 className="item-name">{item.item_name}</h3>
+            <span
+              className="item-type-badge"
+              style={{ background: TYPE_COLOR + "22", color: TYPE_COLOR, borderColor: TYPE_COLOR + "55" }}
+            >
+              {typeLabel}
+            </span>
+          </div>
+          <ItemSubInfo item={item} />
+          {(item.shop_name || item.quantity > 1 || nextDate) && (
+            <div className="item-meta">
+              {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
+              {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
+              {nextDate && <span className="item-next-date">📅 {formatWhen(nextDate)}</span>}
+            </div>
+          )}
+          {item.buy_url && (
+            <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
+              🔗 {item.item_type === "restaurant" ? t("main.viewRestaurant") : t("main.viewProduct")}
+            </a>
+          )}
+          {(!item.bought || item.item_type === "restaurant" || mine) && (
+            <div className="bubble-actions">
+              {!item.bought && (
+                <button className="buy-btn" onClick={onBuy} aria-label={t("main.boughtLabel")}>
+                  {t("main.bought")}
+                </button>
+              )}
+              {item.item_type === "restaurant" && (
+                <button className="schedule-btn" onClick={onSchedule}>
+                  📅 {t("schedule.button")}
+                </button>
+              )}
+              {mine && (
+                <button className="delete-btn" onClick={onDelete} aria-label={t("main.deleteLabel")}>
+                  🗑
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <span className="bubble-foot">
+          {time}
+          {item.bought && <span className="bubble-bought">{t("main.boughtStatus")}</span>}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function MainPage({ setIsAuth }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  // The list's controls, applied by the server (GET /api/items?type=&q=&hide_bought=)
   const [filterType, setFilterType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState(""); // searchQuery once typing pauses
   const [hideBought, setHideBought] = useState(false);
+  const [who, setWho] = useState("all"); // whose items: "all", "me" or "partner"
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
   // The purchase just made, while its rating form is open: { historyId, name }
   const [ratingPurchase, setRatingPurchase] = useState(null);
+  // The couple's meal dates, oldest first, and the calendar popup while open:
+  // { restaurant } to book one, { restaurant: null } to just look
+  const [schedules, setSchedules] = useState([]);
+  const [calendar, setCalendar] = useState(null);
   const navigate = useNavigate();
+  // Only with a partner linked: after unlinking, "partner's items" would always be empty
+  const whoFilter = userData?.partner ? who : "all";
+  const requestRef = useRef(0); // only the latest list request's answer is shown
+  const scrollToEndRef = useRef(false); // set when a fresh list arrives
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
+    const request = ++requestRef.current;
+    const params = {};
+    if (filterType !== "all") params.type = filterType;
+    if (search) params.q = search;
+    if (hideBought) params.hide_bought = true;
+    if (whoFilter !== "all") params.who = whoFilter;
+
     try {
-      const { data } = await client.get("/api/items");
+      const { data } = await client.get("/api/items", { params });
+      if (request !== requestRef.current) return; // the controls changed meanwhile
+      scrollToEndRef.current = true;
       setItems(data);
     } catch (err) {
       console.error("Failed to fetch items:", err);
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
-  };
+  }, [filterType, search, hideBought, whoFilter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchQuery.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  // Like a chat, a freshly loaded list opens on its newest message: the very
+  // bottom, so the chat's padding keeps that bubble clear of the + button. The
+  // partner card above can still push the list down until it loads, so keep at it.
+  useEffect(() => {
+    if (!scrollToEndRef.current) return;
+    window.scrollTo(0, document.body.scrollHeight);
+    if (userData) scrollToEndRef.current = false;
+  }, [items, userData]);
 
   const fetchUserData = async () => {
     try {
@@ -82,15 +245,27 @@ export default function MainPage({ setIsAuth }) {
     }
   };
 
+  const fetchSchedules = async () => {
+    try {
+      const { data } = await client.get("/api/schedules");
+      setSchedules(data);
+    } catch (err) {
+      console.error("Failed to fetch schedules:", err);
+    }
+  };
+
   useEffect(() => {
-    fetchItems();
     fetchUserData();
+    fetchSchedules();
   }, []);
+
+  const closeCalendar = useCallback(() => setCalendar(null), []);
 
   const handleDelete = async (id) => {
     try {
       await client.delete(`/api/items/${id}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
+      setSchedules((prev) => prev.filter((s) => s.restaurant_id !== id));
     } catch (err) {
       console.error("Failed to delete item:", err);
     }
@@ -107,7 +282,8 @@ export default function MainPage({ setIsAuth }) {
 
     try {
       const { data } = await client.patch(`/api/items/${id}/bought`);
-      setItems((prev) => prev.map((i) => (i.id === id ? data : i)));
+      // With "hide bought" on, the server would no longer list it
+      setItems((prev) => (hideBought ? prev.filter((i) => i.id !== id) : prev.map((i) => (i.id === id ? data : i))));
       // Ask for a rating while it's fresh. Ratings belong to the purchase (its
       // history entry), which the backend just created; "Để sau" leaves it for
       // the history page.
@@ -149,14 +325,14 @@ export default function MainPage({ setIsAuth }) {
 
   const currentUser = userData?.id || localStorage.getItem("username");
 
-  const filteredItems = items.filter((item) => {
-    const matchesFilter = filterType === "all" || item.item_type === filterType;
-    const matchesSearch = item.item_name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesHide = hideBought ? !item.bought : true;
-    return matchesFilter && matchesSearch && matchesHide;
-  });
+  // Upcoming dates: the very next one, and each restaurant's next one
+  const now = new Date();
+  const upcoming = schedules.filter((s) => new Date(s.scheduled_at) >= now);
+  const nextDate = upcoming[0];
+  const nextAt = (restaurantId) => upcoming.find((s) => s.restaurant_id === restaurantId);
+
+  // An empty answer to a filtered list means "no match", not "nothing added yet"
+  const filtering = filterType !== "all" || Boolean(search) || hideBought || whoFilter !== "all";
 
   const copyInviteLink = () => {
     if (!userData?.invite_link) return;
@@ -195,7 +371,7 @@ export default function MainPage({ setIsAuth }) {
     if (!window.confirm(t("main.confirmRemovePartner"))) return;
     try {
       await client.delete("/api/partner");
-      await Promise.all([fetchItems(), fetchUserData()]);
+      await Promise.all([fetchItems(), fetchUserData(), fetchSchedules()]);
     } catch (err) {
       console.error("Failed to remove partner:", err);
       alert(err.response?.data?.error || t("errors.Could not remove your partner") || "Failed to remove partner");
@@ -270,7 +446,7 @@ export default function MainPage({ setIsAuth }) {
               )}
             </div>
 
-            {items.length === 0 ? (
+            {items.length === 0 && !filtering ? (
               <div className="empty-state">
                 <span className="empty-icon">🧐</span>
                 <p className="empty-text">{t("main.empty")}</p>
@@ -285,6 +461,26 @@ export default function MainPage({ setIsAuth }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {/* Whose items, once there's a partner to tell apart */}
+              {userData?.partner && (
+                <div className="who-filter" role="radiogroup" aria-label={t("main.whoseItems")}>
+                  {[
+                    ["all", "💞", t("main.both")],
+                    ["me", "🙋", t("main.mine")],
+                    ["partner", "💜", t("main.partners", { name: userData.partner.id })],
+                  ].map(([value, icon, label]) => (
+                    <button
+                      key={value}
+                      role="radio"
+                      aria-checked={who === value}
+                      className={`who-filter-btn ${value} ${who === value ? "active" : ""}`}
+                      onClick={() => setWho(value)}
+                    >
+                      {icon} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="filter-options">
                 <div className="filter-tabs">
                   <button
@@ -314,107 +510,53 @@ export default function MainPage({ setIsAuth }) {
               </div>
             </div>
 
-            {filteredItems.length === 0 ? (
+            {filterType === "restaurant" && (
+              <button className="date-banner" onClick={() => setCalendar({ restaurant: null })}>
+                <span className="date-banner-icon">📅</span>
+                <span className="date-banner-text">
+                  {nextDate ? (
+                    <>
+                      <span className="date-banner-label">{t("schedule.next")}</span>
+                      <strong>{nextDate.restaurant_name}</strong>
+                      <span className="date-banner-when">
+                        {formatWhen(nextDate)} · {relativeWhen(new Date(nextDate.scheduled_at), now)}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{t("schedule.noneYet")}</span>
+                  )}
+                </span>
+                <span className="date-banner-cta">{t("schedule.calendar")} ›</span>
+              </button>
+            )}
+
+            {items.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-icon">😅</span>
                 <p className="empty-text">{t("main.noMatch")}</p>
               </div>
             ) : (
-              <ul className="items-list">
-                {[...filteredItems]
-                  .sort((a, b) => {
-                    if (a.bought === b.bought) {
-                      return new Date(b.created_at) - new Date(a.created_at);
-                    }
-                    return a.bought ? 1 : -1;
-                  })
-                  .map((item) => (
-                    <li
-                      key={item.id}
-                      className={`item-card ${item.bought ? "bought" : ""}`}
-                    >
-                      <div className="item-info">
-                        <div className="item-header-row">
-                          <h3 className="item-name">{item.item_name}</h3>
-                          <span
-                            className="item-type-badge"
-                            style={{
-                              background: TYPE_COLOR + "22",
-                              color: TYPE_COLOR,
-                              borderColor: TYPE_COLOR + "55",
-                            }}
-                          >
-                            {ITEM_TYPES.includes(item.item_type) ? t(`types.${item.item_type}`) : item.item_type}
-                          </span>
-                        </div>
-                        <ItemSubInfo item={item} />
-                        <div className="item-meta">
-                          {item.owner && item.owner !== currentUser && (
-                            <span className="item-owner">
-                              💌 {item.owner}
-                            </span>
-                          )}
-                          {item.shop_name && (
-                            <span className="item-shop">
-                              🏪 {item.shop_name}
-                            </span>
-                          )}
-                          {item.quantity > 1 && (
-                            <span className="item-qty">x{item.quantity}</span>
-                          )}
-                          <span className="item-date">
-                            {item.created_at
-                              ? new Date(item.created_at).toLocaleString(
-                                  dateLocale(),
-                                  {
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  },
-                                )
-                              : ""}
-                          </span>
-                        </div>
-                        {item.buy_url && (
-                          <a
-                            className="item-link"
-                            href={item.buy_url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            🔗 {item.item_type === "restaurant" ? t("main.viewRestaurant") : t("main.viewProduct")}
-                          </a>
-                        )}
-                      </div>
-                      <div className="item-actions">
-                        {item.bought && (
-                          <div className="bought-badge">✓</div>
-                        )}
-                        {!item.bought && (
-                          <button
-                            className="buy-btn"
-                            onClick={() => handleBuy(item.id)}
-                            aria-label={t("main.boughtLabel")}
-                          >
-                            {t("main.bought")}
-                          </button>
-                        )}
-                        {item.owner === currentUser && (
-                          <button
-                            className="delete-btn"
-                            onClick={() => handleDelete(item.id)}
-                            aria-label={t("main.deleteLabel")}
-                          >
-                            🗑
-                          </button>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-              </ul>
+              <div className="chat">
+                {chatRows(items).map((row) =>
+                  row.kind === "day" ? (
+                    <div key={row.key} className="chat-day">
+                      <span>{row.label}</span>
+                    </div>
+                  ) : (
+                    <ChatBubble
+                      key={row.key}
+                      item={row.item}
+                      mine={row.item.owner === currentUser}
+                      runStart={row.runStart}
+                      runEnd={row.runEnd}
+                      nextDate={row.item.item_type === "restaurant" ? nextAt(row.item.id) : null}
+                      onSchedule={() => setCalendar({ restaurant: row.item })}
+                      onBuy={() => handleBuy(row.item.id)}
+                      onDelete={() => handleDelete(row.item.id)}
+                    />
+                  ),
+                )}
+              </div>
             )}
           </>
         )}
@@ -440,6 +582,21 @@ export default function MainPage({ setIsAuth }) {
             </div>
           </div>
         </div>
+      )}
+
+      {calendar && (
+        <ScheduleModal
+          restaurant={calendar.restaurant}
+          schedules={schedules}
+          currentUser={currentUser}
+          partnerName={userData?.partner?.id}
+          onCreated={(schedule) => {
+            setSchedules((prev) => [...prev, schedule].sort(byTime));
+            setCalendar(null);
+          }}
+          onDeleted={(id) => setSchedules((prev) => prev.filter((s) => s.id !== id))}
+          onClose={closeCalendar}
+        />
       )}
 
       {ratingPurchase && (

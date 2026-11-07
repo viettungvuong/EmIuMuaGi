@@ -15,6 +15,9 @@
   --border: rgba(236, 72, 153, 0.15);
   --accent: #ec4899;
   --accent-2: #f472b6;
+  --boy: #3b82f6; /* His items, next to accent pink for hers */
+  --partner: #8b5cf6; /* Your partner: their dates and chat avatar, next to your pink */
+  --success: #10b981;
   --danger: #ff4d6d;
   --text: #331c26; /* Deep dark pink-tinted text */
   --text-muted: #886e7a;

@@ -86,6 +86,81 @@
   color: var(--text);
 }
 
+/* Who wants it: pink for her, blue for him */
+.who-picker {
+  display: flex;
+  gap: 12px;
+}
+
+.who-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.who-icon {
+  font-size: 2rem;
+  line-height: 1;
+  filter: grayscale(0.6);
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.who-option:hover:not(.active),
+.who-option.active {
+  color: var(--text);
+}
+
+.who-option.active .who-icon {
+  filter: none;
+  transform: scale(1.15);
+}
+
+.who-option.girl.active {
+  border-color: var(--accent);
+  background: rgba(236, 72, 153, 0.14);
+}
+
+.who-option.boy.active {
+  border-color: var(--boy);
+  background: rgba(59, 130, 246, 0.14);
+}
+
+/* "Pick a date": opens the calendar popup, then shows the chosen time */
+.pick-date-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick-date-btn.picked {
+  color: var(--text);
+  font-weight: 600;
+  border-color: var(--accent);
+}
+
+.pick-date-change {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .field-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

@@ -12,8 +12,9 @@ import (
 
 // DeleteAccountData removes everything the caller has here, for the user service
 // while it deletes their account: every item they added (with its purchases,
-// ratings, dates and uploads, binned ones too) and the dates they booked at their
-// partner's restaurants. The partner's own items stay. Not routed by the gateway.
+// ratings, dates and uploads, binned ones too), the dates they booked at their
+// partner's restaurants and their phones' push tokens. The partner's own items
+// stay. Not routed by the gateway.
 func DeleteAccountData(c *gin.Context) {
 	username := c.GetString("username")
 
@@ -35,6 +36,12 @@ func DeleteAccountData(c *gin.Context) {
 	res := database.DB.Where("username = ?", username).Delete(&models.Schedule{})
 	if res.Error != nil {
 		log.Printf("[account] delete data of %s: could not delete their dates: %v", username, res.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete your items"})
+		return
+	}
+
+	if err := database.DB.Where("username = ?", username).Delete(&models.PushToken{}).Error; err != nil {
+		log.Printf("[account] delete data of %s: could not delete their push tokens: %v", username, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete your items"})
 		return
 	}

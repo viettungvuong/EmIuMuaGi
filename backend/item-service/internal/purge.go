@@ -15,7 +15,6 @@ import (
 const (
 	defaultPurgeHour = 3  // 3am, when nobody is shopping
 	defaultRetention = 30 // days an item sits in the bin before it is really gone
-	purgeTimeZone    = "Asia/Ho_Chi_Minh"
 	purgeUploadsDir  = "./uploads"
 )
 
@@ -121,18 +120,7 @@ func PurgeItem(item models.Item) error {
 
 // nextPurgeRun is the next time the configured hour comes round in Vietnam time
 func nextPurgeRun(now time.Time) time.Time {
-	loc, err := time.LoadLocation(purgeTimeZone)
-	if err != nil {
-		loc = time.UTC
-	}
-
-	now = now.In(loc)
-	next := time.Date(now.Year(), now.Month(), now.Day(), purgeHour(), 0, 0, 0, loc)
-	if !next.After(now) {
-		next = next.AddDate(0, 0, 1)
-	}
-
-	return next
+	return nextRunAt(now, []int{purgeHour()})
 }
 
 func purgeHour() int {

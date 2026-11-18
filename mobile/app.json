@@ -60,6 +60,12 @@
         }
       ],
       [
+        "expo-calendar",
+        {
+          "calendarPermission": "Cho phép EmIuMuaGi thêm các buổi hẹn đi ăn vào lịch của bạn."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",

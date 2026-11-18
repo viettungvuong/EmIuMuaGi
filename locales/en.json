@@ -60,9 +60,21 @@
     "today": "today",
     "tomorrow": "tomorrow",
     "inHours": "in {n}h",
-    "inDays": "in {n} days",
-    "reminderChannel": "Date reminders",
-    "reminderTitle": "You have a date today 💕"
+    "inDays": "in {n} days"
+  },
+  "notifications": {
+    "channel": "Reminders",
+    "datesTitle": "Date coming up 💕",
+    "remindTitle": "Still not bought ⏰",
+    "mixedTitle": "What's new 💕",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "notBought": "⏰ Still not bought: {items}",
+    "days": "3 days",
+    "week": "1 week"
+  },
+  "calendar": {
+    "bookedBy": "Booked by {name}"
   },
   "auth": {
     "appName": "My Love Wants Whaaat",

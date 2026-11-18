@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const partnerLookupTimeout = 3 * time.Second
@@ -57,6 +58,21 @@ func PartnerOf(ctx context.Context, accessToken string) (string, error) {
 		return "", nil
 	}
 	return *body.PartnerID, nil
+}
+
+// PartnerOfUser is PartnerOf for someone with no request of theirs to forward
+// (the notification job): it signs a short-lived access token as them, the way
+// the user service does when it calls here (its internal/items.go)
+func PartnerOfUser(ctx context.Context, username string) (string, error) {
+	claims := &Claims{
+		Username:         username,
+		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute))},
+	}
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return "", fmt.Errorf("could not sign a token: %w", err)
+	}
+	return PartnerOf(ctx, token)
 }
 
 // OwnerScope lists whose items the caller may see: themselves plus their partner

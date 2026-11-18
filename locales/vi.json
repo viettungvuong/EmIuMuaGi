@@ -60,9 +60,21 @@
     "today": "hôm nay",
     "tomorrow": "ngày mai",
     "inHours": "còn {n} tiếng",
-    "inDays": "còn {n} ngày",
-    "reminderChannel": "Nhắc lịch hẹn",
-    "reminderTitle": "Hôm nay có hẹn đi ăn nè 💕"
+    "inDays": "còn {n} ngày"
+  },
+  "notifications": {
+    "channel": "Nhắc nhở",
+    "datesTitle": "Sắp tới có hẹn nè 💕",
+    "remindTitle": "Vẫn chưa mua nè ⏰",
+    "mixedTitle": "Có tin mới nè 💕",
+    "today": "Hôm nay",
+    "tomorrow": "Ngày mai",
+    "notBought": "⏰ Vẫn chưa mua: {items}",
+    "days": "3 ngày rồi",
+    "week": "1 tuần rồi"
+  },
+  "calendar": {
+    "bookedBy": "{name} đặt lịch"
   },
   "auth": {
     "appName": "EmIuMuaGi",

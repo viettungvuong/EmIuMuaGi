@@ -112,6 +112,7 @@ func main() {
 	r.Any("/api/history/*path", proxy(itemService))
 	r.Any("/api/schedules", proxy(itemService))
 	r.Any("/api/schedules/*path", proxy(itemService))
+	r.Any("/api/notifications/*path", proxy(itemService))
 	r.Any("/api/parse/*path", proxy(aiService)) // WebSocket, ReverseProxy passes the upgrade through
 
 	// Fallback custom matcher just in case
@@ -121,7 +122,8 @@ func main() {
 			proxy(userService)(c)
 			return
 		}
-		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") || strings.HasPrefix(path, "/api/schedules") {
+		if strings.HasPrefix(path, "/api/items") || strings.HasPrefix(path, "/api/history") || strings.HasPrefix(path, "/api/schedules") ||
+			strings.HasPrefix(path, "/api/notifications") {
 			proxy(itemService)(c)
 			return
 		}

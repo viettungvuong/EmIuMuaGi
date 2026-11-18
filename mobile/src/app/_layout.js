@@ -12,7 +12,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../auth';
 import { Spinner } from '../components/ui';
-import { getLanguage, LanguageContext, loadLanguage, setLanguage, t } from '../i18n';
+import { getLanguage, LanguageContext, loadLanguage, setLanguage, t, useLanguage } from '../i18n';
+import { registerForPush } from '../notifications';
 import { colors } from '../theme';
 
 export default function RootLayout() {
@@ -45,6 +46,12 @@ export default function RootLayout() {
 
 function Routes({ ready }) {
   const { isAuth, checking } = useAuth();
+  const { language } = useLanguage();
+
+  // Logged in, this phone gets the server's notifications, in the app's language
+  useEffect(() => {
+    if (isAuth && language) registerForPush(language);
+  }, [isAuth, language]);
 
   // The web app's "🎀 Checking..." screen while /api/me answers
   if (checking || !ready) {

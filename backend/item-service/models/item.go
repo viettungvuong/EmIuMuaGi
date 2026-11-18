@@ -23,12 +23,22 @@ type Item struct {
 	Owner           string         `gorm:"size:255" json:"owner"`
 	DeletedAt       *time.Time     `gorm:"default:null" json:"deleted_at,omitempty"`
 	Metadata        map[string]any `gorm:"type:jsonb;serializer:json" json:"metadata,omitempty"`
+	// How far the notification digest has got with it (NotifyNew...NotifyDone)
+	NotifyStage int `gorm:"type:smallint;default:0;not null" json:"-"`
 }
 
 // Item.WantedBy values: which of the couple wants the item
 const (
 	WantedByGirl = 0
 	WantedByBoy  = 1
+)
+
+// Item.NotifyStage values, in order (see internal/notify.go)
+const (
+	NotifyNew          = 0 // the partner hasn't been told about it yet
+	NotifyAnnounced    = 1
+	NotifyRemindedDays = 2 // brought up again 3 days on, still not bought
+	NotifyDone         = 3 // and once more a week on; nothing further
 )
 
 type Clothes struct {

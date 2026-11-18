@@ -3,7 +3,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import client, { setSessionExpiredHandler } from './api/client';
-import { clearDateReminders } from './notifications';
+import { clearDeviceCalendar } from './calendar';
+import { unregisterPush } from './notifications';
 import { signOutProviders } from './oauth';
 
 const AuthContext = createContext(null);
@@ -47,13 +48,14 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
+    await unregisterPush(); // needs the session, so before it ends
     try {
       await client.post('/api/auth/logout');
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
       await AsyncStorage.removeItem('username');
-      clearDateReminders();
+      clearDeviceCalendar();
       signOutProviders();
       setUsername(null);
       setIsAuth(false);

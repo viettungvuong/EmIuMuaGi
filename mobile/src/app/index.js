@@ -22,7 +22,8 @@ import { useAuth } from '../auth';
 import { dateLocale, t, useLanguage } from '../i18n';
 import { RatingForm } from '../components/RatingModal';
 import ScheduleModal from '../components/ScheduleModal';
-import { syncDateReminders } from '../notifications';
+import { syncDeviceCalendar } from '../calendar';
+import { syncPhoneDigest } from '../notifications';
 import { takeSharedLink } from '../share';
 import { byTime, formatWhen, relativeWhen } from '../schedule';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
@@ -127,11 +128,11 @@ export default function MainScreen() {
   // The couple's meal dates, oldest first, and the calendar popup while open:
   // { restaurant } to book one, { restaurant: null } to just look
   const [schedules, setSchedules] = useState([]);
-  const schedulesLoaded = useRef(false);
   const [calendar, setCalendar] = useState(null);
   // Only with a partner linked: after unlinking, "partner's items" would always be empty
   const whoFilter = userData?.partner ? who : 'all';
   const requestRef = useRef(0); // only the latest list request's answer is shown
+  const schedulesLoaded = useRef(false);
 
   const fetchItems = useCallback(async () => {
     const request = ++requestRef.current;
@@ -189,11 +190,15 @@ export default function MainScreen() {
       fetchItems();
     }, [fetchItems]),
   );
-  // The morning reminders follow the dates (see notifications.js); not before the
-  // first load, which would drop them all
+  // The phone's calendar and, until push works, its own notifications follow the
+  // dates and items (calendar.js, notifications.js); not before the first load,
+  // which would take them all away
   useEffect(() => {
-    if (schedulesLoaded.current) syncDateReminders(schedules);
+    if (schedulesLoaded.current) syncDeviceCalendar(schedules);
   }, [schedules]);
+  useEffect(() => {
+    if (schedulesLoaded.current) syncPhoneDigest(userData, schedules);
+  }, [userData, schedules, items]);
   // A link shared while logged out waited for the login (see share.js): add it now
   useFocusEffect(
     useCallback(() => {

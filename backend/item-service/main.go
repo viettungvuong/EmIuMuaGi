@@ -53,6 +53,9 @@ func main() {
 	// Clears out items that have sat soft deleted past the retention window
 	internal.StartPurgeJob()
 
+	// The notification digest at 0:00, 9:00 and 17:00: dates, new items, reminders
+	internal.StartNotifyJob()
+
 	r := gin.Default()
 
 	// Root path
@@ -87,6 +90,13 @@ func main() {
 			schedules.GET("", handlers.GetSchedules)
 			schedules.POST("", handlers.CreateSchedule)
 			schedules.DELETE("/:schedule_id", handlers.DeleteSchedule)
+		}
+
+		// The phone's push token, for the notification digest
+		notifications := api.Group("/notifications")
+		{
+			notifications.PUT("/token", handlers.SavePushToken)
+			notifications.DELETE("/token", handlers.DeletePushToken)
 		}
 	}
 

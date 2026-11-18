@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -16,30 +15,6 @@ import (
 	"github.com/viettungvuong/emiumuagi-backend/internal"
 	"github.com/viettungvuong/emiumuagi-backend/models"
 )
-
-const NTFY_TOPIC = "emiumuagi_tung"
-
-func sendPushNotification(title string, message string) {
-	go func() {
-		url := "https://ntfy.sh/" + NTFY_TOPIC
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(message)))
-		if err != nil {
-			log.Println("Failed to create request:", err)
-			return
-		}
-		req.Header.Set("Title", title)
-		req.Header.Set("Tags", "shopping_bags,heart")
-
-		client := &http.Client{Timeout: 3 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Println("Failed to send notification:", err)
-			return
-		}
-		log.Println("Notification sent about new item added")
-		defer resp.Body.Close()
-	}()
-}
 
 // likeEscaper keeps the search text literal inside ILIKE: % and _ are wildcards there
 var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
@@ -270,7 +245,6 @@ func CreateItem(c *gin.Context) {
 	}
 
 	input.Item = item
-	sendPushNotification("Mới mún mua thêm đồ nè! 🛍️", "Vừa thêm vào danh sách: "+item.ItemName)
 	log.Printf("[items] created #%d %q (%s, wanted_by %d) by %s", item.ID, item.ItemName, item.ItemType, item.WantedBy, item.Owner)
 	c.JSON(http.StatusCreated, input)
 }

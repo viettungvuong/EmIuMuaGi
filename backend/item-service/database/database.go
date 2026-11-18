@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/viettungvuong/emiumuagi-backend/models"
 	"gorm.io/driver/postgres"
@@ -60,6 +61,10 @@ func InitDB() {
 		log.Fatal("Failed to add items.wanted_by:", err)
 	}
 
+	if err := addNotifyStage(DB); err != nil {
+		log.Fatal("Failed to add items.notify_stage:", err)
+	}
+
 	err = DB.AutoMigrate(
 		&models.Item{},
 		&models.Clothes{},
@@ -69,6 +74,7 @@ func InitDB() {
 		&models.History{},
 		&models.Review{},
 		&models.Schedule{},
+		&models.PushToken{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
@@ -76,4 +82,29 @@ func InitDB() {
 	// -----------------------
 
 	log.Println("Database connected and migrated successfully.")
+}
+
+// addNotifyStage adds items.notify_stage to a list that already has items, as if
+// the notification digest had always run: each item is put past the news it
+// would have had by now, so the first digest doesn't bring up everything ever
+// added, only the reminders still ahead of recent items. (migrations/003)
+func addNotifyStage(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&models.Item{}) || db.Migrator().HasColumn(&models.Item{}, "NotifyStage") {
+		return nil
+	}
+
+	now := time.Now()
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(`ALTER TABLE items ADD COLUMN notify_stage SMALLINT NOT NULL DEFAULT 0`).Error; err != nil {
+			return err
+		}
+		return tx.Exec(`UPDATE items SET notify_stage = CASE
+				WHEN created_at > ? THEN ?
+				WHEN created_at > ? THEN ?
+				ELSE ? END`,
+			now.AddDate(0, 0, -3), models.NotifyAnnounced,
+			now.AddDate(0, 0, -7), models.NotifyRemindedDays,
+			models.NotifyDone,
+		).Error
+	})
 }

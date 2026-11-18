@@ -237,6 +237,14 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
+	// A deleted account's other sessions end here instead of living on
+	var exists int64
+	if err := database.DB.Model(&models.User{}).Where("id = ?", claims.Username).Count(&exists).Error; err != nil || exists == 0 {
+		log.Printf("[auth] refresh %s: no such user (%v)", claims.Username, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
 	accessToken, accessExp, err := internal.GenerateAccessToken(claims.Username)
 	if err != nil {
 		log.Printf("[auth] refresh %s: could not generate access token: %v", claims.Username, err)
@@ -315,8 +323,8 @@ func ChangePassword(c *gin.Context) {
 		req.NewPassword = req.NewPasswordSnake
 	}
 
-	if req.OldPassword == "" || req.NewPassword == "" {
-		log.Printf("[auth] change password: old or new password missing")
+	if req.NewPassword == "" {
+		log.Printf("[auth] change password: new password missing")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Both oldPassword and newPassword are required"})
 		return
 	}
@@ -370,8 +378,9 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// Verify oldPassword against hashed password stored in the database
-	if !internal.CheckPasswordHash(req.OldPassword, user.Password) {
+	// Verify oldPassword against hashed password stored in the database. Someone
+	// who signed up with Google, Apple or Facebook has none and sets their first.
+	if user.Password != "" && !internal.CheckPasswordHash(req.OldPassword, user.Password) {
 		log.Printf("[auth] change password %s: wrong old password", user.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect old password"})
 		return

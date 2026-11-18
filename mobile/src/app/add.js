@@ -1,7 +1,7 @@
 // frontend/src/pages/AddPage.jsx
 import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
@@ -22,6 +22,7 @@ import ScheduleModal from '../components/ScheduleModal';
 import { GradientButton, Select } from '../components/ui';
 import { t, useLanguage } from '../i18n';
 import { formatAt } from '../schedule';
+import { takeSharedLink } from '../share';
 import { colors, fonts, radius } from '../theme';
 
 const ITEM_TYPES = [
@@ -84,12 +85,15 @@ function sendLink(ws, seqRef, url) {
 export default function AddScreen() {
   useLanguage(); // redraw in a newly picked language
   const router = useRouter();
+  // A link shared from another app's Share menu (app/+native-intent.js). TikTok and
+  // Google Maps links are usually somewhere to eat, which is what the parser looks up.
+  const { url: sharedUrl = '' } = useLocalSearchParams();
   // Made up front: names the parser channel now, saved as the item's uuid later
   const [itemUuid] = useState(() => Crypto.randomUUID());
-  const [itemType, setItemType] = useState('clothes');
+  const [itemType, setItemType] = useState(() => (slowLinkSource(sharedUrl) ? 'restaurant' : 'clothes'));
   const [wantedBy, setWantedBy] = useState(0);
   const [form, setForm] = useState({
-    item_name: '', quantity: '1', shop_name: '', buy_url: '',
+    item_name: '', quantity: '1', shop_name: '', buy_url: sharedUrl,
     // clothes
     size: '', color: '', brand: '',
     // food_and_drink
@@ -99,6 +103,16 @@ export default function AddScreen() {
     // others
     category: '',
   });
+  // Another share while this screen is already open brings a new link
+  const [seenSharedUrl, setSeenSharedUrl] = useState(sharedUrl);
+  if (sharedUrl !== seenSharedUrl) {
+    setSeenSharedUrl(sharedUrl);
+    setForm((f) => ({ ...f, buy_url: sharedUrl }));
+  }
+  // The link has arrived, so the list screen mustn't open it again
+  useEffect(() => {
+    if (sharedUrl) takeSharedLink();
+  }, [sharedUrl]);
   const { username } = useAuth();
   // "Pick a date": the chosen time, booked on the calendar along with the restaurant
   const [pickedAt, setPickedAt] = useState(null);

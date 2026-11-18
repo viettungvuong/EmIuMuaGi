@@ -62,6 +62,7 @@ func main() {
 		auth := api.Group("/auth")
 		{
 			auth.POST("/login", handlers.Login)
+			auth.POST("/oauth", handlers.OAuthLogin) // Google, Apple or Facebook
 			auth.POST("/signup", handlers.SignUp)
 			auth.POST("/signup/verify", handlers.VerifySignUp) // create the user once the emailed OTP checks out
 			auth.GET("/refresh", handlers.RefreshToken)        // get Refresh Token directly from the token
@@ -80,6 +81,7 @@ func main() {
 		user.Use(internal.AuthMiddleware())
 		{
 			user.GET("/me", handlers.GetMe)
+			user.DELETE("/me", handlers.DeleteAccount) // delete the account, its items and the partner link
 		}
 	}
 

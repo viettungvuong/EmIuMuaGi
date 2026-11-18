@@ -90,6 +90,10 @@ func main() {
 		}
 	}
 
+	// Called by the user service while it deletes an account; the gateway only
+	// passes /api/ through, so apps can't reach it
+	r.DELETE("/internal/account", internal.AuthMiddleware(), handlers.DeleteAccountData)
+
 	// The API gateway starts this service with -port; when that port is taken the
 	// next free one is used, and the gateway is told which (see internal/listen.go)
 	ln, err := internal.ListenFrom(*port)

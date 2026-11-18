@@ -3,6 +3,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import client, { setSessionExpiredHandler } from './api/client';
+import { clearDateReminders } from './notifications';
+import { signOutProviders } from './oauth';
 
 const AuthContext = createContext(null);
 
@@ -51,6 +53,8 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', err);
     } finally {
       await AsyncStorage.removeItem('username');
+      clearDateReminders();
+      signOutProviders();
       setUsername(null);
       setIsAuth(false);
     }

@@ -196,3 +196,79 @@
 .auth-link:hover {
   text-decoration: underline;
 }
+
+/* Google / Facebook, under the form (see src/oauth.js). Google draws its own button. */
+.oauth {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.oauth.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.oauth-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.oauth-google {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.oauth-facebook {
+  width: 100%;
+  max-width: 400px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: #1877f2;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.oauth-facebook:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.oauth-facebook-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1877f2;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 24px;
+  text-align: right;
+  padding-right: 3px;
+  overflow: hidden;
+  box-sizing: border-box;
+}

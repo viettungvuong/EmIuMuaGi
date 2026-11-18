@@ -60,7 +60,9 @@
     "today": "today",
     "tomorrow": "tomorrow",
     "inHours": "in {n}h",
-    "inDays": "in {n} days"
+    "inDays": "in {n} days",
+    "reminderChannel": "Date reminders",
+    "reminderTitle": "You have a date today 💕"
   },
   "auth": {
     "appName": "My Love Wants Whaaat",
@@ -94,7 +96,11 @@
     "noCode": "Didn't get the code?",
     "resend": "Resend",
     "wrongEmail": "Wrong email?",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "or": "or",
+    "continueGoogle": "Continue with Google",
+    "continueFacebook": "Continue with Facebook",
+    "oauthFailed": "Couldn't sign you in. Please try again."
   },
   "main": {
     "partnerLabel": "Your partner:",
@@ -224,7 +230,18 @@
     "updatePasswordBtn": "Update Password",
     "passwordMismatch": "New passwords do not match",
     "passwordSameAsOld": "New password cannot be the same as current password",
-    "passwordChanged": "Password changed successfully!"
+    "passwordChanged": "Password changed successfully!",
+    "deleteAccount": "Delete Account",
+    "deleteAccountInfo": "Permanently deletes your account and every item, purchase, rating and date you added. Your partner keeps their account and items, they just won't be linked to you anymore. This can't be undone.",
+    "deleteAccountPassword": "Enter your password to confirm",
+    "deleteAccountBtn": "Delete my account",
+    "deleteAccountConfirmTitle": "Delete your account? 🥺",
+    "deleteAccountConfirm": "Everything you added will be gone for good.",
+    "deleteAccountYes": "Delete forever",
+    "setPassword": "Set a Password",
+    "setPasswordInfo": "You sign in with Google, Apple or Facebook. Set a password to also log in with your username, {name}.",
+    "setPasswordBtn": "Set Password",
+    "passwordSet": "Password set!"
   },
   "server": {
     "Incorrect old password": "Incorrect current password",
@@ -299,6 +316,14 @@
     "Failed to save the schedule": "Couldn't save the date",
     "Schedule not found": "That date doesn't exist anymore",
     "Only whoever booked this date can cancel it": "Only whoever booked this date can cancel it",
-    "Failed to cancel the schedule": "Couldn't cancel the date"
+    "Failed to cancel the schedule": "Couldn't cancel the date",
+    "Incorrect password": "Incorrect password",
+    "Could not delete your items": "Couldn't delete your items. Please try again.",
+    "Could not delete your account": "Couldn't delete your account. Please try again.",
+    "Could not verify your sign-in": "Couldn't verify your sign-in. Please try again.",
+    "This sign-in isn't set up yet": "This sign-in isn't set up yet",
+    "Your account has no email address": "That account has no email address, so it can't sign in here. Try another way.",
+    "Could not sign you in": "Couldn't sign you in. Please try again.",
+    "Unknown sign-in provider": "Unknown sign-in provider"
   }
 }

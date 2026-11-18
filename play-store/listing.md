@@ -1,6 +1,6 @@
 # Google Play listing: EmIuMuaGi
 
-Package: `com.viettungvuong.emiumuagi` · Version 1.0.0 (versionCode 1)
+Package: `com.dreamtung.whatyouwant` · Version 1.0.2 (versionCode 3)
 
 ## App name (max 30)
 EmIuMuaGi - Em Iu Mua Gì
@@ -35,10 +35,10 @@ Category: Lifestyle · Tags: Shopping, Couples, Wish list
 ## Graphics in this folder
 - `icon-512.png`: app icon (512×512)
 - `feature-graphic-1024x500.png`: feature graphic
-- Phone screenshots: still needed (2–8, 16:9 or 9:16, at least 320px)
+- `screenshots/vi/` and `screenshots/en/`: 6 phone screenshots per language, 1080×1920 (9:16) PNG, demo accounts minh/lan (vi) and alex/mia (en)
 
 ## Data safety form (from what the app does)
 - Collected: email address, username (account management); photos/videos the user attaches (app functionality); user-written content such as item notes, ratings and questions.
 - Shared with third parties: the backend sends item text, links and search queries to AI and search providers (OpenAI/Gemini, SerpApi). Declare these as service providers that process data on your behalf.
 - Encrypted in transit: **No** (the API uses plain `http://`). Answer this truthfully until HTTPS is set up.
-- Users can request deletion: required by Play, but the app does not offer it yet.
+- Users can request deletion: **Yes**. In the app: Settings → Xoá tài khoản (Delete Account), password required. Web URL for the Play form: https://emiumuagi.online/settings (same section, after logging in). Deletes the account and everything the user added (items, purchases, ratings, dates, uploads); the partner is unlinked and keeps their own data.

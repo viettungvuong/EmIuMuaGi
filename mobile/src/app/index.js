@@ -22,6 +22,8 @@ import { useAuth } from '../auth';
 import { dateLocale, t, useLanguage } from '../i18n';
 import { RatingForm } from '../components/RatingModal';
 import ScheduleModal from '../components/ScheduleModal';
+import { syncDateReminders } from '../notifications';
+import { takeSharedLink } from '../share';
 import { byTime, formatWhen, relativeWhen } from '../schedule';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
 import { colors, fonts, radius } from '../theme';
@@ -125,6 +127,7 @@ export default function MainScreen() {
   // The couple's meal dates, oldest first, and the calendar popup while open:
   // { restaurant } to book one, { restaurant: null } to just look
   const [schedules, setSchedules] = useState([]);
+  const schedulesLoaded = useRef(false);
   const [calendar, setCalendar] = useState(null);
   // Only with a partner linked: after unlinking, "partner's items" would always be empty
   const whoFilter = userData?.partner ? who : 'all';
@@ -166,6 +169,7 @@ export default function MainScreen() {
   const fetchSchedules = async () => {
     try {
       const { data } = await client.get('/api/schedules');
+      schedulesLoaded.current = true;
       setSchedules(data);
     } catch (err) {
       console.error('Failed to fetch schedules:', err);
@@ -184,6 +188,18 @@ export default function MainScreen() {
     useCallback(() => {
       fetchItems();
     }, [fetchItems]),
+  );
+  // The morning reminders follow the dates (see notifications.js); not before the
+  // first load, which would drop them all
+  useEffect(() => {
+    if (schedulesLoaded.current) syncDateReminders(schedules);
+  }, [schedules]);
+  // A link shared while logged out waited for the login (see share.js): add it now
+  useFocusEffect(
+    useCallback(() => {
+      const link = takeSharedLink();
+      if (link) router.push({ pathname: '/add', params: { url: link } });
+    }, [router]),
   );
 
   const onRefresh = async () => {

@@ -251,3 +251,36 @@
     padding: 18px 16px;
   }
 }
+
+/* Delete account: the password card, in red */
+.settings-section-label.danger {
+  color: var(--danger);
+}
+
+.delete-account-card {
+  border-color: rgba(255, 77, 109, 0.35);
+}
+
+.delete-account-info {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.password-submit-btn.delete-account-btn {
+  background: var(--danger);
+  box-shadow: 0 2px 10px rgba(255, 77, 109, 0.25);
+}
+
+.delete-account-confirm {
+  color: var(--text-muted);
+  margin: 0 0 24px;
+}
+
+/* MainPage's dialog buttons, with a red confirm */
+.modal-btn.danger {
+  background: rgba(255, 77, 109, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(255, 77, 109, 0.4);
+}

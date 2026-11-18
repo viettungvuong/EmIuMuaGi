@@ -1,12 +1,14 @@
-// frontend/src/pages/AuthPage.jsx
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+// frontend/src/pages/AuthPage.jsx, plus signing in with Google, Apple or Facebook
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useEffect, useState } from 'react';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { useAuth } from '../auth';
 import { LanguageIsland } from '../components/LanguageIsland';
 import { Spinner } from '../components/ui';
 import { serverText, t, useLanguage } from '../i18n';
+import { providers, signInWith } from '../oauth';
 import { colors, fonts } from '../theme';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
@@ -23,6 +25,22 @@ export default function LoginScreen() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState(expired ? t('auth.sessionExpired') : '');
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(null); // the provider being signed in with
+
+  // The provider's sign-in, then the server's: an existing account or a new one
+  const handleOAuth = async (provider) => {
+    setError('');
+    clearExpired();
+    setOauthLoading(provider);
+    try {
+      const data = await signInWith(provider);
+      if (data) await signIn(data.username);
+    } catch (err) {
+      setError(err.response?.data?.error ? serverText(err.response.data.error) : t('auth.oauthFailed'));
+    } finally {
+      setOauthLoading(null);
+    }
+  };
 
   const handleSubmit = async () => {
     setError('');
@@ -226,6 +244,8 @@ export default function LoginScreen() {
               </Pressable>
             </View>
 
+            {mode !== 'verify' && <OAuthButtons busy={loading || !!oauthLoading} loading={oauthLoading} onPress={handleOAuth} />}
+
             {mode === 'verify' ? (
               <>
                 <Text style={styles.footer}>
@@ -253,6 +273,56 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+// "or", then a button per provider that's set up (see src/oauth.js). Apple's
+// is its own native button, first, as Apple asks; only where Apple sign-in works.
+function OAuthButtons({ busy, loading, onPress }) {
+  const [apple, setApple] = useState(false);
+  useEffect(() => {
+    if (providers.apple) AppleAuthentication.isAvailableAsync().then(setApple, () => {});
+  }, []);
+  if (!apple && !providers.google && !providers.facebook) return null;
+
+  return (
+    <View style={styles.oauth}>
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>{t('auth.or')}</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {apple && (
+        <View pointerEvents={busy ? 'none' : 'auto'} style={busy && { opacity: 0.6 }}>
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={12}
+            style={styles.appleBtn}
+            onPress={() => onPress('apple')}
+          />
+        </View>
+      )}
+      {providers.google && (
+        <Pressable style={[styles.oauthBtn, busy && { opacity: 0.6 }]} onPress={() => onPress('google')} disabled={busy}>
+          {loading === 'google' ? <Spinner /> : <Image source={require('../../assets/google-g.png')} style={styles.oauthIcon} />}
+          <Text style={styles.oauthText}>{t('auth.continueGoogle')}</Text>
+        </Pressable>
+      )}
+      {providers.facebook && (
+        <Pressable style={[styles.oauthBtn, styles.facebookBtn, busy && { opacity: 0.6 }]} onPress={() => onPress('facebook')} disabled={busy}>
+          {loading === 'facebook' ? (
+            <Spinner color="#fff" />
+          ) : (
+            <View style={styles.facebookLogo}>
+              <Text style={styles.facebookF}>f</Text>
+            </View>
+          )}
+          <Text style={[styles.oauthText, { color: '#fff' }]}>{t('auth.continueFacebook')}</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -314,4 +384,25 @@ const styles = StyleSheet.create({
   footer: { marginTop: 24, textAlign: 'center', fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted },
   footerSecond: { marginTop: 8 },
   link: { color: colors.accent, fontFamily: fonts.semibold },
+  oauth: { marginTop: 24, gap: 12 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontFamily: fonts.medium, fontSize: 13, color: colors.textMuted },
+  appleBtn: { height: 48 },
+  oauthBtn: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: 12,
+  },
+  oauthIcon: { width: 20, height: 20 },
+  oauthText: { fontFamily: fonts.semibold, fontSize: 15, color: '#1f1f1f' },
+  facebookBtn: { backgroundColor: '#1877f2', borderColor: '#1877f2' },
+  facebookLogo: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
+  facebookF: { fontFamily: fonts.extrabold, fontSize: 18, lineHeight: 19, color: '#1877f2', marginRight: -3 },
 });

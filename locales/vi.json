@@ -60,7 +60,9 @@
     "today": "hôm nay",
     "tomorrow": "ngày mai",
     "inHours": "còn {n} tiếng",
-    "inDays": "còn {n} ngày"
+    "inDays": "còn {n} ngày",
+    "reminderChannel": "Nhắc lịch hẹn",
+    "reminderTitle": "Hôm nay có hẹn đi ăn nè 💕"
   },
   "auth": {
     "appName": "EmIuMuaGi",
@@ -94,7 +96,11 @@
     "noCode": "Không nhận được mã?",
     "resend": "Gửi lại",
     "wrongEmail": "Sai email?",
-    "goBack": "Quay lại"
+    "goBack": "Quay lại",
+    "or": "hoặc",
+    "continueGoogle": "Tiếp tục với Google",
+    "continueFacebook": "Tiếp tục với Facebook",
+    "oauthFailed": "Đăng nhập không thành công. Thử lại nha."
   },
   "main": {
     "partnerLabel": "Người ấy của bạn:",
@@ -224,7 +230,18 @@
     "updatePasswordBtn": "Cập nhật mật khẩu",
     "passwordMismatch": "Mật khẩu mới không trùng khớp",
     "passwordSameAsOld": "Mật khẩu mới không được trùng với mật khẩu cũ",
-    "passwordChanged": "Đổi mật khẩu thành công!"
+    "passwordChanged": "Đổi mật khẩu thành công!",
+    "deleteAccount": "Xoá tài khoản",
+    "deleteAccountInfo": "Xoá vĩnh viễn tài khoản cùng mọi món đồ, lịch sử mua, đánh giá và lịch hẹn bạn đã thêm. Người ấy vẫn giữ tài khoản và đồ của họ, chỉ không còn ghép đôi với bạn nữa. Không thể hoàn tác.",
+    "deleteAccountPassword": "Nhập mật khẩu để xác nhận",
+    "deleteAccountBtn": "Xoá tài khoản của mình",
+    "deleteAccountConfirmTitle": "Xoá tài khoản thật hả? 🥺",
+    "deleteAccountConfirm": "Mọi thứ bạn đã thêm sẽ mất vĩnh viễn, không lấy lại được.",
+    "deleteAccountYes": "Xoá vĩnh viễn",
+    "setPassword": "Đặt Mật Khẩu",
+    "setPasswordInfo": "Bạn đang đăng nhập bằng Google, Apple hoặc Facebook. Đặt mật khẩu để đăng nhập bằng tên {name} nữa.",
+    "setPasswordBtn": "Đặt mật khẩu",
+    "passwordSet": "Đã đặt mật khẩu!"
   },
   "server": {
     "Incorrect old password": "Mật khẩu hiện tại không chính xác",
@@ -299,6 +316,14 @@
     "Failed to save the schedule": "Không lưu được lịch hẹn",
     "Schedule not found": "Lịch hẹn này không còn nữa",
     "Only whoever booked this date can cancel it": "Chỉ người hẹn mới huỷ được",
-    "Failed to cancel the schedule": "Không huỷ được lịch hẹn"
+    "Failed to cancel the schedule": "Không huỷ được lịch hẹn",
+    "Incorrect password": "Mật khẩu không đúng",
+    "Could not delete your items": "Không xoá được đồ của bạn. Thử lại nha.",
+    "Could not delete your account": "Không xoá được tài khoản. Thử lại nha.",
+    "Could not verify your sign-in": "Không xác minh được đăng nhập. Thử lại nha.",
+    "This sign-in isn't set up yet": "Cách đăng nhập này chưa được bật",
+    "Your account has no email address": "Tài khoản này không có email nên chưa đăng nhập được. Thử cách khác nha.",
+    "Could not sign you in": "Không đăng nhập được. Thử lại nha.",
+    "Unknown sign-in provider": "Cách đăng nhập không hợp lệ"
   }
 }

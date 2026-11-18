@@ -55,7 +55,7 @@ func PurgeDeletedItems() error {
 
 	purged := 0
 	for _, item := range items {
-		if err := purgeItem(item); err != nil {
+		if err := PurgeItem(item); err != nil {
 			log.Printf("[purge] item %d (%s): %v", item.ID, item.ItemName, err)
 			continue
 		}
@@ -67,7 +67,9 @@ func PurgeDeletedItems() error {
 	return nil
 }
 
-func purgeItem(item models.Item) error {
+// PurgeItem removes an item for good: its ratings, purchases, type details, dates
+// (the restaurants row cascades to schedules) and uploads
+func PurgeItem(item models.Item) error {
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		// Delete in Review
 		if err := tx.Exec(`

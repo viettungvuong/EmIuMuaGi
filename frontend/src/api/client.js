@@ -54,11 +54,13 @@ client.interceptors.response.use(
     const originalRequest = error.config;
 
     // If the error is 401 (Unauthorized) and we haven't tried to refresh yet.
-    // Login and signup answer 401 for a wrong password or OTP, not for an expired session.
+    // Login, signup and Google/Facebook sign-in answer 401 for a wrong password, OTP
+    // or token, not for an expired session.
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url.includes("/api/auth/login") &&
+      !originalRequest.url.includes("/api/auth/oauth") &&
       !originalRequest.url.includes("/api/auth/signup") &&
       !originalRequest.url.includes("/api/auth/refresh") &&
       !originalRequest.url.includes("/api/auth/change-password")

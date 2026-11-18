@@ -1,10 +1,12 @@
-// frontend/src/pages/SettingsPage.jsx: pick the app's language, change the password
+// frontend/src/pages/SettingsPage.jsx: pick the app's language, change the
+// password, delete the account
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
-import { Spinner } from '../components/ui';
+import { useAuth } from '../auth';
+import { ModalCard, Spinner } from '../components/ui';
 import { LANGUAGES, serverText, t, useLanguage } from '../i18n';
 import { colors, fonts, radius } from '../theme';
 
@@ -49,11 +51,42 @@ export default function SettingsScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Someone who signs in with Google, Apple or Facebook may have no password:
+  // they set one instead of changing it, and delete the account without one
+  const [me, setMe] = useState(null);
+  const hasPassword = me?.has_password ?? true;
+  useEffect(() => {
+    client.get('/api/me').then(({ data }) => setMe(data), (err) => console.error('Failed to fetch user data:', err));
+  }, []);
+
+  const { signOut } = useAuth();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  // Gone for good on the server (items, dates, the partner link too); then the
+  // same local sign-out as the header's button, which lands on the login screen
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await client.delete('/api/me', { data: { password: deletePassword } });
+      setConfirmDelete(false);
+      await signOut();
+    } catch (err) {
+      setConfirmDelete(false);
+      setDeleteError(err.response?.data?.error ? serverText(err.response.data.error) : t('common.somethingWrong'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handlePasswordChange = async () => {
     setError('');
     setSuccess('');
 
-    if (!oldPassword.trim() || !newPassword.trim()) {
+    if ((hasPassword && !oldPassword.trim()) || !newPassword.trim()) {
       setError(t('settings.passwordMismatch'));
       return;
     }
@@ -65,7 +98,7 @@ export default function SettingsScreen() {
       setError(t('settings.passwordMismatch'));
       return;
     }
-    if (oldPassword === newPassword) {
+    if (hasPassword && oldPassword === newPassword) {
       setError(t('settings.passwordSameAsOld'));
       return;
     }
@@ -73,7 +106,8 @@ export default function SettingsScreen() {
     setLoading(true);
     try {
       await client.post('/api/auth/change-password', { oldPassword, newPassword });
-      setSuccess(t('settings.passwordChanged'));
+      setSuccess(hasPassword ? t('settings.passwordChanged') : t('settings.passwordSet'));
+      setMe((m) => m && { ...m, has_password: true });
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -90,7 +124,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const canSubmit = !!oldPassword && !!newPassword && !!confirmPassword;
+  const canSubmit = (!hasPassword || !!oldPassword) && !!newPassword && !!confirmPassword;
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
@@ -123,18 +157,23 @@ export default function SettingsScreen() {
             })}
           </View>
 
-          <Text style={[styles.sectionLabel, styles.sectionGap]}>{t('settings.changePassword')}</Text>
+          <Text style={[styles.sectionLabel, styles.sectionGap]}>
+            {hasPassword ? t('settings.changePassword') : t('settings.setPassword')}
+          </Text>
           <View style={styles.card}>
+            {!hasPassword && <Text style={styles.cardNote}>{t('settings.setPasswordInfo', { name: me.id })}</Text>}
             {!!error && <Text style={[styles.message, styles.messageError]}>{error}</Text>}
             {!!success && <Text style={[styles.message, styles.messageSuccess]}>{success}</Text>}
 
-            <PasswordField
-              label={t('settings.oldPassword')}
-              placeholder={t('settings.oldPasswordPlaceholder')}
-              value={oldPassword}
-              onChangeText={setOldPassword}
-              textContentType="password"
-            />
+            {hasPassword && (
+              <PasswordField
+                label={t('settings.oldPassword')}
+                placeholder={t('settings.oldPasswordPlaceholder')}
+                value={oldPassword}
+                onChangeText={setOldPassword}
+                textContentType="password"
+              />
+            )}
             <PasswordField
               label={t('settings.newPassword')}
               placeholder={t('settings.newPasswordPlaceholder')}
@@ -155,11 +194,50 @@ export default function SettingsScreen() {
               onPress={handlePasswordChange}
               disabled={loading || !canSubmit}
             >
-              {loading ? <Spinner color="#fff" /> : <Text style={styles.submitText}>{t('settings.updatePasswordBtn')}</Text>}
+              {loading ? (
+                <Spinner color="#fff" />
+              ) : (
+                <Text style={styles.submitText}>{hasPassword ? t('settings.updatePasswordBtn') : t('settings.setPasswordBtn')}</Text>
+              )}
+            </Pressable>
+          </View>
+
+          <Text style={[styles.sectionLabel, styles.sectionGap, { color: colors.danger }]}>{t('settings.deleteAccount')}</Text>
+          <View style={[styles.card, styles.dangerCard]}>
+            <Text style={styles.cardNote}>{t('settings.deleteAccountInfo')}</Text>
+            {!!deleteError && <Text style={[styles.message, styles.messageError]}>{deleteError}</Text>}
+            {hasPassword && (
+              <PasswordField
+                label={t('settings.deleteAccountPassword')}
+                placeholder={t('settings.oldPasswordPlaceholder')}
+                value={deletePassword}
+                onChangeText={setDeletePassword}
+                textContentType="password"
+              />
+            )}
+            <Pressable
+              style={[styles.submit, styles.deleteBtn, hasPassword && !deletePassword && { opacity: 0.6 }]}
+              onPress={() => setConfirmDelete(true)}
+              disabled={hasPassword && !deletePassword}
+            >
+              <Text style={styles.submitText}>{t('settings.deleteAccountBtn')}</Text>
             </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ModalCard visible={confirmDelete} onRequestClose={() => !deleting && setConfirmDelete(false)}>
+        <Text style={styles.modalTitle}>{t('settings.deleteAccountConfirmTitle')}</Text>
+        <Text style={styles.modalText}>{t('settings.deleteAccountConfirm')}</Text>
+        <View style={styles.modalActions}>
+          <Pressable style={[styles.modalBtn, styles.modalCancel]} onPress={() => setConfirmDelete(false)} disabled={deleting}>
+            <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>{t('common.cancel')}</Text>
+          </Pressable>
+          <Pressable style={[styles.modalBtn, styles.modalDelete, deleting && { opacity: 0.6 }]} onPress={handleDeleteAccount} disabled={deleting}>
+            {deleting ? <Spinner color={colors.danger} /> : <Text style={[styles.modalBtnText, { color: colors.danger }]}>{t('settings.deleteAccountYes')}</Text>}
+          </Pressable>
+        </View>
+      </ModalCard>
     </SafeAreaView>
   );
 }
@@ -268,4 +346,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
+  dangerCard: { borderColor: 'rgba(255, 77, 109, 0.35)' },
+  cardNote: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.textMuted },
+  deleteBtn: { marginTop: 0, backgroundColor: colors.danger },
+  // The main screen's "did you buy it?" dialog, with a red confirm
+  modalTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, textAlign: 'center', marginBottom: 8 },
+  modalText: { fontFamily: fonts.medium, fontSize: 15, color: colors.textMuted, textAlign: 'center', marginBottom: 24 },
+  modalActions: { flexDirection: 'row', gap: 12 },
+  modalBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
+  modalCancel: { backgroundColor: colors.surface2, borderColor: colors.border },
+  modalDelete: { backgroundColor: 'rgba(255, 77, 109, 0.12)', borderColor: 'rgba(255, 77, 109, 0.4)' },
+  modalBtnText: { fontFamily: fonts.semibold, fontSize: 15, textAlign: 'center' },
 });

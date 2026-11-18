@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import client from '../api/client';
 import LanguageIsland from '../components/LanguageIsland';
 import { serverText, t, useLanguage } from '../i18n';
+import { facebookToken, prepareFacebook, providers, renderGoogleButton } from '../oauth';
 import '../styles/AuthPage.css';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
@@ -10,7 +11,7 @@ import '../styles/AuthPage.css';
 const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
 
 export default function AuthPage({ setIsAuth }) {
-  useLanguage(); // redraw when the island switches language
+  const language = useLanguage(); // redraw when the island switches language
   const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -20,6 +21,48 @@ export default function AuthPage({ setIsAuth }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const googleButton = useRef(null);
+
+  // A token from Google or Facebook, checked by the server: an existing account or a new one
+  const handleOAuth = async (provider, token) => {
+    setError('');
+    setOauthLoading(true);
+    try {
+      const response = await client.post('/api/auth/oauth', { provider, token });
+      localStorage.setItem('username', response.data.username);
+      setIsAuth(true);
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.error ? serverText(err.response.data.error) : t('auth.oauthFailed'));
+      setOauthLoading(false);
+    }
+  };
+  // Google's button keeps the callback it was drawn with; this sees the latest state
+  const onGoogleToken = useRef(null);
+  onGoogleToken.current = (token) => handleOAuth('google', token);
+
+  const showOAuth = mode !== 'verify' && (providers.google || providers.facebook);
+  useEffect(() => {
+    if (!showOAuth || !providers.google || !googleButton.current) return;
+    const el = googleButton.current;
+    renderGoogleButton(el, { language, width: Math.min(el.offsetWidth, 400), onToken: (token) => onGoogleToken.current(token) }).catch(
+      (err) => console.error('Google sign-in unavailable:', err)
+    );
+  }, [showOAuth, language]);
+  useEffect(() => {
+    if (providers.facebook) prepareFacebook().catch((err) => console.error('Facebook sign-in unavailable:', err));
+  }, []);
+
+  const signInWithFacebook = async () => {
+    setError('');
+    try {
+      const token = await facebookToken();
+      if (token) await handleOAuth('facebook', token);
+    } catch {
+      setError(t('auth.oauthFailed'));
+    }
+  };
 
   // Check if redirected due to expired session
   useEffect(() => {
@@ -218,6 +261,21 @@ export default function AuthPage({ setIsAuth }) {
             )}
           </button>
         </form>
+
+        {showOAuth && (
+          <div className={`oauth ${oauthLoading ? 'busy' : ''}`}>
+            <div className="oauth-divider">
+              <span>{t('auth.or')}</span>
+            </div>
+            {providers.google && <div className="oauth-google" ref={googleButton} />}
+            {providers.facebook && (
+              <button type="button" className="oauth-facebook" onClick={signInWithFacebook} disabled={oauthLoading}>
+                <span className="oauth-facebook-logo">f</span>
+                {t('auth.continueFacebook')}
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="auth-footer">
           {mode === 'verify' ? (

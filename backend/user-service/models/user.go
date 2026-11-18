@@ -14,6 +14,9 @@ type User struct {
 	PartnerID  *string `gorm:"uniqueIndex" json:"partner_id"`
 	Partner    *User   `gorm:"foreignKey:PartnerID" json:"partner,omitempty"`
 	InviteLink string  `gorm:"not null" json:"invite_link"`
+	// False for someone who only signs in with Google, Apple or Facebook (their
+	// Password is empty). Filled in by GetMe.
+	HasPassword bool `gorm:"-" json:"has_password,omitempty"`
 }
 
 // NewInviteLink builds an invite ID: no dashes, only alphanumeric, 12 characters long

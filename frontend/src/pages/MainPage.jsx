@@ -242,6 +242,23 @@ function BulletItem({ item, mine, nextDate, onSchedule, onBuy, onDelete }) {
 // points), remembered in this browser
 const VIEW_KEY = "itemsView";
 
+// The switch's icons: a chat bubble and a bulleted list, in the text colour
+const VIEW_ICONS = {
+  chat: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9.5L5 20v-4.2A2.5 2.5 0 0 1 4 13.5z" />
+    </svg>
+  ),
+  list: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <circle cx="4.5" cy="6" r="1.3" />
+      <circle cx="4.5" cy="12" r="1.3" />
+      <circle cx="4.5" cy="18" r="1.3" />
+    </svg>
+  ),
+};
+
 function savedView() {
   try {
     return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "chat";
@@ -583,20 +600,22 @@ export default function MainPage({ setIsAuth }) {
                     />
                     <span>{t("main.hideBought")}</span>
                   </label>
-                  {/* Bubbles or bullet points */}
+                  {/* Bubbles or bullet points: icons, named for screen readers and on hover */}
                   <div className="view-switch" role="radiogroup" aria-label={t("main.view")}>
                     {[
-                      ["chat", "💬", t("main.chatView")],
-                      ["list", "☰", t("main.listView")],
-                    ].map(([value, icon, label]) => (
+                      ["chat", t("main.chatView")],
+                      ["list", t("main.listView")],
+                    ].map(([value, label]) => (
                       <button
                         key={value}
                         role="radio"
                         aria-checked={view === value}
+                        aria-label={label}
+                        title={label}
                         className={`view-switch-btn ${view === value ? "active" : ""}`}
                         onClick={() => changeView(value)}
                       >
-                        <span aria-hidden="true">{icon}</span> {label}
+                        {VIEW_ICONS[value]}
                       </button>
                     ))}
                   </div>

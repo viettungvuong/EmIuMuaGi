@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -409,11 +410,11 @@ export default function MainScreen() {
                       </View>
                       <Text style={styles.hideBoughtText}>{t('main.hideBought')}</Text>
                     </Pressable>
-                    {/* Bubbles or bullet points */}
+                    {/* Bubbles or bullet points: icons, the labels are what VoiceOver/TalkBack read */}
                     <View style={styles.viewSwitch} accessibilityRole="radiogroup" accessibilityLabel={t('main.view')}>
                       {[
-                        ['chat', '💬', t('main.chatView')],
-                        ['list', '☰', t('main.listView')],
+                        ['chat', { ios: 'bubble.left', android: 'chat_bubble', web: 'chat_bubble' }, t('main.chatView')],
+                        ['list', { ios: 'list.bullet', android: 'format_list_bulleted', web: 'format_list_bulleted' }, t('main.listView')],
                       ].map(([value, icon, label]) => (
                         <Pressable
                           key={value}
@@ -421,10 +422,10 @@ export default function MainScreen() {
                           onPress={() => changeView(value)}
                           accessibilityRole="radio"
                           accessibilityState={{ checked: view === value }}
+                          accessibilityLabel={label}
+                          hitSlop={4}
                         >
-                          <Text style={[styles.viewSwitchText, view === value && { color: colors.accent }]}>
-                            {icon} {label}
-                          </Text>
+                          <SymbolView name={icon} size={18} tintColor={view === value ? colors.accent : colors.textMuted} />
                         </Pressable>
                       ))}
                     </View>
@@ -881,9 +882,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface2,
   },
-  viewSwitchBtn: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 16 },
+  viewSwitchBtn: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 16 },
   viewSwitchBtnActive: { backgroundColor: colors.surface, boxShadow: '0 1px 6px rgba(236, 72, 153, 0.2)' },
-  viewSwitchText: { fontFamily: fonts.semibold, fontSize: 13.6, color: colors.textMuted },
 
   // The list view: the same items as bullet points, a card of them under each
   // day, the dot pink for yours and violet for your partner's

@@ -1,4 +1,5 @@
 // frontend/src/pages/MainPage.jsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,6 +89,22 @@ function chatRows(items) {
   return rows;
 }
 
+// The list in days, newest first, for the list view: { day, label, items }
+// (dayGroups in the web app's MainPage)
+function dayGroups(items) {
+  const groups = [];
+  for (const item of items) {
+    const day = dayOf(item.created_at);
+    if (groups.at(-1)?.day !== day) groups.push({ day, label: dayLabel(day), items: [] });
+    groups.at(-1).items.push(item);
+  }
+  return groups;
+}
+
+// How the list is shown: 'chat' (bubbles, the default) or 'list' (bullet
+// points), remembered on this phone
+const VIEW_KEY = 'itemsView';
+
 function subInfo(item) {
   if (item.item_type === 'clothes') {
     return [item.size, item.color, item.brand].filter(Boolean).join(' · ');
@@ -119,6 +136,7 @@ export default function MainScreen() {
   const [search, setSearch] = useState(''); // searchQuery once typing pauses
   const [hideBought, setHideBought] = useState(false);
   const [who, setWho] = useState('all'); // whose items: 'all', 'me' or 'partner'
+  const [view, setView] = useState('chat'); // 'chat' or 'list'
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmItemId, setConfirmItemId] = useState(null);
@@ -206,6 +224,18 @@ export default function MainScreen() {
       if (link) router.push({ pathname: '/add', params: { url: link } });
     }, [router]),
   );
+
+  // The view picked last time
+  useEffect(() => {
+    AsyncStorage.getItem(VIEW_KEY)
+      .then((saved) => saved === 'list' && setView('list'))
+      .catch(() => {});
+  }, []);
+
+  const changeView = (next) => {
+    setView(next);
+    AsyncStorage.setItem(VIEW_KEY, next).catch(() => {}); // switched either way, just not remembered
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -372,12 +402,33 @@ export default function MainScreen() {
                       </Pressable>
                     ))}
                   </ScrollView>
-                  <Pressable style={styles.hideBought} onPress={() => setHideBought((v) => !v)}>
-                    <View style={[styles.checkbox, hideBought && styles.checkboxOn]}>
-                      {hideBought && <Text style={styles.checkmark}>✓</Text>}
+                  <View style={styles.viewOptions}>
+                    <Pressable style={styles.hideBought} onPress={() => setHideBought((v) => !v)}>
+                      <View style={[styles.checkbox, hideBought && styles.checkboxOn]}>
+                        {hideBought && <Text style={styles.checkmark}>✓</Text>}
+                      </View>
+                      <Text style={styles.hideBoughtText}>{t('main.hideBought')}</Text>
+                    </Pressable>
+                    {/* Bubbles or bullet points */}
+                    <View style={styles.viewSwitch} accessibilityRole="radiogroup" accessibilityLabel={t('main.view')}>
+                      {[
+                        ['chat', '💬', t('main.chatView')],
+                        ['list', '☰', t('main.listView')],
+                      ].map(([value, icon, label]) => (
+                        <Pressable
+                          key={value}
+                          style={[styles.viewSwitchBtn, view === value && styles.viewSwitchBtnActive]}
+                          onPress={() => changeView(value)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: view === value }}
+                        >
+                          <Text style={[styles.viewSwitchText, view === value && { color: colors.accent }]}>
+                            {icon} {label}
+                          </Text>
+                        </Pressable>
+                      ))}
                     </View>
-                    <Text style={styles.hideBoughtText}>{t('main.hideBought')}</Text>
-                  </Pressable>
+                  </View>
                 </View>
 
                 {filterType === 'restaurant' && (
@@ -402,15 +453,33 @@ export default function MainScreen() {
 
                 {items.length === 0 ? (
                   <EmptyState icon="😅" text={t('main.noMatch')} />
+                ) : view === 'list' ? (
+                  <View>
+                    {dayGroups(items).map((group) => (
+                      <View key={group.day}>
+                        <DayDivider label={group.label} />
+                        <View style={styles.bulletList}>
+                          {group.items.map((item, i) => (
+                            <BulletItem
+                              key={item.id}
+                              item={item}
+                              first={i === 0}
+                              mine={item.owner === currentUser}
+                              nextDate={item.item_type === 'restaurant' ? upcoming.find((s) => s.restaurant_id === item.id) : null}
+                              onSchedule={() => setCalendar({ restaurant: item })}
+                              onBuy={() => setConfirmItemId(item.id)}
+                              onDelete={() => handleDelete(item.id)}
+                            />
+                          ))}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
                 ) : (
                   <View>
                     {chatRows(items).map((row) =>
                       row.kind === 'day' ? (
-                        <View key={row.key} style={styles.chatDay}>
-                          <View style={styles.chatDayLine} />
-                          <Text style={styles.chatDayText}>{row.label}</Text>
-                          <View style={styles.chatDayLine} />
-                        </View>
+                        <DayDivider key={row.key} label={row.label} />
                       ) : (
                         <ChatBubble
                           key={row.key}
@@ -482,6 +551,81 @@ export default function MainScreen() {
         )}
       </ModalCard>
     </SafeAreaView>
+  );
+}
+
+// The day the items under it were added, between two lines
+function DayDivider({ label }) {
+  return (
+    <View style={styles.chatDay}>
+      <View style={styles.chatDayLine} />
+      <Text style={styles.chatDayText}>{label}</Text>
+      <View style={styles.chatDayLine} />
+    </View>
+  );
+}
+
+// One item as a bullet point (the list view): its name on the first line, the
+// rest small underneath, the same buttons at the end. The dot is pink for yours
+// and violet for your partner's, like the chat's two sides (MainPage's
+// BulletItem on the web).
+function BulletItem({ item, first, mine, nextDate, onSchedule, onBuy, onDelete }) {
+  const info = subInfo(item);
+  const time = new Date(item.created_at).toLocaleTimeString(dateLocale(), { timeZone: VN_TIME, hour: '2-digit', minute: '2-digit' });
+  // Only worth showing until it's bought
+  const deadline = !item.bought && item.deadline_at;
+  const buyAt = !item.bought && item.buy_at;
+  const hasDetails = !!info || !!item.shop_name || !!nextDate || !!deadline || !!buyAt || !!item.buy_url;
+
+  return (
+    <View style={[styles.bulletItem, !first && styles.bulletItemDivided, item.bought && { opacity: 0.6 }]}>
+      <View style={[styles.bulletDot, !mine && styles.bulletDotTheirs]} accessibilityLabel={item.owner} />
+      <View style={styles.bulletBody}>
+        {/* One run of text, so a long name wraps on from the emoji */}
+        <Text style={styles.bulletLine}>
+          <Text accessibilityLabel={t(`wantedBy.${item.wanted_by === 1 ? 'boy' : 'girl'}`)}>
+            {item.wanted_by === 1 ? '👦' : '👧'}{' '}
+          </Text>
+          <Text style={[styles.bulletName, item.bought && styles.itemNameBought]}>{item.item_name}</Text>
+          {item.quantity > 1 && <Text style={styles.metaAccent}>{'  '}x{item.quantity}</Text>}
+          {/* Non-breaking spaces: the label moves to the next line whole, not split */}
+          <Text style={styles.bulletType}>{'  '}{typeLabel(item.item_type).replace(/ /g, ' ')}</Text>
+        </Text>
+        {hasDetails && (
+          <View style={styles.bulletDetails}>
+            {!!info && <Text style={styles.metaText}>{info}</Text>}
+            {!!item.shop_name && <Text style={styles.metaText}>🏪 {item.shop_name}</Text>}
+            {!!nextDate && <Text style={styles.nextDateChip}>📅 {formatWhen(nextDate)}</Text>}
+            {!!deadline && <Text style={styles.nextDateChip}>⏳ {t('main.deadline', { when: formatAt(deadline) })}</Text>}
+            {!!buyAt && <Text style={styles.nextDateChip}>🛒 {t('main.buyAt', { when: formatAt(buyAt) })}</Text>}
+            {!!item.buy_url && (
+              <Text style={[styles.metaText, { color: colors.accent2 }]} onPress={() => Linking.openURL(item.buy_url)}>
+                🔗 {item.item_type === 'restaurant' ? t('main.viewRestaurant') : t('main.viewProduct')}
+              </Text>
+            )}
+          </View>
+        )}
+      </View>
+      <View style={styles.bulletSide}>
+        {item.bought && <Text style={[styles.bubbleFootText, styles.bubbleBought]}>{t('main.boughtStatus')}</Text>}
+        <Text style={styles.bubbleFootText}>{time}</Text>
+        {!item.bought && (
+          <Pressable style={[styles.buyBtn, styles.bulletBtn]} onPress={onBuy} accessibilityLabel={t('main.boughtLabel')} hitSlop={6}>
+            <Text style={styles.buyBtnText}>✓</Text>
+          </Pressable>
+        )}
+        {item.item_type === 'restaurant' && (
+          <Pressable style={[styles.scheduleBtn, styles.bulletBtn]} onPress={onSchedule} accessibilityLabel={t('schedule.button')} hitSlop={6}>
+            <Text style={styles.scheduleBtnText}>📅</Text>
+          </Pressable>
+        )}
+        {mine && (
+          <Pressable onPress={onDelete} accessibilityLabel={t('main.deleteLabel')} hitSlop={6}>
+            <Text style={styles.deleteBtnText}>🗑</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -702,7 +846,6 @@ const styles = StyleSheet.create({
   },
   filterTabText: { fontFamily: fonts.semibold, fontSize: 13.6, color: colors.textMuted },
   hideBought: {
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -726,6 +869,42 @@ const styles = StyleSheet.create({
   checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   checkmark: { color: '#fff', fontSize: 11, lineHeight: 13, fontFamily: fonts.bold },
   hideBoughtText: { fontFamily: fonts.regular, fontSize: 13.6, color: colors.textMuted },
+  // "Hide bought" and the chat / list switch, side by side
+  viewOptions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  // Chat or list: two options in a pill, the picked one raised
+  viewSwitch: {
+    flexDirection: 'row',
+    gap: 2,
+    padding: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface2,
+  },
+  viewSwitchBtn: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 16 },
+  viewSwitchBtnActive: { backgroundColor: colors.surface, boxShadow: '0 1px 6px rgba(236, 72, 153, 0.2)' },
+  viewSwitchText: { fontFamily: fonts.semibold, fontSize: 13.6, color: colors.textMuted },
+
+  // The list view: the same items as bullet points, a card of them under each
+  // day, the dot pink for yours and violet for your partner's
+  bulletList: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  bulletItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10, paddingHorizontal: 12 },
+  bulletItemDivided: { borderTopWidth: 1, borderTopColor: colors.border },
+  bulletDot: { width: 9, height: 9, borderRadius: 4.5, marginTop: 6, backgroundColor: colors.accent },
+  bulletDotTheirs: { backgroundColor: colors.partner },
+  bulletBody: { flex: 1, gap: 3 },
+  bulletLine: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.text },
+  bulletName: { fontFamily: fonts.semibold, color: colors.text },
+  bulletType: { fontFamily: fonts.semibold, fontSize: 10.5, color: TYPE_COLOR, letterSpacing: 0.5, textTransform: 'uppercase' },
+  bulletDetails: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },
+  bulletSide: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  bulletBtn: { paddingVertical: 3, paddingHorizontal: 9 },
 
   // The list as a conversation: your items on the right, your partner's on the left
   chatDay: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20, marginBottom: 6 },

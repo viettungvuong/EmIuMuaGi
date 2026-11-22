@@ -153,7 +153,10 @@
     "mine": "Của mình",
     "partners": "Của {name}",
     "deadline": "Hạn {when}",
-    "buyAt": "Mua lúc {when}"
+    "buyAt": "Mua lúc {when}",
+    "view": "Kiểu xem danh sách",
+    "chatView": "Trò chuyện",
+    "listView": "Danh sách"
   },
   "add": {
     "title": "Thêm Mục Mới",

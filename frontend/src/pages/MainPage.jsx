@@ -61,40 +61,36 @@ function chatRows(items) {
   return rows;
 }
 
-function ItemSubInfo({ item }) {
+// The list in days, newest first, for the list view: { day, label, items }
+function dayGroups(items) {
+  const groups = [];
+  for (const item of items) {
+    const day = dayOf(item.created_at);
+    if (groups.at(-1)?.day !== day) groups.push({ day, label: dayLabel(day), items: [] });
+    groups.at(-1).items.push(item);
+  }
+  return groups;
+}
+
+// The type's details on one line ("M · Black · Uniqlo"), or null
+function subInfoText(item) {
   if (item.item_type === "clothes") {
-    const parts = [item.size, item.color, item.brand].filter(Boolean);
-    return parts.length ? (
-      <p className="item-subinfo">{parts.join(" · ")}</p>
-    ) : null;
+    return [item.size, item.color, item.brand].filter(Boolean).join(" · ") || null;
   }
   if (item.item_type === "food_and_drink") {
-    const parts = [item.size, item.sugar && t("main.sugar", { sugar: item.sugar })].filter(
-      Boolean,
-    );
-    const toppingStr = item.toppings?.length
-      ? t("main.toppings", { toppings: item.toppings.join(", ") })
-      : null;
-    return parts.length || toppingStr ? (
-      <p className="item-subinfo">
-        {[...parts, toppingStr].filter(Boolean).join(" · ")}
-      </p>
-    ) : null;
+    const toppings = item.toppings?.length ? t("main.toppings", { toppings: item.toppings.join(", ") }) : null;
+    return [item.size, item.sugar && t("main.sugar", { sugar: item.sugar }), toppings].filter(Boolean).join(" · ") || null;
   }
   if (item.item_type === "restaurant") {
-    const parts = [
-      item.main_food,
-      item.cuisine_type,
-      item.address,
-    ].filter(Boolean);
-    return parts.length ? (
-      <p className="item-subinfo">{parts.join(" · ")}</p>
-    ) : null;
+    return [item.main_food, item.cuisine_type, item.address].filter(Boolean).join(" · ") || null;
   }
-  if (item.item_type === "others" && item.category) {
-    return <p className="item-subinfo">{item.category}</p>;
-  }
+  if (item.item_type === "others") return item.category || null;
   return null;
+}
+
+function ItemSubInfo({ item }) {
+  const text = subInfoText(item);
+  return text ? <p className="item-subinfo">{text}</p> : null;
 }
 
 // One item as a chat message: yours on the right, your partner's on the left
@@ -178,6 +174,82 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
   );
 }
 
+// One item as a bullet point (the list view): its name on the first line, the
+// rest small underneath, the same buttons at the end. The dot is pink for
+// yours and violet for your partner's, like the chat's two sides.
+function BulletItem({ item, mine, nextDate, onSchedule, onBuy, onDelete }) {
+  const typeLabel = ITEM_TYPES.includes(item.item_type) ? t(`types.${item.item_type}`) : item.item_type;
+  const time = new Date(item.created_at).toLocaleTimeString(dateLocale(), {
+    timeZone: VN_TIME,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const info = subInfoText(item);
+  // Only worth showing until it's bought
+  const deadline = !item.bought && item.deadline_at;
+  const buyAt = !item.bought && item.buy_at;
+  const hasDetails = info || item.shop_name || nextDate || deadline || buyAt || item.buy_url;
+
+  return (
+    <li className={`bullet-item ${mine ? "mine" : "theirs"} ${item.bought ? "bought" : ""}`}>
+      <span className="bullet-dot" role="img" aria-label={item.owner} title={item.owner} />
+      <div className="bullet-body">
+        <div className="bullet-line">
+          <span title={t(`wantedBy.${item.wanted_by === 1 ? "boy" : "girl"}`)}>{item.wanted_by === 1 ? "👦" : "👧"}</span>
+          <span className="bullet-name">{item.item_name}</span>
+          {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
+          <span className="bullet-type" style={{ color: TYPE_COLOR }}>{typeLabel}</span>
+        </div>
+        {hasDetails && (
+          <div className="bullet-details">
+            {info && <span>{info}</span>}
+            {item.shop_name && <span>🏪 {item.shop_name}</span>}
+            {nextDate && <span className="item-next-date">📅 {formatWhen(nextDate)}</span>}
+            {deadline && <span className="item-next-date">⏳ {t("main.deadline", { when: formatAt(deadline) })}</span>}
+            {buyAt && <span className="item-next-date">🛒 {t("main.buyAt", { when: formatAt(buyAt) })}</span>}
+            {item.buy_url && (
+              <a className="item-link" href={item.buy_url} target="_blank" rel="noreferrer">
+                🔗 {item.item_type === "restaurant" ? t("main.viewRestaurant") : t("main.viewProduct")}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="bullet-side">
+        {item.bought && <span className="bubble-bought">{t("main.boughtStatus")}</span>}
+        <span className="bullet-time">{time}</span>
+        {!item.bought && (
+          <button className="buy-btn" onClick={onBuy} aria-label={t("main.boughtLabel")} title={t("main.boughtLabel")}>
+            ✓
+          </button>
+        )}
+        {item.item_type === "restaurant" && (
+          <button className="schedule-btn" onClick={onSchedule} aria-label={t("schedule.button")} title={t("schedule.button")}>
+            📅
+          </button>
+        )}
+        {mine && (
+          <button className="delete-btn" onClick={onDelete} aria-label={t("main.deleteLabel")} title={t("main.deleteLabel")}>
+            🗑
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+// How the list is shown: "chat" (bubbles, the default) or "list" (bullet
+// points), remembered in this browser
+const VIEW_KEY = "itemsView";
+
+function savedView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "chat";
+  } catch {
+    return "chat";
+  }
+}
+
 export default function MainPage({ setIsAuth }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +259,7 @@ export default function MainPage({ setIsAuth }) {
   const [search, setSearch] = useState(""); // searchQuery once typing pauses
   const [hideBought, setHideBought] = useState(false);
   const [who, setWho] = useState("all"); // whose items: "all", "me" or "partner"
+  const [view, setView] = useState(savedView); // "chat" or "list"
   const [userData, setUserData] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, itemId: null });
@@ -302,6 +375,15 @@ export default function MainPage({ setIsAuth }) {
 
   const cancelBuy = () => {
     setConfirmModal({ isOpen: false, itemId: null });
+  };
+
+  const changeView = (next) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // Switched, just not remembered (private window, storage blocked)
+    }
   };
 
   const handleLogout = async () => {
@@ -492,14 +574,33 @@ export default function MainPage({ setIsAuth }) {
                     </button>
                   ))}
                 </div>
-                <label className="hide-bought-toggle">
-                  <input
-                    type="checkbox"
-                    checked={hideBought}
-                    onChange={(e) => setHideBought(e.target.checked)}
-                  />
-                  <span>{t("main.hideBought")}</span>
-                </label>
+                <div className="view-options">
+                  <label className="hide-bought-toggle">
+                    <input
+                      type="checkbox"
+                      checked={hideBought}
+                      onChange={(e) => setHideBought(e.target.checked)}
+                    />
+                    <span>{t("main.hideBought")}</span>
+                  </label>
+                  {/* Bubbles or bullet points */}
+                  <div className="view-switch" role="radiogroup" aria-label={t("main.view")}>
+                    {[
+                      ["chat", "💬", t("main.chatView")],
+                      ["list", "☰", t("main.listView")],
+                    ].map(([value, icon, label]) => (
+                      <button
+                        key={value}
+                        role="radio"
+                        aria-checked={view === value}
+                        className={`view-switch-btn ${view === value ? "active" : ""}`}
+                        onClick={() => changeView(value)}
+                      >
+                        <span aria-hidden="true">{icon}</span> {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -527,6 +628,29 @@ export default function MainPage({ setIsAuth }) {
               <div className="empty-state">
                 <span className="empty-icon">😅</span>
                 <p className="empty-text">{t("main.noMatch")}</p>
+              </div>
+            ) : view === "list" ? (
+              <div className="bullets">
+                {dayGroups(items).map((group) => (
+                  <section key={group.day}>
+                    <div className="chat-day">
+                      <span>{group.label}</span>
+                    </div>
+                    <ul className="bullet-list">
+                      {group.items.map((item) => (
+                        <BulletItem
+                          key={item.id}
+                          item={item}
+                          mine={item.owner === currentUser}
+                          nextDate={item.item_type === "restaurant" ? nextAt(item.id) : null}
+                          onSchedule={() => setCalendar({ restaurant: item })}
+                          onBuy={() => handleBuy(item.id)}
+                          onDelete={() => handleDelete(item.id)}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
               </div>
             ) : (
               <div className="chat">

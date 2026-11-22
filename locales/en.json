@@ -153,7 +153,10 @@
     "mine": "Mine",
     "partners": "{name}'s",
     "deadline": "Due {when}",
-    "buyAt": "Buy at {when}"
+    "buyAt": "Buy at {when}",
+    "view": "How to show the list",
+    "chatView": "Chat",
+    "listView": "List"
   },
   "add": {
     "title": "Add New Item",

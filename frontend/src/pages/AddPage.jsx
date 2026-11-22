@@ -68,6 +68,12 @@ function sendLink(ws, seqRef, url) {
   ws.send(JSON.stringify({ seq: seqRef.current, url }));
 }
 
+// Now as a datetime-local input's value, so past times can't be picked
+const localNow = () => {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
 export default function AddPage() {
   // Made up front: names the parser channel now, saved as the item's uuid later
   const [itemUuid] = useState(newUuid);
@@ -83,6 +89,8 @@ export default function AddPage() {
     main_food: '', cuisine_type: '', address: '', time_to_eat: '',
     // others
     category: '',
+    // not for restaurants: "YYYY-MM-DDTHH:mm" from the datetime inputs, local time
+    deadline_at: '', buy_at: '',
   });
   // "Pick a date": the chosen time, booked on the calendar along with the restaurant
   const [pickedAt, setPickedAt] = useState(null);
@@ -241,6 +249,10 @@ export default function AddPage() {
     const picksDate = itemType === 'restaurant' && form.time_to_eat === 'pick_date';
     if (picksDate && !pickedAt) { setError(t('add.pickDateRequired')); return; }
     if (picksDate && pickedAt < new Date()) { setError(t('schedule.past')); return; }
+    const timed = itemType !== 'restaurant';
+    const deadlineAt = timed && form.deadline_at ? new Date(form.deadline_at) : null;
+    const buyAt = timed && form.buy_at ? new Date(form.buy_at) : null;
+    if ([deadlineAt, buyAt].some((at) => at && at < new Date())) { setError(t('schedule.past')); return; }
     setLoading(true);
     setError('');
 
@@ -252,6 +264,8 @@ export default function AddPage() {
       quantity: Number(form.quantity) || 1,
       shop_name: form.shop_name.trim() || null,
       buy_url: form.buy_url.trim() || null,
+      deadline_at: deadlineAt ? deadlineAt.toISOString() : null,
+      buy_at: buyAt ? buyAt.toISOString() : null,
     };
 
     const subtypeFields =
@@ -493,6 +507,26 @@ export default function AddPage() {
               <input type="text" className="field-input" placeholder={t('add.categoryPlaceholder')}
                 value={form.category} onChange={set('category')} />
             </div>
+          )}
+
+          {/* Deadline and time to buy, which bring nudges; not for restaurants */}
+          {itemType !== 'restaurant' && (
+            <>
+              <div className="field-group">
+                <label className="field-label">
+                  {t('add.deadline')} <span className="field-hint">{t('add.deadlineHint')}</span>
+                </label>
+                <input type="datetime-local" className="field-input" min={localNow()}
+                  value={form.deadline_at} onChange={set('deadline_at')} />
+              </div>
+              <div className="field-group">
+                <label className="field-label">
+                  {t('add.buyAt')} <span className="field-hint">{t('add.buyAtHint')}</span>
+                </label>
+                <input type="datetime-local" className="field-input" min={localNow()}
+                  value={form.buy_at} onChange={set('buy_at')} />
+              </div>
+            </>
           )}
 
           {/* ── Media Upload ── */}

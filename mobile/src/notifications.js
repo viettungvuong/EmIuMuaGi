@@ -1,12 +1,13 @@
-// Notifications at 0:00, 9:00 and 17:00: the dates coming up, what the partner
-// added, and what's still not bought 3 days / a week on.
+// Notifications at 0:00, 9:00 and 17:00: the dates coming up, what's due today,
+// what the partner added, and what's still not bought 3 days / a week on. Plus
+// nudges at an item's own times: an hour before its deadline, and 5 minutes
+// before and at its time to buy.
 //
 // The server sends them (item-service internal/notify.go) to this phone's Expo
 // push token, which needs the EAS project id and, on Android, Firebase (see
 // app.config.js). Until push works on this phone, the phone schedules the same
-// digest itself from what it last loaded: the dates and the reminders, but not
-// news of new items, which only the server knows in time. Never both, so
-// nothing arrives twice.
+// digest and nudges itself from what it last loaded, all but news of new items,
+// which only the server knows in time. Never both, so nothing arrives twice.
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -20,7 +21,9 @@ const OLD_CHANNEL_ID = 'dates'; // the morning date reminders of 1.0.2
 const DIGEST_HOURS = [0, 9, 17];
 const DAY_MS = 24 * 60 * 60 * 1000;
 const REMIND_AFTER_DAYS = [3, 7];
-const MAX_DIGESTS = 40; // iOS keeps at most 64 pending notifications per app
+const DEADLINE_NUDGE_MS = 60 * 60 * 1000;
+const BUY_NUDGE_MS = 5 * 60 * 1000;
+const MAX_SCHEDULED = 60; // iOS keeps at most 64 pending notifications per app
 const MAX_LISTED = 3; // names on a line before the rest become "+N"
 
 // Shown even while the app is open
@@ -105,28 +108,42 @@ function dayOf(date, slot) {
 const listNames = (names) =>
   names.length <= MAX_LISTED ? names.join(', ') : `${names.slice(0, MAX_LISTED).join(', ')} +${names.length - MAX_LISTED}`;
 
-function render(slot, { dates, reminders }) {
+function render(slot, { dates, due, reminders }) {
   const lines = [];
-  dates.slice(0, MAX_LISTED).forEach((d) => lines.push(`📅 ${dayOf(d.at, slot)} ${timeOf(d.at)} · ${d.name}`));
-  if (dates.length > MAX_LISTED) lines.push(`📅 +${dates.length - MAX_LISTED}`);
+  const titles = [];
+  if (dates.length) {
+    titles.push(t('notifications.datesTitle'));
+    dates.slice(0, MAX_LISTED).forEach((d) => lines.push(`📅 ${dayOf(d.at, slot)} ${timeOf(d.at)} · ${d.name}`));
+    if (dates.length > MAX_LISTED) lines.push(`📅 +${dates.length - MAX_LISTED}`);
+  }
+  if (due.length) {
+    titles.push(t('notifications.dueTitle'));
+    lines.push(t('notifications.due', { items: listNames(due.map((d) => `${d.name} (${timeOf(d.at)})`)) }));
+  }
   if (reminders.length) {
+    titles.push(t('notifications.remindTitle'));
     const names = reminders.map((r) => `${r.name} (${t(r.week ? 'notifications.week' : 'notifications.days')})`);
     lines.push(t('notifications.notBought', { items: listNames(names) }));
   }
-  const title =
-    dates.length && reminders.length
-      ? t('notifications.mixedTitle')
-      : t(dates.length ? 'notifications.datesTitle' : 'notifications.remindTitle');
+  const title = titles.length === 1 ? titles[0] : t('notifications.mixedTitle');
   return { title, body: lines.join('\n') };
 }
 
-// The digests to come, from the couple's dates and the items not bought yet
+// A nudge at an item's own time: `kind` is deadlineSoon, buySoon or buyNow
+const nudge = (kind, name, at) => ({
+  title: t(`notifications.${kind}Title`),
+  body: t(`notifications.${kind}`, { name, time: timeOf(at) }),
+});
+
+// The notifications to come, from the couple's dates and the items not bought
+// yet: [{ at, content }], soonest first
 function plan({ me, partner, schedules, items }) {
   const now = new Date();
-  const slots = new Map(); // time → { dates, reminders }
+  const slots = new Map(); // digest time → { dates, due, reminders }
+  const nudges = [];
   const at = (slot) => {
     const key = slot.getTime();
-    if (!slots.has(key)) slots.set(key, { dates: [], reminders: [] });
+    if (!slots.has(key)) slots.set(key, { dates: [], due: [], reminders: [] });
     return slots.get(key);
   };
 
@@ -148,25 +165,42 @@ function plan({ me, partner, schedules, items }) {
       const slot = slotFrom(new Date(new Date(item.created_at).getTime() + days * DAY_MS));
       if (slot > now) at(slot).reminders.push({ name: item.item_name, week: days === 7 });
     }
+
+    // Due today, in the day's first digest; and an hour before
+    if (item.deadline_at) {
+      const deadline = new Date(item.deadline_at);
+      const first = slotFrom(new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()));
+      if (first > now && first <= deadline) at(first).due.push({ name: item.item_name, at: deadline });
+      const soon = new Date(deadline - DEADLINE_NUDGE_MS);
+      if (soon > now) nudges.push({ at: soon, content: nudge('deadlineSoon', item.item_name, deadline) });
+    }
+    // 5 minutes before the time to buy, and at it
+    if (item.buy_at) {
+      const buy = new Date(item.buy_at);
+      const soon = new Date(buy - BUY_NUDGE_MS);
+      if (soon > now) nudges.push({ at: soon, content: nudge('buySoon', item.item_name, buy) });
+      if (buy > now) nudges.push({ at: buy, content: nudge('buyNow', item.item_name, buy) });
+    }
   }
 
-  return [...slots.entries()]
-    .sort(([a], [b]) => a - b)
-    .slice(0, MAX_DIGESTS)
-    .map(([time, news]) => ({ slot: new Date(time), news }));
+  const digests = [...slots.entries()].map(([time, news]) => {
+    const slot = new Date(time);
+    return { at: slot, content: render(slot, news) };
+  });
+  return [...digests, ...nudges].sort((a, b) => a.at - b.at).slice(0, MAX_SCHEDULED);
 }
 
 async function scheduleOwn({ me, partner, schedules }) {
   if (registered) return; // the server sends them
   const { data: items } = await client.get('/api/items', { params: { hide_bought: true } });
-  const digests = plan({ me, partner, schedules, items });
+  const planned = plan({ me, partner, schedules, items });
 
   await Notifications.cancelAllScheduledNotificationsAsync();
-  if (!digests.length || !(await allowed())) return;
-  for (const { slot, news } of digests) {
+  if (!planned.length || !(await allowed())) return;
+  for (const { at, content } of planned) {
     await Notifications.scheduleNotificationAsync({
-      content: render(slot, news),
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: slot, channelId: CHANNEL_ID },
+      content,
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId: CHANNEL_ID },
     });
   }
 }

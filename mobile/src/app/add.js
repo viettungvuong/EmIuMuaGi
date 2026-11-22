@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import client from '../api/client';
 import { WS_URL } from '../api/config';
 import { useAuth } from '../auth';
+import DateTimeField from '../components/DateTimeField';
 import ScheduleModal from '../components/ScheduleModal';
 import { GradientButton, Select } from '../components/ui';
 import { t, useLanguage } from '../i18n';
@@ -119,6 +120,10 @@ export default function AddScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   // What the picker shows: the couple's dates and who's who, fetched on first open
   const [calendarData, setCalendarData] = useState(null);
+  // Not for restaurants: when it has to be bought by, and when to go buy it.
+  // Each brings nudges (the server's internal/nudge.go).
+  const [deadlineAt, setDeadlineAt] = useState(null);
+  const [buyAt, setBuyAt] = useState(null);
   const [mediaFiles, setMediaFiles] = useState([]); // { uri, name, mimeType, type }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -277,6 +282,11 @@ export default function AddScreen() {
       setError(t('schedule.past'));
       return;
     }
+    const timed = itemType !== 'restaurant';
+    if (timed && [deadlineAt, buyAt].some((at) => at && at < new Date())) {
+      setError(t('schedule.past'));
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -288,6 +298,8 @@ export default function AddScreen() {
       quantity: Number(form.quantity) || 1,
       shop_name: form.shop_name.trim() || null,
       buy_url: form.buy_url.trim() || null,
+      deadline_at: timed && deadlineAt ? deadlineAt.toISOString() : null,
+      buy_at: timed && buyAt ? buyAt.toISOString() : null,
     };
 
     const subtypeFields =
@@ -507,6 +519,45 @@ export default function AddScreen() {
               )}
 
               {itemType === 'others' && field(t('add.category'), 'category', { placeholder: t('add.categoryPlaceholder') })}
+
+              {itemType !== 'restaurant' && (
+                <>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>
+                      {t('add.deadline')} <Text style={styles.hint}>{t('add.deadlineHint')}</Text>
+                    </Text>
+                    <DateTimeField
+                      icon="⏳"
+                      value={deadlineAt}
+                      placeholder={t('add.deadlinePlaceholder')}
+                      onChange={(at) => {
+                        setDeadlineAt(at);
+                        setError('');
+                      }}
+                      style={styles.input}
+                      pickedStyle={styles.pickDatePicked}
+                      textStyle={styles.inputText}
+                    />
+                  </View>
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>
+                      {t('add.buyAt')} <Text style={styles.hint}>{t('add.buyAtHint')}</Text>
+                    </Text>
+                    <DateTimeField
+                      icon="🛒"
+                      value={buyAt}
+                      placeholder={t('add.buyAtPlaceholder')}
+                      onChange={(at) => {
+                        setBuyAt(at);
+                        setError('');
+                      }}
+                      style={styles.input}
+                      pickedStyle={styles.pickDatePicked}
+                      textStyle={styles.inputText}
+                    />
+                  </View>
+                </>
+              )}
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>{t('add.media')}</Text>

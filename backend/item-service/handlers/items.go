@@ -87,7 +87,7 @@ func GetItems(c *gin.Context) {
 	var results []PolledItem
 
 	err = database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by,
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
@@ -171,6 +171,18 @@ func CreateItem(c *gin.Context) {
 		log.Printf("[items] create by %s: invalid wanted_by %d", c.GetString("username"), input.WantedBy)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "wanted_by must be 0 (girl) or 1 (boy)"})
 		return
+	}
+
+	// Deadline and time to buy are for things to buy, not places to eat
+	if input.ItemType == "restaurant" {
+		input.DeadlineAt, input.BuyAt = nil, nil
+	}
+	for _, at := range []*time.Time{input.DeadlineAt, input.BuyAt} {
+		if at != nil && at.Before(time.Now().Add(-scheduleGrace)) {
+			log.Printf("[items] create by %s: deadline / time to buy %s has already passed", c.GetString("username"), at.Format(time.RFC3339))
+			c.JSON(http.StatusBadRequest, gin.H{"error": "That time has already passed"})
+			return
+		}
 	}
 
 	// A restaurant's picked date also goes on the calendar, so it can't be in the past
@@ -338,7 +350,7 @@ func MarkItemAsBought(c *gin.Context) {
 	}
 
 	if err := database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by,
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,

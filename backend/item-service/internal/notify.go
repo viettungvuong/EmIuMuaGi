@@ -22,6 +22,8 @@ import (
 //   - what their partner added since the last run
 //   - what is still not bought 3 days and a week after it was added, for whoever
 //     is to buy it: the owner's partner, or the owner when they have none
+//   - in the day's first run, what is due today (its deadline), for the same
+//     person; the nudges at an item's own times are nudge.go's
 // Items keep how far they have got (items.notify_stage), so news isn't sent
 // twice, and what came in while the service was down goes out with the next run.
 
@@ -79,6 +81,13 @@ func (i dueItem) stageDue(at time.Time) int {
 	}
 }
 
+// An item not bought yet whose deadline is later today
+type dueToday struct {
+	ItemName   string
+	Owner      string
+	DeadlineAt time.Time
+}
+
 type upcomingDate struct {
 	ScheduledAt    time.Time
 	Username       string // who booked it
@@ -94,6 +103,10 @@ func SendDigests(ctx context.Context, at time.Time, hours []int) error {
 	dates, err := loadUpcomingDates(at, nextRunAt(nextRunAt(at, hours), hours))
 	if err != nil {
 		return fmt.Errorf("could not load dates: %w", err)
+	}
+	deadlines, err := loadDueToday(at, hours)
+	if err != nil {
+		return fmt.Errorf("could not load deadlines: %w", err)
 	}
 
 	var tokens []models.PushToken
@@ -115,7 +128,7 @@ func SendDigests(ctx context.Context, at time.Time, hours []int) error {
 			continue
 		}
 
-		d := buildDigest(username, partner, items, dates, at)
+		d := buildDigest(username, partner, items, dates, deadlines, at)
 		if d.empty() {
 			continue
 		}
@@ -195,6 +208,26 @@ func loadUpcomingDates(from, until time.Time) ([]upcomingDate, error) {
 	return dates, err
 }
 
+// loadDueToday lists, in the day's first run only, the items not bought whose
+// deadline is still to come today
+func loadDueToday(at time.Time, hours []int) ([]dueToday, error) {
+	loc := jobLocation()
+	local := at.In(loc)
+	dayStart := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, loc)
+	first := nextRunAt(dayStart.Add(-time.Nanosecond), hours)
+	if at.Before(first) || !at.Before(nextRunAt(first, hours)) {
+		return nil, nil
+	}
+
+	var due []dueToday
+	err := database.DB.Model(&models.Item{}).
+		Select("item_name, owner, deadline_at").
+		Where("deleted_at IS NULL AND NOT bought AND deadline_at >= ? AND deadline_at < ?", at, dayStart.AddDate(0, 0, 1)).
+		Order("deadline_at").
+		Scan(&due).Error
+	return due, err
+}
+
 // markNotified moves each item on to the stage this run took it to
 func markNotified(items []dueItem) error {
 	byStage := map[int][]uint{}
@@ -224,9 +257,10 @@ type digest struct {
 	dates     []upcomingDate
 	added     []string // what the partner added
 	reminders []reminder
+	dueToday  []dueToday
 }
 
-func buildDigest(me, partner string, items []dueItem, dates []upcomingDate, at time.Time) digest {
+func buildDigest(me, partner string, items []dueItem, dates []upcomingDate, deadlines []dueToday, at time.Time) digest {
 	d := digest{at: at, partner: partner}
 
 	// Both of the couple's dates, as on the calendar (handlers.GetSchedules)
@@ -236,10 +270,19 @@ func buildDigest(me, partner string, items []dueItem, dates []upcomingDate, at t
 		}
 	}
 
+	// Only whoever is to buy it hears about it
+	toBuy := func(owner string) bool {
+		return (partner != "" && owner == partner) || (partner == "" && owner == me)
+	}
+
+	for _, item := range deadlines {
+		if toBuy(item.Owner) {
+			d.dueToday = append(d.dueToday, item)
+		}
+	}
+
 	for _, item := range items {
-		// Only whoever is to buy it hears about it
-		toBuy := (partner != "" && item.Owner == partner) || (partner == "" && item.Owner == me)
-		if !toBuy {
+		if !toBuy(item.Owner) {
 			continue
 		}
 		switch item.due {
@@ -257,17 +300,18 @@ func buildDigest(me, partner string, items []dueItem, dates []upcomingDate, at t
 }
 
 func (d digest) empty() bool {
-	return len(d.dates)+len(d.added)+len(d.reminders) == 0
+	return len(d.dates)+len(d.added)+len(d.reminders)+len(d.dueToday) == 0
 }
 
 // Backend text, like the OTP email's, rather than locales/*.json: the phone may
 // be asleep when it arrives, with no app running to translate it
 type digestText struct {
-	datesTitle, addedTitle, remindTitle, mixedTitle string
-	today, tomorrow                                 string
-	added                                           string // the partner, then the items
-	notBought                                       string // the items
-	days, week                                      string // how long a reminded item has waited
+	datesTitle, addedTitle, remindTitle, dueTitle, mixedTitle string
+	today, tomorrow                                           string
+	added                                                     string // the partner, then the items
+	notBought                                                 string // the items
+	due                                                       string // the items, each with its time
+	days, week                                                string // how long a reminded item has waited
 }
 
 var digestTexts = map[string]digestText{
@@ -275,11 +319,13 @@ var digestTexts = map[string]digestText{
 		datesTitle:  "Sắp tới có hẹn nè 💕",
 		addedTitle:  "Mới mún mua thêm đồ nè! 🛍️",
 		remindTitle: "Vẫn chưa mua nè ⏰",
+		dueTitle:    "Hôm nay là hạn chót nè 📌",
 		mixedTitle:  "Có tin mới nè 💕",
 		today:       "Hôm nay",
 		tomorrow:    "Ngày mai",
 		added:       "🛍️ %s vừa thêm: %s",
 		notBought:   "⏰ Vẫn chưa mua: %s",
+		due:         "📌 Hạn chót hôm nay: %s",
 		days:        "3 ngày rồi",
 		week:        "1 tuần rồi",
 	},
@@ -287,11 +333,13 @@ var digestTexts = map[string]digestText{
 		datesTitle:  "Date coming up 💕",
 		addedTitle:  "New things to buy! 🛍️",
 		remindTitle: "Still not bought ⏰",
+		dueTitle:    "Due today 📌",
 		mixedTitle:  "What's new 💕",
 		today:       "Today",
 		tomorrow:    "Tomorrow",
 		added:       "🛍️ %s added: %s",
 		notBought:   "⏰ Still not bought: %s",
+		due:         "📌 Due today: %s",
 		days:        "3 days",
 		week:        "1 week",
 	},
@@ -305,8 +353,8 @@ func DigestLanguage(lang string) string {
 	return "vi"
 }
 
-// render writes the notification: one line per date, then what was added, then
-// what's still not bought. The title says which, or that there's a mix.
+// render writes the notification: one line per date, then what's due today,
+// what was added and what's still not bought. The title says which, or that there's a mix.
 func (d digest) render(lang string) (title, body string) {
 	text := digestTexts[DigestLanguage(lang)]
 	loc := jobLocation()
@@ -322,6 +370,15 @@ func (d digest) render(lang string) (title, body string) {
 			when := date.ScheduledAt.In(loc)
 			lines = append(lines, fmt.Sprintf("📅 %s %s · %s", text.day(when, d.at.In(loc)), when.Format("15:04"), shorten(date.RestaurantName)))
 		}
+	}
+
+	if len(d.dueToday) > 0 {
+		titles = append(titles, text.dueTitle)
+		names := make([]string, len(d.dueToday))
+		for i, item := range d.dueToday {
+			names[i] = fmt.Sprintf("%s (%s)", shorten(item.ItemName), item.DeadlineAt.In(loc).Format("15:04"))
+		}
+		lines = append(lines, fmt.Sprintf(text.due, listNames(names)))
 	}
 
 	if len(d.added) > 0 {

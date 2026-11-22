@@ -55,6 +55,8 @@ func main() {
 
 	// The notification digest at 0:00, 9:00 and 17:00: dates, new items, reminders
 	internal.StartNotifyJob()
+	// Nudges at items' own times: before a deadline, before and at the time to buy
+	internal.StartNudgeJob()
 
 	r := gin.Default()
 

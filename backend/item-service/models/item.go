@@ -25,6 +25,12 @@ type Item struct {
 	Metadata        map[string]any `gorm:"type:jsonb;serializer:json" json:"metadata,omitempty"`
 	// How far the notification digest has got with it (NotifyNew...NotifyDone)
 	NotifyStage int `gorm:"type:smallint;default:0;not null" json:"-"`
+	// When it has to be bought by, and when to go and buy it. Not for
+	// restaurants. Each brings nudges (internal/nudge.go).
+	DeadlineAt *time.Time `json:"deadline_at"`
+	BuyAt      *time.Time `json:"buy_at"`
+	// Which of those nudges have gone out: Nudge* bits
+	NudgesSent int `gorm:"type:smallint;default:0;not null" json:"-"`
 }
 
 // Item.WantedBy values: which of the couple wants the item
@@ -39,6 +45,13 @@ const (
 	NotifyAnnounced    = 1
 	NotifyRemindedDays = 2 // brought up again 3 days on, still not bought
 	NotifyDone         = 3 // and once more a week on; nothing further
+)
+
+// Item.NudgesSent bits (see internal/nudge.go)
+const (
+	NudgeDeadlineSoon = 1 << iota // an hour before the deadline
+	NudgeBuySoon                  // 5 minutes before the time to buy
+	NudgeBuyNow                   // at the time to buy
 )
 
 type Clothes struct {

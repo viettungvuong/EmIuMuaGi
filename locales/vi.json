@@ -19,7 +19,8 @@
     "remove": "Xóa",
     "somethingWrong": "Có lỗi xảy ra rùiii",
     "unknown": "Không xác định",
-    "settings": "Cài Đặt"
+    "settings": "Cài Đặt",
+    "done": "Xong"
   },
   "types": {
     "all": "Tất Cả",
@@ -71,7 +72,15 @@
     "tomorrow": "Ngày mai",
     "notBought": "⏰ Vẫn chưa mua: {items}",
     "days": "3 ngày rồi",
-    "week": "1 tuần rồi"
+    "week": "1 tuần rồi",
+    "dueTitle": "Hôm nay là hạn chót nè 📌",
+    "due": "📌 Hạn chót hôm nay: {items}",
+    "deadlineSoonTitle": "Sắp hết hạn mua nè ⏳",
+    "deadlineSoon": "⏳ {name}: hạn chót {time}",
+    "buySoonTitle": "Sắp tới giờ mua nè 🛒",
+    "buySoon": "🛒 {name} lúc {time}",
+    "buyNowTitle": "Tới giờ mua rồi nè! 🛒",
+    "buyNow": "🛒 {name}"
   },
   "calendar": {
     "bookedBy": "{name} đặt lịch"
@@ -142,7 +151,9 @@
     "whoseItems": "Đồ của ai",
     "both": "Cả hai",
     "mine": "Của mình",
-    "partners": "Của {name}"
+    "partners": "Của {name}",
+    "deadline": "Hạn {when}",
+    "buyAt": "Mua lúc {when}"
   },
   "add": {
     "title": "Thêm Mục Mới",
@@ -190,7 +201,13 @@
     "dropHint": "Hỗ trợ: JPG, PNG, GIF, MP4, MOV…",
     "submit": "✓ Thêm Mục",
     "nameRequired": "Vui lòng nhập tên.",
-    "failed": "Thêm mục hoặc tải lên thất bại. Vui lòng thử lại."
+    "failed": "Thêm mục hoặc tải lên thất bại. Vui lòng thử lại.",
+    "deadline": "Hạn chót mua",
+    "deadlineHint": "(nhắc trong ngày và trước 1 tiếng)",
+    "deadlinePlaceholder": "Không có hạn",
+    "buyAt": "Giờ đi mua",
+    "buyAtHint": "(nhắc trước 5 phút và đúng giờ)",
+    "buyAtPlaceholder": "Chưa hẹn giờ"
   },
   "history": {
     "title": "Lịch Sử Mua Đồ",

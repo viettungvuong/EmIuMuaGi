@@ -19,7 +19,8 @@
     "remove": "Remove",
     "somethingWrong": "Something went wrong",
     "unknown": "Unknown",
-    "settings": "Settings"
+    "settings": "Settings",
+    "done": "Done"
   },
   "types": {
     "all": "All",
@@ -71,7 +72,15 @@
     "tomorrow": "Tomorrow",
     "notBought": "⏰ Still not bought: {items}",
     "days": "3 days",
-    "week": "1 week"
+    "week": "1 week",
+    "dueTitle": "Due today 📌",
+    "due": "📌 Due today: {items}",
+    "deadlineSoonTitle": "Deadline coming up ⏳",
+    "deadlineSoon": "⏳ {name}: due at {time}",
+    "buySoonTitle": "Time to buy soon 🛒",
+    "buySoon": "🛒 {name} at {time}",
+    "buyNowTitle": "Time to buy! 🛒",
+    "buyNow": "🛒 {name}"
   },
   "calendar": {
     "bookedBy": "Booked by {name}"
@@ -142,7 +151,9 @@
     "whoseItems": "Whose items",
     "both": "Both",
     "mine": "Mine",
-    "partners": "{name}'s"
+    "partners": "{name}'s",
+    "deadline": "Due {when}",
+    "buyAt": "Buy at {when}"
   },
   "add": {
     "title": "Add New Item",
@@ -190,7 +201,13 @@
     "dropHint": "Supports: JPG, PNG, GIF, MP4, MOV…",
     "submit": "✓ Add Item",
     "nameRequired": "Please enter a name.",
-    "failed": "Couldn't add the item or upload files. Please try again."
+    "failed": "Couldn't add the item or upload files. Please try again.",
+    "deadline": "Deadline to buy",
+    "deadlineHint": "(nudged on the day and an hour before)",
+    "deadlinePlaceholder": "No deadline",
+    "buyAt": "Time to buy",
+    "buyAtHint": "(reminded 5 minutes before and on time)",
+    "buyAtPlaceholder": "No set time"
   },
   "history": {
     "title": "Purchase History",

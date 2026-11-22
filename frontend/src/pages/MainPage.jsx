@@ -4,7 +4,7 @@ import client from "../api/client";
 import RatingModal from "../components/RatingModal";
 import ScheduleModal from "../components/ScheduleModal";
 import { dateLocale, t } from "../i18n";
-import { byTime, formatWhen, relativeWhen } from "../schedule";
+import { byTime, formatAt, formatWhen, relativeWhen } from "../schedule";
 import "../styles/MainPage.css";
 
 const ITEM_TYPES = ["clothes", "food_and_drink", "restaurant", "others"];
@@ -106,6 +106,9 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
     hour: "2-digit",
     minute: "2-digit",
   });
+  // Only worth showing until it's bought
+  const deadline = !item.bought && item.deadline_at;
+  const buyAt = !item.bought && item.buy_at;
 
   return (
     <div className={`chat-row ${mine ? "mine" : "theirs"} ${runStart ? "run-start" : ""} ${runEnd ? "run-end" : ""}`}>
@@ -132,11 +135,13 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
             </span>
           </div>
           <ItemSubInfo item={item} />
-          {(item.shop_name || item.quantity > 1 || nextDate) && (
+          {(item.shop_name || item.quantity > 1 || nextDate || deadline || buyAt) && (
             <div className="item-meta">
               {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
               {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
               {nextDate && <span className="item-next-date">📅 {formatWhen(nextDate)}</span>}
+              {deadline && <span className="item-next-date">⏳ {t("main.deadline", { when: formatAt(deadline) })}</span>}
+              {buyAt && <span className="item-next-date">🛒 {t("main.buyAt", { when: formatAt(buyAt) })}</span>}
             </div>
           )}
           {item.buy_url && (

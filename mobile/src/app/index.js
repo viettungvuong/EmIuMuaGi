@@ -25,7 +25,7 @@ import ScheduleModal from '../components/ScheduleModal';
 import { syncDeviceCalendar } from '../calendar';
 import { syncPhoneDigest } from '../notifications';
 import { takeSharedLink } from '../share';
-import { byTime, formatWhen, relativeWhen } from '../schedule';
+import { byTime, formatAt, formatWhen, relativeWhen } from '../schedule';
 import { AppHeader, EmptyState, LoadingState, ModalCard } from '../components/ui';
 import { colors, fonts, radius } from '../theme';
 
@@ -491,6 +491,9 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
   const info = subInfo(item);
   const time = new Date(item.created_at).toLocaleTimeString(dateLocale(), { timeZone: VN_TIME, hour: '2-digit', minute: '2-digit' });
   const showActions = !item.bought || item.item_type === 'restaurant' || mine;
+  // Only worth showing until it's bought
+  const deadline = !item.bought && item.deadline_at;
+  const buyAt = !item.bought && item.buy_at;
 
   // Swipe left to buy: the bubble slides over a green strip, and letting go past
   // SWIPE_TRIGGER opens the same "did you buy it?" dialog as the button
@@ -538,11 +541,13 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
 
       {!!info && <Text style={styles.subInfo}>{info}</Text>}
 
-      {(!!item.shop_name || item.quantity > 1 || !!nextDate) && (
+      {(!!item.shop_name || item.quantity > 1 || !!nextDate || !!deadline || !!buyAt) && (
         <View style={styles.meta}>
           {!!item.shop_name && <Text style={styles.metaText}>🏪 {item.shop_name}</Text>}
           {item.quantity > 1 && <Text style={styles.metaAccent}>x{item.quantity}</Text>}
           {!!nextDate && <Text style={styles.nextDateChip}>📅 {formatWhen(nextDate)}</Text>}
+          {!!deadline && <Text style={styles.nextDateChip}>⏳ {t('main.deadline', { when: formatAt(deadline) })}</Text>}
+          {!!buyAt && <Text style={styles.nextDateChip}>🛒 {t('main.buyAt', { when: formatAt(buyAt) })}</Text>}
         </View>
       )}
 

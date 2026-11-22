@@ -135,9 +135,11 @@ function ChatBubble({ item, mine, runStart, runEnd, nextDate, onSchedule, onBuy,
             </span>
           </div>
           <ItemSubInfo item={item} />
-          {(item.shop_name || item.quantity > 1 || nextDate || deadline || buyAt) && (
+          {(item.shop_name || item.price || item.quantity > 1 || nextDate || deadline || buyAt) && (
             <div className="item-meta">
               {item.shop_name && <span className="item-shop">🏪 {item.shop_name}</span>}
+              {/* Read off its Shopee page when someone last signed in */}
+              {item.price && <span className="item-qty">💰 {item.price}</span>}
               {item.quantity > 1 && <span className="item-qty">x{item.quantity}</span>}
               {nextDate && <span className="item-next-date">📅 {formatWhen(nextDate)}</span>}
               {deadline && <span className="item-next-date">⏳ {t("main.deadline", { when: formatAt(deadline) })}</span>}

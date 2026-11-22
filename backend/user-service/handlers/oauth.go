@@ -109,6 +109,8 @@ func OAuthLogin(c *gin.Context) {
 	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
 	log.Printf("[oauth] %s: logged in with %s (new account: %t)", user.ID, id.Provider, created)
+	// Signing in is when the prices on their shop links are read again
+	go internal.RefreshItemPrices(user.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Login successful",
 		"token":    tokens,

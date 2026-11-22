@@ -87,7 +87,7 @@ func GetItems(c *gin.Context) {
 	var results []PolledItem
 
 	err = database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at,
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at, i.price,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,
@@ -350,7 +350,7 @@ func MarkItemAsBought(c *gin.Context) {
 	}
 
 	if err := database.DB.Raw(`
-		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at,
+		SELECT i.id, i.uuid, i.item_name, i.quantity, i.buy_url, i.shop_name, i.created_at, i.item_type, i.bought, i.owner, i.wanted_by, i.deadline_at, i.buy_at, i.price,
 			c.size as c_size, c.color, c.brand,
 			f.sugar, f.size as f_size, f.notes as f_notes, f.toppings,
 			o.category, o.notes as o_notes,

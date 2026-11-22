@@ -4,3 +4,5 @@ yt-dlp[default,curl-cffi]
 regex
 beautifulsoup4
 curl_cffi
+python-dotenv
+playwright

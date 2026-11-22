@@ -211,6 +211,8 @@ func Login(c *gin.Context) {
 	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
 
 	log.Printf("[auth] login %s: logged in", user.ID)
+	// Signing in is when the prices on their shop links are read again
+	go internal.RefreshItemPrices(user.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Login successful",
 		"token":    tokens,

@@ -57,6 +57,14 @@ function refreshOnce() {
   return refreshInFlight;
 }
 
+// A new access token (2 hours) now, from the refresh token while that hasn't
+// expired. The app asks every time it's opened (auth.js), not only after a 401.
+export const refreshSession = () => refreshOnce();
+
+// Whether a failed refreshSession means the session is over – the server turned
+// the refresh token down – rather than that it couldn't be reached
+export const sessionIsOver = (err) => !isWorthRetrying(err);
+
 client.interceptors.response.use(
   (response) => response,
   async (error) => {

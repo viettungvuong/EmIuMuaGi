@@ -105,12 +105,10 @@ func OAuthLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
-	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
-	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("access_token", tokens.AccessToken, internal.AccessCookieMaxAge, "/", "", false, true)
+	c.SetCookie("refresh_token", tokens.RefreshToken, internal.RefreshCookieMaxAge, "/", "", false, true)
 
 	log.Printf("[oauth] %s: logged in with %s (new account: %t)", user.ID, id.Provider, created)
-	// Signing in is when the prices on their shop links are read again
-	go internal.RefreshItemPrices(user.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Login successful",
 		"token":    tokens,

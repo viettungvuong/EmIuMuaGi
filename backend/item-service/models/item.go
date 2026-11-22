@@ -31,10 +31,6 @@ type Item struct {
 	BuyAt      *time.Time `json:"buy_at"`
 	// Which of those nudges have gone out: Nudge* bits
 	NudgesSent int `gorm:"type:smallint;default:0;not null" json:"-"`
-	// The price on its shop page as the shop shows it ("₫129.000"), read when
-	// someone signs in (internal/prices.go); Shopee links only, so far
-	Price          *string    `gorm:"size:64" json:"price"`
-	PriceCheckedAt *time.Time `json:"-"`
 }
 
 // Item.WantedBy values: which of the couple wants the item

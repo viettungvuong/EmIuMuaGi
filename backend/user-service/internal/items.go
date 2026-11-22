@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -46,39 +45,4 @@ func DeleteItemData(ctx context.Context, username string) error {
 		return fmt.Errorf("item service answered %d", resp.StatusCode)
 	}
 	return nil
-}
-
-// The item service answers at once and reads the prices in the background
-const priceRefreshTimeout = 5 * time.Second
-
-// RefreshItemPrices asks the item service to read the prices off the shop links
-// on username's list (and their partner's), now that they've signed in: prices
-// are only read then (see its /internal/prices). Run it in a goroutine, so the
-// sign-in doesn't wait for it; it goes as them, like DeleteItemData.
-func RefreshItemPrices(username string) {
-	accessToken, _, err := GenerateAccessToken(username)
-	if err != nil {
-		log.Printf("[prices] %s: could not sign a token: %v", username, err)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), priceRefreshTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, itemServiceURL()+"/internal/prices", nil)
-	if err != nil {
-		log.Printf("[prices] %s: %v", username, err)
-		return
-	}
-	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Printf("[prices] %s: item service didn't answer: %v", username, err)
-		return
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusAccepted {
-		log.Printf("[prices] %s: item service answered %d", username, resp.StatusCode)
-	}
 }

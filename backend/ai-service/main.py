@@ -3,18 +3,12 @@ import errno
 import logging
 import os
 import socket
-from pathlib import Path
 
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 
-from app.api.parsing import internal_router
 from app.api.parsing import router as parsing_router
 from app.api.video import router as video_router
-
-# This service's own .env (SHOPEE_COOKIES…), like the Go services read theirs
-load_dotenv(Path(__file__).with_name(".env"))
 
 # The app's own loggers (uvicorn sets up only its own). stderr is line buffered,
 # so each line reaches the gateway's log as it happens.
@@ -22,7 +16,6 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 
 app = FastAPI()
 app.include_router(parsing_router)
-app.include_router(internal_router)
 app.include_router(video_router)
 
 @app.get("/")

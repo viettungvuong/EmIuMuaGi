@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -207,73 +208,14 @@ func Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly cookies for both tokens
-	c.SetCookie("access_token", tokens.AccessToken, 30*60, "/", "", false, true)
-	c.SetCookie("refresh_token", tokens.RefreshToken, 3600*24*7, "/", "", false, true)
+	c.SetCookie("access_token", tokens.AccessToken, internal.AccessCookieMaxAge, "/", "", false, true)
+	c.SetCookie("refresh_token", tokens.RefreshToken, internal.RefreshCookieMaxAge, "/", "", false, true)
 
 	log.Printf("[auth] login %s: logged in", user.ID)
-	// Signing in is when the prices on their shop links are read again
-	go internal.RefreshItemPrices(user.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "Login successful",
 		"token":    tokens,
 		"username": user.ID, // as stored, whatever case it was typed in
-	})
-}
-
-func RefreshToken(c *gin.Context) {
-	refreshToken, err := c.Cookie("refresh_token") // extract from cookie
-	if err != nil {
-		log.Printf("[auth] refresh: no refresh token cookie")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
-		return
-	}
-
-	claims := &internal.Claims{}
-	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
-	})
-
-	if err != nil || !token.Valid {
-		log.Printf("[auth] refresh: invalid or expired refresh token: %v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
-		return
-	}
-
-	// A deleted account's other sessions end here instead of living on
-	var exists int64
-	if err := database.DB.Model(&models.User{}).Where("id = ?", claims.Username).Count(&exists).Error; err != nil || exists == 0 {
-		log.Printf("[auth] refresh %s: no such user (%v)", claims.Username, err)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
-		return
-	}
-
-	accessToken, accessExp, err := internal.GenerateAccessToken(claims.Username)
-	if err != nil {
-		log.Printf("[auth] refresh %s: could not generate access token: %v", claims.Username, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
-		return
-	}
-
-	c.SetCookie("access_token", accessToken, 30*60, "/", "", false, true) // 30 min access token cookie
-
-	// Add new token to database
-	newToken := models.Token{
-		AccessToken:      accessToken,
-		RefreshToken:     refreshToken,
-		AccessExpiresAt:  accessExp,
-		RefreshExpiresAt: claims.ExpiresAt.Time,
-	}
-	if err := database.DB.Create(&newToken).Error; err != nil {
-		log.Printf("[auth] refresh %s: could not save token: %v", claims.Username, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save token to database"})
-		return
-	}
-
-	log.Printf("[auth] refresh %s: new access token issued", claims.Username)
-
-	c.JSON(http.StatusOK, gin.H{
-		"access_token": accessToken,
-		"expires_at":   accessExp,
 	})
 }
 
@@ -421,6 +363,71 @@ func SignOut(c *gin.Context) {
 	log.Printf("[auth] logout: signed out (had access token: %t)", accessToken != "")
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Signed out successfully",
+	})
+}
+
+// RefreshToken gives a new access token (2 hours, its cookie too) for a refresh
+// token that hasn't expired. The apps call it every time they're opened, so the
+// access token is renewed while the session lasts, as well as after a 401.
+func RefreshToken(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil || refreshToken == "" {
+		log.Printf("[auth] refresh: no refresh token cookie")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
+		return
+	}
+
+	// Ours (signed with the refresh secret, HS256) and not past its expiry, which
+	// it must have
+	claims := &internal.Claims{}
+	_, err = jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_REFRESH_SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithExpirationRequired())
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		log.Printf("[auth] refresh %s: refresh token expired at %s", claims.Username, claims.ExpiresAt.Format(time.RFC3339))
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token expired"})
+		return
+	}
+	if err != nil {
+		log.Printf("[auth] refresh: invalid refresh token: %v", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	// A deleted account's other sessions end here instead of living on
+	var exists int64
+	if err := database.DB.Model(&models.User{}).Where("id = ?", claims.Username).Count(&exists).Error; err != nil || exists == 0 {
+		log.Printf("[auth] refresh %s: no such user (%v)", claims.Username, err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		return
+	}
+
+	accessToken, accessExp, err := internal.GenerateAccessToken(claims.Username)
+	if err != nil {
+		log.Printf("[auth] refresh %s: could not generate access token: %v", claims.Username, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate access token"})
+		return
+	}
+	c.SetCookie("access_token", accessToken, internal.AccessCookieMaxAge, "/", "", false, true)
+
+	// Kept so signing out can expire it (invalidateToken)
+	newToken := models.Token{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		AccessExpiresAt:  accessExp,
+		RefreshExpiresAt: claims.ExpiresAt.Time,
+	}
+	if err := database.DB.Create(&newToken).Error; err != nil {
+		log.Printf("[auth] refresh %s: could not save token: %v", claims.Username, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save token to database"})
+		return
+	}
+
+	log.Printf("[auth] refresh %s: new access token until %s (refresh token until %s)",
+		claims.Username, accessExp.Format(time.RFC3339), claims.ExpiresAt.Format(time.RFC3339))
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
+		"expires_at":   accessExp,
 	})
 }
 

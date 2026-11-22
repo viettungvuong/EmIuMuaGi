@@ -40,7 +40,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				newAccessToken, _, err := GenerateAccessToken(refreshClaims.Username)
 				if err == nil {
 					// Set the new cookie transparently
-					c.SetCookie("access_token", newAccessToken, 30*60, "/", "", false, true)
+					c.SetCookie("access_token", newAccessToken, AccessCookieMaxAge, "/", "", false, true)
 					log.Printf("[auth] %s: access token expired, renewed it for %s", c.Request.URL.Path, refreshClaims.Username)
 					c.Set("username", refreshClaims.Username)
 					c.Next()

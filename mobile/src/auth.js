@@ -2,7 +2,8 @@
 // username it kept in localStorage (AsyncStorage here).
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import client, { setSessionExpiredHandler } from './api/client';
+import { AppState } from 'react-native';
+import client, { refreshSession, sessionIsOver, setSessionExpiredHandler } from './api/client';
 import { clearDeviceCalendar } from './calendar';
 import { unregisterPush } from './notifications';
 import { signOutProviders } from './oauth';
@@ -30,7 +31,9 @@ export function AuthProvider({ children }) {
     (async () => {
       setUsername(await AsyncStorage.getItem('username'));
       try {
-        await client.get('/api/me');
+        // Every time the app opens: a new 2-hour access token from the refresh
+        // token, which also tells whether the session is still on
+        await refreshSession();
         setIsAuth(true);
       } catch {
         setIsAuth(false);
@@ -38,6 +41,24 @@ export function AuthProvider({ children }) {
         setChecking(false);
       }
     })();
+  }, []);
+
+  // ...and every time it's brought back from the background
+  useEffect(() => {
+    let previous = AppState.currentState;
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (previous === 'background' && next === 'active' && isAuthRef.current) {
+        refreshSession().catch((err) => {
+          // Turned down: the session is over, so back to the login screen
+          if (sessionIsOver(err)) {
+            setExpired(true);
+            setIsAuth(false);
+          }
+        });
+      }
+      previous = next;
+    });
+    return () => subscription.remove();
   }, []);
 
   const signIn = async (name) => {

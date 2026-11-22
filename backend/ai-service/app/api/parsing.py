@@ -12,16 +12,12 @@ from yt_dlp.utils import DownloadError, ExtractorError
 from app.core.address import extract_address
 from app.core.location import get_tiktok_location
 from app.core.maps import MapsLookupError, is_maps_link, read_maps_link
-from app.core.parsing import PriceLink, parse_link, read_prices
+from app.core.parsing import parse_link
 from app.core.video import is_tiktok
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/parse", tags=["parse"])
-
-# For the other services on this machine only: the gateway passes on /api/ alone,
-# and this service listens on 127.0.0.1 (main.py)
-internal_router = APIRouter(prefix="/internal", tags=["internal"])
 
 
 class AddressRequest(BaseModel):
@@ -153,33 +149,3 @@ async def parse_channel(ws: WebSocket, item_uuid: UUID):
         # Only drop the channel if it hasn't already been taken over
         if channels.get(item_uuid) is ws:
             del channels[item_uuid]
-
-
-class PriceLinkIn(BaseModel):
-    id: int  # the item's
-    url: str = Field(max_length=2048)
-
-
-class PricesRequest(BaseModel):
-    links: list[PriceLinkIn] = Field(max_length=1000)
-
-
-class PriceResult(BaseModel):
-    id: int
-    price: str | None  # None: the page was read but showed no price
-
-
-class PricesResponse(BaseModel):
-    results: list[PriceResult]
-
-
-@internal_router.post("/prices", response_model=PricesResponse)
-def prices(req: PricesRequest):
-    """The prices on the items' shop pages, for the item service when someone
-    signs in. Only links whose page was read are answered for: other sites' are
-    left out, and so are pages that didn't load (tried again next sign-in).
-    Takes as long as the pages do, so a plain def: FastAPI runs it on a thread."""
-    found = read_prices([PriceLink(id=link.id, url=link.url) for link in req.links])
-    log.info("prices: %d of %d link(s) read, %d with a price",
-             len(found), len(req.links), sum(price is not None for price in found.values()))
-    return PricesResponse(results=[PriceResult(id=item_id, price=price) for item_id, price in found.items()])

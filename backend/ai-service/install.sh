@@ -41,26 +41,4 @@ step "installing Python packages"
 .venv/bin/pip install -q --upgrade pip
 .venv/bin/pip install -q -r requirements.txt
 
-# Chromium, for reading Shopee prices (app/core/parsing.py); a no-op once it's there
-step "installing Chromium (playwright)"
-.venv/bin/python -m playwright install chromium
-
-# ...and the system libraries it needs, only when it won't start without them
-chromium_starts() {
-    .venv/bin/python - <<'PY' 2>/dev/null
-from playwright.sync_api import sync_playwright
-with sync_playwright() as p:
-    p.chromium.launch(headless=True).close()
-PY
-}
-if ! chromium_starts; then
-    if is_root; then
-        step "installing Chromium's system libraries (apt)"
-        fix_apt
-        .venv/bin/python -m playwright install-deps chromium
-    else
-        echo "ai-service: Chromium won't start – as root, run: .venv/bin/python -m playwright install-deps chromium" >&2
-    fi
-fi
-
 step "ready"

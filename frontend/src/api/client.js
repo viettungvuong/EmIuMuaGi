@@ -47,6 +47,10 @@ function refreshOnce() {
   return refreshInFlight;
 }
 
+// A new access token (2 hours) now, from the refresh token while that hasn't
+// expired. App.jsx asks every time the page is opened, not only after a 401.
+export const refreshSession = () => refreshOnce();
+
 // Response Interceptor for Automatic Refresh
 client.interceptors.response.use(
   (response) => response,

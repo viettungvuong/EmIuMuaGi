@@ -13,8 +13,18 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-const EXPIRY_MINUTES_ACCESS = 30
-const EXPIRY_DAY_REFRESH = 7
+// Access tokens are short-lived: 2 hours. The apps get a new one from the
+// refresh token every time they're opened (GET /api/auth/refresh), and on a 401.
+const EXPIRY_MINUTES_ACCESS = 2 * 60
+
+// Refresh tokens last a month from signing in; after that, sign in again
+const EXPIRY_DAY_REFRESH = 30
+
+// The cookies' Max-Age, in seconds: as long as the token inside each
+const (
+	AccessCookieMaxAge  = EXPIRY_MINUTES_ACCESS * 60
+	RefreshCookieMaxAge = EXPIRY_DAY_REFRESH * 24 * 60 * 60
+)
 
 func GenerateAccessToken(username string) (string, time.Time, error) {
 	accessSecret := []byte(os.Getenv("JWT_SECRET"))

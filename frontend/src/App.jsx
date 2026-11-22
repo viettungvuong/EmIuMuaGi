@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import client from './api/client';
+import { refreshSession } from './api/client';
 import { t } from './i18n';
 import AuthPage from './pages/AuthPage';
 import MainPage from './pages/MainPage';
@@ -32,9 +32,11 @@ export default function App() {
         return;
       }
       try {
-        await client.get("/api/me");
+        // Every time the page opens: a new 2-hour access token from the refresh
+        // token, which also tells whether the session is still on
+        await refreshSession();
         setIsAuth(true);
-      } catch (err) {
+      } catch {
         setIsAuth(false);
       } finally {
         setLoading(false);

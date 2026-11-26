@@ -121,7 +121,12 @@
     "or": "hoặc",
     "continueGoogle": "Tiếp tục với Google",
     "continueFacebook": "Tiếp tục với Facebook",
-    "oauthFailed": "Đăng nhập không thành công. Thử lại nha."
+    "oauthFailed": "Đăng nhập không thành công. Thử lại nha.",
+    "usernameOrEmail": "Tên đăng nhập hoặc email",
+    "usernameOrEmailPlaceholder": "Username hoặc email…",
+    "pickUsernameSubtitle": "Bước cuối: chọn tên đăng nhập cho {email}",
+    "createAccount": "Tạo tài khoản",
+    "notYou": "Không phải tài khoản này?"
   },
   "main": {
     "partnerLabel": "Người ấy của bạn:",
@@ -356,6 +361,8 @@
     "This sign-in isn't set up yet": "Cách đăng nhập này chưa được bật",
     "Your account has no email address": "Tài khoản này không có email nên chưa đăng nhập được. Thử cách khác nha.",
     "Could not sign you in": "Không đăng nhập được. Thử lại nha.",
-    "Unknown sign-in provider": "Cách đăng nhập không hợp lệ"
+    "Unknown sign-in provider": "Cách đăng nhập không hợp lệ",
+    "That username is taken": "Tên đăng nhập này có người dùng rồi. Chọn tên khác nha.",
+    "Usernames can't contain @": "Tên đăng nhập không được có dấu @"
   }
 }

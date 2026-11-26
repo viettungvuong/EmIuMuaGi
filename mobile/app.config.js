@@ -38,6 +38,10 @@ module.exports = ({ config }) => {
   // which needs the EAS project's id; on Android they also need Firebase's
   // google-services.json, put next to this file
   const extra = { ...config.extra };
+  // Google sign-in (src/oauth.js): the Web client's id, which the ID token is
+  // issued for. Only the id goes into the app: GOOGLE_OAUTH_CLIENT_SECRET stays
+  // out, as anything in the app can be read out of it.
+  if (process.env.GOOGLE_OAUTH_CLIENT_ID) extra.googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const easProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
   if (easProjectId) extra.eas = { ...extra.eas, projectId: easProjectId };
   const android = { ...config.android };

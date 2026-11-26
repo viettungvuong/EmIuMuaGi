@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -39,6 +40,19 @@ const minPasswordLength = 6
 // stored lowercased; lookups go through lower(id) so older mixed-case IDs still match.
 func normalizeUsername(username string) string {
 	return strings.ToLower(strings.TrimSpace(username))
+}
+
+// What login takes for an email rather than a username
+var emailPattern = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
+
+// Login tells usernames and emails apart by the @, so a new username can't have one
+func badUsername(c *gin.Context, username string) bool {
+	if strings.Contains(username, "@") {
+		log.Printf("[auth] %s: username %q has an @", c.Request.URL.Path, username)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Usernames can't contain @"})
+		return true
+	}
+	return false
 }
 
 func passwordTooShort(c *gin.Context, password string) bool {
@@ -85,6 +99,9 @@ func SignUp(c *gin.Context) {
 		return
 	}
 	req.Username = normalizeUsername(req.Username)
+	if badUsername(c, req.Username) {
+		return
+	}
 
 	// Turn away a taken username or email now, not after the user has fetched the code
 	var taken int64
@@ -133,6 +150,9 @@ func VerifySignUp(c *gin.Context) {
 		return
 	}
 	req.Username = normalizeUsername(req.Username)
+	if badUsername(c, req.Username) {
+		return
+	}
 
 	ok, err := VerifyOTP(req.Email, req.OTP)
 	if err != nil {
@@ -169,9 +189,10 @@ func VerifySignUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
-// Login handles user authentication
+// Login handles user authentication. The username field takes an email too:
+// one shaped like an email is looked up by email, anything else by username.
 // @Summary User login
-// @Description Authenticate user and return JWT tokens
+// @Description Authenticate user (by username or email) and return JWT tokens
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -187,8 +208,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	login := strings.TrimSpace(req.Username)
+	query := database.DB.Where("lower(id) = ?", normalizeUsername(login))
+	if emailPattern.MatchString(login) {
+		query = database.DB.Where("lower(email) = lower(?)", login)
+	}
 	var user models.User
-	if err := database.DB.Where("lower(id) = ?", normalizeUsername(req.Username)).First(&user).Error; err != nil {
+	if err := query.First(&user).Error; err != nil {
 		log.Printf("[auth] login %q: user not found (%v)", req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return

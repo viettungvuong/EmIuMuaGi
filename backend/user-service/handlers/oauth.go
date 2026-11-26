@@ -23,16 +23,20 @@ import (
 
 // A token from Google, Apple or Facebook's own sign-in, done in the app or on
 // the web page. Name is what Apple tells the app on someone's first sign-in
-// only, used to pick their username.
+// only, used to suggest a username. Username is sent only by someone new: the
+// first answer asks for one (needsUsername), then the same token comes back with it.
 type OAuthRequest struct {
 	Provider string `json:"provider" binding:"required"`
 	Token    string `json:"token" binding:"required"`
 	Name     string `json:"name"`
+	Username string `json:"username"`
 }
 
 var (
 	errNoEmail         = errors.New("no_email")
 	errEmailUnverified = errors.New("email_unverified")
+	errNeedsUsername   = errors.New("needs_username")
+	errUsernameTaken   = errors.New("username_taken")
 )
 
 var oauthVerifiers = map[string]func(context.Context, string) (internal.OAuthIdentity, error){
@@ -43,7 +47,10 @@ var oauthVerifiers = map[string]func(context.Context, string) (internal.OAuthIde
 
 // OAuthLogin signs someone in with Google, Apple or Facebook: the account that
 // sign-in was used for before, else the account with the same (provider-checked)
-// email, else a new account. Answers like Login, plus whether it was created.
+// email, else a new account with that email, under the username they send. No
+// code is emailed: the provider has checked the address. Answers like Login,
+// plus whether it was created; someone new who sent no username gets
+// { needsUsername, email, suggestion } and no account yet.
 // @Summary Sign in with Google, Apple or Facebook
 // @Tags auth
 // @Accept json
@@ -81,10 +88,26 @@ func OAuthLogin(c *gin.Context) {
 	if id.Name == "" {
 		id.Name = strings.TrimSpace(req.Name)
 	}
+	username := normalizeUsername(req.Username)
+	if badUsername(c, username) {
+		return
+	}
 
-	user, created, err := oauthUser(id)
+	user, created, err := oauthUser(id, username)
 	switch {
 	case err == nil:
+	case errors.Is(err, errNeedsUsername):
+		suggestion, err := uniqueUsername(database.DB, id.Name, id.Email)
+		if err != nil {
+			log.Printf("[oauth] %s %s: could not suggest a username: %v", id.Provider, id.Subject, err)
+		}
+		log.Printf("[oauth] %s %s <%s>: new, asking for a username", id.Provider, id.Subject, id.Email)
+		c.JSON(http.StatusOK, gin.H{"needsUsername": true, "email": id.Email, "suggestion": suggestion})
+		return
+	case errors.Is(err, errUsernameTaken):
+		log.Printf("[oauth] %s %s: username %q is taken", id.Provider, id.Subject, username)
+		c.JSON(http.StatusConflict, gin.H{"error": "That username is taken", "code": "username_taken"})
+		return
 	case errors.Is(err, errNoEmail):
 		log.Printf("[oauth] %s %s: no email to make an account with", id.Provider, id.Subject)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Your account has no email address", "code": "no_email"})
@@ -117,9 +140,10 @@ func OAuthLogin(c *gin.Context) {
 	})
 }
 
-// oauthUser finds or makes the account for a verified sign-in and remembers the
-// sign-in on it, so the next one finds it even if the email has changed
-func oauthUser(id internal.OAuthIdentity) (models.User, bool, error) {
+// oauthUser finds the account for a verified sign-in, or makes one named
+// username (errNeedsUsername without it), and remembers the sign-in on it, so
+// the next one finds it even if the email has changed
+func oauthUser(id internal.OAuthIdentity, username string) (models.User, bool, error) {
 	var user models.User
 	created := false
 
@@ -144,9 +168,15 @@ func oauthUser(id internal.OAuthIdentity) (models.User, bool, error) {
 				return errEmailUnverified
 			}
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			username, err := uniqueUsername(tx, id.Name, id.Email)
-			if err != nil {
+			if username == "" {
+				return errNeedsUsername
+			}
+			var taken int64
+			if err := tx.Model(&models.User{}).Where("lower(id) = ?", username).Count(&taken).Error; err != nil {
 				return err
+			}
+			if taken > 0 {
+				return errUsernameTaken
 			}
 			user = models.User{ID: username, Email: id.Email} // no password: they sign in with the provider
 			if err := tx.Create(&user).Error; err != nil {
@@ -166,7 +196,7 @@ var usernameJunk = regexp.MustCompile(`[^a-z0-9._]+`)
 
 const maxUsernameLength = 20
 
-// uniqueUsername picks a username for someone new: their name without accents
+// uniqueUsername suggests a username to someone new: their name without accents
 // or spaces ("Vương Tùng" → "vuongtung"), else the start of their email, with a
 // number added while it's taken
 func uniqueUsername(tx *gorm.DB, name, email string) (string, error) {

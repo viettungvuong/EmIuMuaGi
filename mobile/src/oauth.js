@@ -8,7 +8,8 @@ import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 import client from './api/client';
 
-const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+// GOOGLE_OAUTH_CLIENT_ID in mobile/.env (the Web client's id), passed in by app.config.js
+const GOOGLE_WEB_CLIENT_ID = Constants.expoConfig?.extra?.googleClientId;
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 const FACEBOOK_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID;
 
@@ -80,12 +81,16 @@ async function facebookToken() {
 const providerTokens = { google: googleToken, apple: appleToken, facebook: facebookToken };
 
 // Signs in with `provider`: the server's login answer ({ username, created }),
-// or null if the person cancelled. Throws when something went wrong.
+// or null if the person cancelled. Someone without an account yet gets
+// { needsUsername, email, suggestion, finish }: finish(username) makes theirs
+// with the same sign-in and answers like a login. Throws when something went wrong.
 export async function signInWith(provider) {
   const got = await providerTokens[provider]();
   if (!got?.token) return null;
-  const { data } = await client.post('/api/auth/oauth', { provider, token: got.token, name: got.name });
-  return data;
+  const body = { provider, token: got.token, name: got.name };
+  const { data } = await client.post('/api/auth/oauth', body);
+  if (!data.needsUsername) return data;
+  return { ...data, finish: async (username) => (await client.post('/api/auth/oauth', { ...body, username })).data };
 }
 
 // On logging out, so the next sign-in can pick another Google or Facebook account

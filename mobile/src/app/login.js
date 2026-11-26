@@ -8,17 +8,20 @@ import { useAuth } from '../auth';
 import { LanguageIsland } from '../components/LanguageIsland';
 import { Spinner } from '../components/ui';
 import { serverText, t, useLanguage } from '../i18n';
-import { providers, signInWith } from '../oauth';
+import { providers, signInWith, signOutProviders } from '../oauth';
 import { colors, fonts } from '../theme';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
 // or email), shown larger so they aren't missed. As the server words them.
-const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
+const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists', 'That username is taken'];
 
 export default function LoginScreen() {
   useLanguage(); // redraw in a newly picked language
   const { signIn, expired, clearExpired } = useAuth();
-  const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
+  // 'login', 'signup', 'verify' (entering the emailed OTP), or 'username' (someone
+  // new from Google, Apple or Facebook picking theirs)
+  const [mode, setMode] = useState('login');
+  const [newcomer, setNewcomer] = useState(null); // signInWith's answer that asked for a username
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,14 +30,22 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(null); // the provider being signed in with
 
-  // The provider's sign-in, then the server's: an existing account or a new one
+  // The provider's sign-in, then the server's: the account with that email, or
+  // for someone new, a username to pick first (no code to enter: the provider
+  // has checked the email)
   const handleOAuth = async (provider) => {
     setError('');
     clearExpired();
     setOauthLoading(provider);
     try {
       const data = await signInWith(provider);
-      if (data) await signIn(data.username);
+      if (data?.needsUsername) {
+        setNewcomer(data);
+        setUsername(data.suggestion ?? '');
+        setMode('username');
+      } else if (data) {
+        await signIn(data.username);
+      }
     } catch (err) {
       setError(err.response?.data?.error ? serverText(err.response.data.error) : t('auth.oauthFailed'));
     } finally {
@@ -45,6 +56,22 @@ export default function LoginScreen() {
   const handleSubmit = async () => {
     setError('');
     clearExpired();
+    if (mode === 'username') {
+      if (!username.trim()) {
+        setError(t('auth.fillAll'));
+        return;
+      }
+      setLoading(true);
+      try {
+        const data = await newcomer.finish(username.trim());
+        await signIn(data.username);
+      } catch (err) {
+        setError(err.response?.data?.error ? serverText(err.response.data.error) : t('auth.oauthFailed'));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     if (!username || !password || (mode === 'signup' && !email)) {
       setError(t('auth.fillAll')); // the web form's `required` does this
       return;
@@ -128,6 +155,15 @@ export default function LoginScreen() {
     setOtp('');
   };
 
+  // Someone new backing out of picking a username, e.g. to use another Google
+  // account: signed out of the provider, so its next sign-in can pick again
+  const cancelNewcomer = () => {
+    setNewcomer(null);
+    switchMode('login');
+    signOutProviders();
+  };
+  const tabbed = mode === 'login' || mode === 'signup';
+
   // Success notes share the error line, in green
   const success = error === t('auth.signupSuccess') || error === t('auth.codeResent');
   const big = BIG_ERRORS.some((message) => error === serverText(message));
@@ -145,11 +181,13 @@ export default function LoginScreen() {
               <Text style={styles.subtitle}>
                 {mode === 'verify' ? (
                   t('auth.verifySubtitle', { email: <Text style={styles.subtitleEmail}>{email}</Text> })
+                ) : mode === 'username' ? (
+                  t('auth.pickUsernameSubtitle', { email: <Text style={styles.subtitleEmail}>{newcomer?.email}</Text> })
                 ) : mode === 'login' ? t('auth.loginSubtitle') : t('auth.signupSubtitle')}
               </Text>
             </View>
 
-            {mode !== 'verify' && (
+            {tabbed && (
               <View style={styles.tabs}>
                 {[
                   ['login', t('auth.login')],
@@ -178,13 +216,28 @@ export default function LoginScreen() {
                     onSubmitEditing={handleSubmit}
                   />
                 </View>
+              ) : mode === 'username' ? (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>{t('auth.username')}</Text>
+                  <TextInput
+                    style={inputStyle(username)}
+                    placeholder={t('auth.usernamePlaceholder')}
+                    placeholderTextColor={colors.textMuted}
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoFocus
+                    onSubmitEditing={handleSubmit}
+                  />
+                </View>
               ) : (
                 <>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>{t('auth.username')}</Text>
+                    <Text style={styles.label}>{mode === 'login' ? t('auth.usernameOrEmail') : t('auth.username')}</Text>
                     <TextInput
                       style={inputStyle(username)}
-                      placeholder={t('auth.usernamePlaceholder')}
+                      placeholder={mode === 'login' ? t('auth.usernameOrEmailPlaceholder') : t('auth.usernamePlaceholder')}
                       placeholderTextColor={colors.textMuted}
                       value={username}
                       onChangeText={setUsername}
@@ -238,15 +291,28 @@ export default function LoginScreen() {
                   </>
                 ) : (
                   <Text style={styles.submitText}>
-                    {mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.confirm')}
+                    {mode === 'login'
+                      ? t('auth.login')
+                      : mode === 'signup'
+                        ? t('auth.signup')
+                        : mode === 'username'
+                          ? t('auth.createAccount')
+                          : t('auth.confirm')}
                   </Text>
                 )}
               </Pressable>
             </View>
 
-            {mode !== 'verify' && <OAuthButtons busy={loading || !!oauthLoading} loading={oauthLoading} onPress={handleOAuth} />}
+            {tabbed && <OAuthButtons busy={loading || !!oauthLoading} loading={oauthLoading} onPress={handleOAuth} />}
 
-            {mode === 'verify' ? (
+            {mode === 'username' ? (
+              <Text style={styles.footer}>
+                {t('auth.notYou')}{' '}
+                <Text style={styles.link} onPress={cancelNewcomer}>
+                  {t('auth.goBack')}
+                </Text>
+              </Text>
+            ) : mode === 'verify' ? (
               <>
                 <Text style={styles.footer}>
                   {t('auth.noCode')}{' '}

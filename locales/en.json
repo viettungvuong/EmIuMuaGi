@@ -121,7 +121,12 @@
     "or": "or",
     "continueGoogle": "Continue with Google",
     "continueFacebook": "Continue with Facebook",
-    "oauthFailed": "Couldn't sign you in. Please try again."
+    "oauthFailed": "Couldn't sign you in. Please try again.",
+    "usernameOrEmail": "Username or email",
+    "usernameOrEmailPlaceholder": "Username or email…",
+    "pickUsernameSubtitle": "Last step: pick a username for {email}",
+    "createAccount": "Create account",
+    "notYou": "Not this account?"
   },
   "main": {
     "partnerLabel": "Your partner:",
@@ -356,6 +361,8 @@
     "This sign-in isn't set up yet": "This sign-in isn't set up yet",
     "Your account has no email address": "That account has no email address, so it can't sign in here. Try another way.",
     "Could not sign you in": "Couldn't sign you in. Please try again.",
-    "Unknown sign-in provider": "Unknown sign-in provider"
+    "Unknown sign-in provider": "Unknown sign-in provider",
+    "That username is taken": "That username is taken. Try another one.",
+    "Usernames can't contain @": "Usernames can't contain @"
   }
 }

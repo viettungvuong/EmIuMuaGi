@@ -8,11 +8,14 @@ import '../styles/AuthPage.css';
 
 // Mistakes the user fixes right here (a wrong or expired code, a taken username
 // or email), shown larger so they aren't missed. As the server words them.
-const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists'];
+const BIG_ERRORS = ['Invalid or expired OTP', 'Username or Email already exists', 'That username is taken'];
 
 export default function AuthPage({ setIsAuth }) {
   const language = useLanguage(); // redraw when the island switches language
-  const [mode, setMode] = useState('login'); // 'login', 'signup', or 'verify' (entering the emailed OTP)
+  // 'login', 'signup', 'verify' (entering the emailed OTP), or 'username' (someone
+  // new from Google or Facebook picking theirs)
+  const [mode, setMode] = useState('login');
+  const [newcomer, setNewcomer] = useState(null); // { provider, token, email }: the sign-in that asked for a username
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,15 +27,28 @@ export default function AuthPage({ setIsAuth }) {
   const [oauthLoading, setOauthLoading] = useState(false);
   const googleButton = useRef(null);
 
-  // A token from Google or Facebook, checked by the server: an existing account or a new one
+  const loggedIn = (name) => {
+    localStorage.setItem('username', name); // the server's spelling: usernames are case insensitive
+    setIsAuth(true); // Notify App component
+    navigate('/');
+  };
+
+  // A token from Google or Facebook, checked by the server: the account with that
+  // email, or for someone new, a username to pick first (no code to enter: the
+  // provider has checked the email)
   const handleOAuth = async (provider, token) => {
     setError('');
     setOauthLoading(true);
     try {
       const response = await client.post('/api/auth/oauth', { provider, token });
-      localStorage.setItem('username', response.data.username);
-      setIsAuth(true);
-      navigate('/');
+      if (response.data.needsUsername) {
+        setNewcomer({ provider, token, email: response.data.email });
+        setUsername(response.data.suggestion ?? '');
+        setMode('username');
+        setOauthLoading(false);
+        return;
+      }
+      loggedIn(response.data.username);
     } catch (err) {
       setError(err.response?.data?.error ? serverText(err.response.data.error) : t('auth.oauthFailed'));
       setOauthLoading(false);
@@ -42,7 +58,8 @@ export default function AuthPage({ setIsAuth }) {
   const onGoogleToken = useRef(null);
   onGoogleToken.current = (token) => handleOAuth('google', token);
 
-  const showOAuth = mode !== 'verify' && (providers.google || providers.facebook);
+  const tabbed = mode === 'login' || mode === 'signup';
+  const showOAuth = tabbed && (providers.google || providers.facebook);
   useEffect(() => {
     if (!showOAuth || !providers.google || !googleButton.current) return;
     const el = googleButton.current;
@@ -80,13 +97,15 @@ export default function AuthPage({ setIsAuth }) {
     setLoading(true);
 
     try {
-      if (mode === 'login') {
+      if (mode === 'username') {
+        // The same sign-in again, now with the username: makes the account
+        const { provider, token } = newcomer;
+        const response = await client.post('/api/auth/oauth', { provider, token, username: username.trim() });
+        loggedIn(response.data.username);
+      } else if (mode === 'login') {
         const response = await client.post('/api/auth/login', { username, password });
         if (response.data.success || response.status === 200) {
-          // The server's spelling: usernames are case insensitive
-          localStorage.setItem('username', response.data.username ?? username);
-          setIsAuth(true); // Notify App component
-          navigate('/');
+          loggedIn(response.data.username ?? username);
         }
       } else if (mode === 'signup') {
         // This only emails a code; the account is created once the code is entered
@@ -110,6 +129,8 @@ export default function AuthPage({ setIsAuth }) {
         setError(serverText(err.response.data.error));
       } else if (err.response?.data?.message) {
         setError(serverText(err.response.data.message));
+      } else if (mode === 'username') {
+        setError(t('auth.oauthFailed'));
       } else if (mode === 'verify') {
         setError(t('auth.verifyFailed'));
       } else {
@@ -151,6 +172,14 @@ export default function AuthPage({ setIsAuth }) {
     setOtp('');
   };
 
+  // Someone new backing out of picking a username, e.g. to use another account
+  const cancelNewcomer = () => {
+    setNewcomer(null);
+    setMode('login');
+    setError('');
+    setUsername('');
+  };
+
   // Success notes share the error line, in green
   const success = error === t('auth.signupSuccess') || error === t('auth.codeResent');
   const big = BIG_ERRORS.some((message) => error === serverText(message));
@@ -165,11 +194,13 @@ export default function AuthPage({ setIsAuth }) {
           <p className="auth-subtitle">
             {mode === 'verify' ? (
               t('auth.verifySubtitle', { email: <strong>{email}</strong> })
+            ) : mode === 'username' ? (
+              t('auth.pickUsernameSubtitle', { email: <strong>{newcomer?.email}</strong> })
             ) : mode === 'login' ? t('auth.loginSubtitle') : t('auth.signupSubtitle')}
           </p>
         </div>
 
-        {mode !== 'verify' && (
+        {tabbed && (
           <div className="auth-tabs">
             <button
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
@@ -204,14 +235,28 @@ export default function AuthPage({ setIsAuth }) {
                 required
               />
             </div>
+          ) : mode === 'username' ? (
+            <div className="input-group">
+              <span className="input-label">{t('auth.username')}</span>
+              <input
+                type="text"
+                className={`auth-input ${error && !username ? 'input-error' : ''}`}
+                placeholder={t('auth.usernamePlaceholder')}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoCapitalize="none"
+                autoFocus
+                required
+              />
+            </div>
           ) : (
             <>
               <div className="input-group">
-                <span className="input-label">{t('auth.username')}</span>
+                <span className="input-label">{mode === 'login' ? t('auth.usernameOrEmail') : t('auth.username')}</span>
                 <input
                   type="text"
                   className={`auth-input ${error && !username ? 'input-error' : ''}`}
-                  placeholder={t('auth.usernamePlaceholder')}
+                  placeholder={mode === 'login' ? t('auth.usernameOrEmailPlaceholder') : t('auth.usernamePlaceholder')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -257,7 +302,7 @@ export default function AuthPage({ setIsAuth }) {
                 {t('auth.processing')}
               </>
             ) : (
-              mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.confirm')
+              mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : mode === 'username' ? t('auth.createAccount') : t('auth.confirm')
             )}
           </button>
         </form>
@@ -278,7 +323,9 @@ export default function AuthPage({ setIsAuth }) {
         )}
 
         <div className="auth-footer">
-          {mode === 'verify' ? (
+          {mode === 'username' ? (
+            <p>{t('auth.notYou')} <span className="auth-link" onClick={cancelNewcomer}>{t('auth.goBack')}</span></p>
+          ) : mode === 'verify' ? (
             <>
               <p>{t('auth.noCode')} <span className="auth-link" onClick={resendOtp}>{t('auth.resend')}</span></p>
               <p>{t('auth.wrongEmail')} <span className="auth-link" onClick={backToSignup}>{t('auth.goBack')}</span></p>

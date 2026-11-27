@@ -712,31 +712,75 @@
   color: var(--text);
 }
 
+/* "Hide bought": a pill with an on/off switch, all pink while it's on. The real
+   checkbox stays (keyboard, screen readers) but isn't seen. */
 .hide-bought-toggle {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
   user-select: none;
-  transition: color 0.2s;
-  background: var(--surface-2);
-  padding: 8px 12px;
+  background: var(--surface);
+  padding: 8px 14px 8px 10px;
   border-radius: 20px;
-  border: 1px solid var(--border);
+  border: 1.5px solid rgba(236, 72, 153, 0.45);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .hide-bought-toggle:hover {
-  color: var(--text);
-  border-color: rgba(236, 72, 153, 0.4);
+  border-color: var(--accent);
+}
+
+.hide-bought-toggle.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(236, 72, 153, 0.35);
 }
 
 .hide-bought-toggle input {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+
+.hide-bought-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.toggle-track {
+  flex-shrink: 0;
+  width: 30px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--text-muted);
+  transition: background 0.2s;
+}
+
+.toggle-track::after {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.hide-bought-toggle.on .toggle-track {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.hide-bought-toggle.on .toggle-track::after {
+  transform: translateX(12px);
 }
 
 /* "Hide bought" and the chat / list switch, together on the right */

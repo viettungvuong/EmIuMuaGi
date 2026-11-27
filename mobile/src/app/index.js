@@ -404,11 +404,16 @@ export default function MainScreen() {
                     ))}
                   </ScrollView>
                   <View style={styles.viewOptions}>
-                    <Pressable style={styles.hideBought} onPress={() => setHideBought((v) => !v)}>
-                      <View style={[styles.checkbox, hideBought && styles.checkboxOn]}>
-                        {hideBought && <Text style={styles.checkmark}>✓</Text>}
+                    <Pressable
+                      style={[styles.hideBought, hideBought && styles.hideBoughtOn]}
+                      onPress={() => setHideBought((v) => !v)}
+                      accessibilityRole="switch"
+                      accessibilityState={{ checked: hideBought }}
+                    >
+                      <View style={[styles.toggleTrack, hideBought && styles.toggleTrackOn]}>
+                        <View style={styles.toggleKnob} />
                       </View>
-                      <Text style={styles.hideBoughtText}>{t('main.hideBought')}</Text>
+                      <Text style={[styles.hideBoughtText, hideBought && styles.hideBoughtTextOn]}>{t('main.hideBought')}</Text>
                     </Pressable>
                     {/* Bubbles or bullet points: icons, the labels are what VoiceOver/TalkBack read */}
                     <View style={styles.viewSwitch} accessibilityRole="radiogroup" accessibilityLabel={t('main.view')}>
@@ -846,30 +851,37 @@ const styles = StyleSheet.create({
     boxShadow: '0 2px 10px rgba(236, 72, 153, 0.2)',
   },
   filterTabText: { fontFamily: fonts.semibold, fontSize: 13.6, color: colors.textMuted },
+  // "Hide bought": a pill with an on/off switch, all pink while it's on
   hideBought: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.surface2,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.textMuted,
     backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingLeft: 10,
+    paddingRight: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(236, 72, 153, 0.45)',
   },
-  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-  checkmark: { color: '#fff', fontSize: 11, lineHeight: 13, fontFamily: fonts.bold },
-  hideBoughtText: { fontFamily: fonts.regular, fontSize: 13.6, color: colors.textMuted },
+  hideBoughtOn: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+    boxShadow: '0 3px 10px rgba(236, 72, 153, 0.35)',
+  },
+  toggleTrack: {
+    width: 30,
+    height: 18,
+    padding: 2,
+    borderRadius: 9,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    backgroundColor: colors.textMuted,
+  },
+  toggleTrackOn: { justifyContent: 'flex-end', backgroundColor: 'rgba(255, 255, 255, 0.45)' },
+  toggleKnob: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#fff' },
+  hideBoughtText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  hideBoughtTextOn: { color: '#fff' },
   // "Hide bought" and the chat / list switch, side by side
   viewOptions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   // Chat or list: two options in a pill, the picked one raised

@@ -592,12 +592,14 @@ export default function MainPage({ setIsAuth }) {
                   ))}
                 </div>
                 <div className="view-options">
-                  <label className="hide-bought-toggle">
+                  <label className={`hide-bought-toggle ${hideBought ? "on" : ""}`}>
                     <input
                       type="checkbox"
+                      role="switch"
                       checked={hideBought}
                       onChange={(e) => setHideBought(e.target.checked)}
                     />
+                    <span className="toggle-track" aria-hidden="true" />
                     <span>{t("main.hideBought")}</span>
                   </label>
                   {/* Bubbles or bullet points: icons, named for screen readers and on hover */}

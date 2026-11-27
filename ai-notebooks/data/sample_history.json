@@ -1,0 +1,1815 @@
+[
+  {
+    "id": "01a20e21-b667-762b-9884-d50b117943c6",
+    "item_id": 160,
+    "item": {
+      "id": 160,
+      "uuid": "01a1c989-8e83-71f2-9656-c69771af2650",
+      "item_name": "Trà đào cam sả",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Highlands Coffee",
+      "created_at": "2026-11-11T14:36:37+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": null,
+      "toppings": [
+        "thạch đào"
+      ]
+    },
+    "time": "2026-11-24T22:17:00+07:00",
+    "review": null
+  },
+  {
+    "id": "01a1f8fb-9955-7010-a08e-7c041148da69",
+    "item_id": 159,
+    "item": {
+      "id": 159,
+      "uuid": "01a1c4a2-7d2a-79b4-a8bd-454ef11e46f1",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-11-10T15:45:45+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-11-20T19:43:20+07:00",
+    "review": {
+      "id": "01a202ae-22f8-79bd-b1be-4d880531b3ae",
+      "history_id": "01a1f8fb-9955-7010-a08e-7c041148da69",
+      "score": 5,
+      "content": "Hoàn hảo, không chê được gì"
+    }
+  },
+  {
+    "id": "01a1c2c9-7cd5-793a-aceb-11b8983bab28",
+    "item_id": 158,
+    "item": {
+      "id": 158,
+      "uuid": "01a1783f-b065-740a-a679-256005611673",
+      "item_name": "Cà phê muối",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Cà Phê Muối Chú Long",
+      "created_at": "2026-10-26T19:46:42+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": "2026-11-10T06:45:07+07:00",
+      "sugar": "100%",
+      "size": "M",
+      "notes": null,
+      "toppings": []
+    },
+    "time": "2026-11-10T07:09:07+07:00",
+    "review": {
+      "id": "01a1c674-d009-7b6c-acee-ed8cbc7a882d",
+      "history_id": "01a1c2c9-7cd5-793a-aceb-11b8983bab28",
+      "score": 3,
+      "content": "Bình thường, không có gì đặc biệt"
+    }
+  },
+  {
+    "id": "01a1bf7b-bf88-7238-9d88-e6528cd46d02",
+    "item_id": 157,
+    "item": {
+      "id": 157,
+      "uuid": "01a1ad2e-10a4-72cd-9288-6663cc849a79",
+      "item_name": "Lẩu Thái Tomyum",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-11-06T02:27:19+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Lẩu hải sản",
+      "cuisine_type": "Thái",
+      "address": "45 Trần Thái Tông, Cầu Giấy, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-11-09T19:15:00+07:00"
+    },
+    "time": "2026-11-09T15:45:20+07:00",
+    "review": {
+      "id": "01a1c60b-5131-756a-9116-dd6aabbbcfb2",
+      "history_id": "01a1bf7b-bf88-7238-9d88-e6528cd46d02",
+      "score": 5,
+      "content": "Hoàn hảo, không chê được gì"
+    }
+  },
+  {
+    "id": "01a1b554-9206-7fbd-8767-d370665b42a3",
+    "item_id": 156,
+    "item": {
+      "id": 156,
+      "uuid": "01a1a0a4-66e0-7332-8f26-06ce2a228326",
+      "item_name": "Túi tote canvas",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/642075909",
+      "shop_name": "Shopee",
+      "created_at": "2026-11-03T16:01:31+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": null,
+      "color": "Be",
+      "brand": "Local Brand"
+    },
+    "time": "2026-11-07T16:26:20+07:00",
+    "review": {
+      "id": "01a1bf70-2793-7847-9cd8-3b70911fcb86",
+      "history_id": "01a1b554-9206-7fbd-8767-d370665b42a3",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "01a18a2f-1629-73a5-9a1d-7db68aaaf212",
+    "item_id": 155,
+    "item": {
+      "id": 155,
+      "uuid": "01a13da2-6e2c-78c0-aae7-96b58be94918",
+      "item_name": "Cà phê muối",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Cà Phê Muối Chú Long",
+      "created_at": "2026-10-15T10:36:57+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": "2026-10-30T07:13:44+07:00",
+      "sugar": "100%",
+      "size": "M",
+      "notes": null,
+      "toppings": []
+    },
+    "time": "2026-10-30T07:21:44+07:00",
+    "review": {
+      "id": "01a18ab7-32f7-78e5-a2c6-3adf69db8679",
+      "history_id": "01a18a2f-1629-73a5-9a1d-7db68aaaf212",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "01a17889-8bc0-7f8a-a6b5-5717a682c1c3",
+    "item_id": 154,
+    "item": {
+      "id": 154,
+      "uuid": "01a1724d-8c68-7dbf-a6f1-8dc9ee797106",
+      "item_name": "Bún chả Hương Liên",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-10-25T16:04:07+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Bún chả",
+      "cuisine_type": "Việt",
+      "address": "24 Lê Văn Hưu, Hai Bà Trưng, Hà Nội",
+      "time_to_eat": "Trưa",
+      "schedule": "2026-10-26T12:00:00+07:00"
+    },
+    "time": "2026-10-26T21:07:22+07:00",
+    "review": {
+      "id": "01a178d3-54f6-70b2-a577-4f959e24aa6a",
+      "history_id": "01a17889-8bc0-7f8a-a6b5-5717a682c1c3",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "01a14a38-8978-7e1f-b5bd-34395b0d1e48",
+    "item_id": 153,
+    "item": {
+      "id": 153,
+      "uuid": "01a0eebc-edc6-78fe-b66e-f9b5cd963f25",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-09-30T02:55:54+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-10-17T21:16:21+07:00",
+    "review": null
+  },
+  {
+    "id": "01a14814-7739-7324-be8b-7985017a3ad8",
+    "item_id": 152,
+    "item": {
+      "id": 152,
+      "uuid": "01a0f0dd-4663-76a7-bd6c-b580ce21626c",
+      "item_name": "Áo hoodie nỉ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Uniqlo Đồng Khởi",
+      "created_at": "2026-09-30T12:50:28+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "L",
+      "color": "Xám",
+      "brand": "Uniqlo"
+    },
+    "time": "2026-10-17T11:17:43+07:00",
+    "review": {
+      "id": "01a14d96-1dc9-7159-9fce-192ee983f1ec",
+      "history_id": "01a14814-7739-7324-be8b-7985017a3ad8",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "01a13dc4-9ec1-75a4-86bb-72f794917337",
+    "item_id": 151,
+    "item": {
+      "id": 151,
+      "uuid": "01a10427-41cd-76eb-8459-318e446e48af",
+      "item_name": "Sushi Hokkaido Sachi",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-10-04T06:44:04+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Sashimi cá hồi",
+      "cuisine_type": "Nhật",
+      "address": "Lotte Center, Ba Đình, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-10-15T19:30:00+07:00"
+    },
+    "time": "2026-10-15T11:14:18+07:00",
+    "review": {
+      "id": "01a1461c-0f42-78dc-9373-7a129629078f",
+      "history_id": "01a13dc4-9ec1-75a4-86bb-72f794917337",
+      "score": 3,
+      "content": "Ổn, nhưng có chỗ khác ngon hơn"
+    }
+  },
+  {
+    "id": "01a12674-edf3-7879-bb9b-341061b1c6f2",
+    "item_id": 150,
+    "item": {
+      "id": 150,
+      "uuid": "01a0f596-117c-7968-9d1c-91e3c4cf4357",
+      "item_name": "Váy hoa nhí",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Zara Vincom",
+      "created_at": "2026-10-01T10:50:47+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "S",
+      "color": "Xanh pastel",
+      "brand": "Zara"
+    },
+    "time": "2026-10-10T22:35:59+07:00",
+    "review": {
+      "id": "01a12a8d-20f8-7772-878f-c1de08b6f768",
+      "history_id": "01a12674-edf3-7879-bb9b-341061b1c6f2",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a1161c-e22c-778b-b54c-d1a74e99b1d4",
+    "item_id": 149,
+    "item": {
+      "id": 149,
+      "uuid": "01a0c636-8b28-755b-a7b3-6dcbdb43b649",
+      "item_name": "Giày Air Force 1",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Nike Store",
+      "created_at": "2026-09-22T06:04:18+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "42",
+      "color": "Trắng",
+      "brand": "Nike"
+    },
+    "time": "2026-10-07T18:25:54+07:00",
+    "review": {
+      "id": "01a11b83-1464-76b1-9007-b405d93313ba",
+      "history_id": "01a1161c-e22c-778b-b54c-d1a74e99b1d4",
+      "score": 3,
+      "content": "Bình thường, không có gì đặc biệt"
+    }
+  },
+  {
+    "id": "01a103ce-a8c3-7644-9aeb-50c806ce2aae",
+    "item_id": 148,
+    "item": {
+      "id": 148,
+      "uuid": "01a0c824-15da-751b-a5ee-c87e2731c6ff",
+      "item_name": "Lẩu Thái Tomyum",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-09-22T15:03:23+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Lẩu hải sản",
+      "cuisine_type": "Thái",
+      "address": "45 Trần Thái Tông, Cầu Giấy, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-10-04T19:00:00+07:00"
+    },
+    "time": "2026-10-04T05:07:17+07:00",
+    "review": {
+      "id": "01a10434-abc1-7f8a-bfb9-ec940bd313ac",
+      "history_id": "01a103ce-a8c3-7644-9aeb-50c806ce2aae",
+      "score": 3,
+      "content": "Ổn, nhưng có chỗ khác ngon hơn"
+    }
+  },
+  {
+    "id": "01a102dd-932e-74bd-86af-8c03d0470f5e",
+    "item_id": 147,
+    "item": {
+      "id": 147,
+      "uuid": "01a0a917-e518-787f-922a-cc0686806efb",
+      "item_name": "Áo hoodie nỉ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Uniqlo Đồng Khởi",
+      "created_at": "2026-09-16T14:21:50+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "L",
+      "color": "Xám",
+      "brand": "Uniqlo"
+    },
+    "time": "2026-10-04T00:43:57+07:00",
+    "review": {
+      "id": "01a108c5-9c3a-7a53-8c94-1d4262e03dd6",
+      "history_id": "01a102dd-932e-74bd-86af-8c03d0470f5e",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a0eddc-bfc4-7413-8141-82a253853900",
+    "item_id": 146,
+    "item": {
+      "id": 146,
+      "uuid": "01a0a874-ba6d-7b2b-ae44-43770c59237f",
+      "item_name": "Tai nghe không dây",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "CellphoneS",
+      "created_at": "2026-09-16T11:23:37+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "category": "Điện tử",
+      "notes": "Chống ồn"
+    },
+    "time": "2026-09-29T22:51:02+07:00",
+    "review": null
+  },
+  {
+    "id": "01a0d8c9-0a55-7d71-85e8-f721e3012e25",
+    "item_id": 145,
+    "item": {
+      "id": 145,
+      "uuid": "01a0b7e6-2426-7025-a5f7-1bd55d7f8476",
+      "item_name": "Túi tote canvas",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/611717932",
+      "shop_name": "Shopee",
+      "created_at": "2026-09-19T11:21:48+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": null,
+      "color": "Be",
+      "brand": "Local Brand"
+    },
+    "time": "2026-09-25T20:37:29+07:00",
+    "review": {
+      "id": "01a0da15-6b0b-738e-8f45-022b24dcac35",
+      "history_id": "01a0d8c9-0a55-7d71-85e8-f721e3012e25",
+      "score": 2,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a0d224-f7d0-71d4-a877-0c03b01aedfc",
+    "item_id": 144,
+    "item": {
+      "id": 144,
+      "uuid": "01a070e0-ec8c-71d8-b208-c766bd328e8b",
+      "item_name": "Matcha latte",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Katinat",
+      "created_at": "2026-09-05T16:23:03+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": "Sữa yến mạch",
+      "toppings": [
+        "kem cheese"
+      ]
+    },
+    "time": "2026-09-24T13:40:33+07:00",
+    "review": {
+      "id": "01a0dc45-e4f7-7f8a-8c01-dd1c07cef7b1",
+      "history_id": "01a0d224-f7d0-71d4-a877-0c03b01aedfc",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a0d168-8d7f-75cf-9b2d-cfad759a5eb1",
+    "item_id": 143,
+    "item": {
+      "id": 143,
+      "uuid": "01a0be19-571e-76c3-9ed2-58fefdeac4b1",
+      "item_name": "Áo hoodie nỉ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Uniqlo Đồng Khởi",
+      "created_at": "2026-09-20T16:15:26+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "L",
+      "color": "Xám",
+      "brand": "Uniqlo"
+    },
+    "time": "2026-09-24T10:14:45+07:00",
+    "review": {
+      "id": "01a0d7f8-5293-7f2b-af64-2b5f70c313a5",
+      "history_id": "01a0d168-8d7f-75cf-9b2d-cfad759a5eb1",
+      "score": 5,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a0bd45-eed5-7073-81ba-d5e1542a6174",
+    "item_id": 142,
+    "item": {
+      "id": 142,
+      "uuid": "01a08fc0-894e-7255-9312-a6cde66f0182",
+      "item_name": "Matcha latte",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Katinat",
+      "created_at": "2026-09-11T16:15:55+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-09-20T21:00:00+07:00",
+      "buy_at": "2026-09-20T12:03:32+07:00",
+      "sugar": "50%",
+      "size": "M",
+      "notes": "Sữa yến mạch",
+      "toppings": [
+        "kem cheese"
+      ]
+    },
+    "time": "2026-09-20T12:24:32+07:00",
+    "review": {
+      "id": "01a0bf7f-c3db-73d8-abb0-f862d780f5c8",
+      "history_id": "01a0bd45-eed5-7073-81ba-d5e1542a6174",
+      "score": 5,
+      "content": "Hoàn hảo, không chê được gì"
+    }
+  },
+  {
+    "id": "01a0b712-7246-7276-ae0f-a7182f85b878",
+    "item_id": 141,
+    "item": {
+      "id": 141,
+      "uuid": "01a06b57-55f3-72b1-b511-3b5c20c3e9d5",
+      "item_name": "Quần jean ống rộng",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Levi's Store",
+      "created_at": "2026-09-04T14:34:40+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": "2026-09-19T21:00:00+07:00",
+      "buy_at": null,
+      "size": "28",
+      "color": "Xanh nhạt",
+      "brand": "Levi's"
+    },
+    "time": "2026-09-19T07:30:34+07:00",
+    "review": {
+      "id": "01a0ba51-966e-7e35-9d39-610983bb5916",
+      "history_id": "01a0b712-7246-7276-ae0f-a7182f85b878",
+      "score": 4,
+      "content": "Thích lắm, cảm ơn anh nha 💕"
+    }
+  },
+  {
+    "id": "01a0713f-9700-74cb-8a1d-687247c624d6",
+    "item_id": 140,
+    "item": {
+      "id": 140,
+      "uuid": "01a02950-92e2-7aab-8d46-3d490fa2ccb6",
+      "item_name": "Áo sơ mi linen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "H&M Aeon",
+      "created_at": "2026-08-22T18:52:21+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "M",
+      "color": "Kem",
+      "brand": "H&M"
+    },
+    "time": "2026-09-05T18:06:27+07:00",
+    "review": null
+  },
+  {
+    "id": "01a06323-224c-7ff5-9d1e-70ff53650be2",
+    "item_id": 139,
+    "item": {
+      "id": 139,
+      "uuid": "01a005a1-ce6a-7b77-9fb1-dd4ec699d5ef",
+      "item_name": "Bánh tráng trộn",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Cô Thảo",
+      "created_at": "2026-08-15T20:34:45+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": null,
+      "size": null,
+      "notes": "Không cay",
+      "toppings": [
+        "trứng cút",
+        "bò khô"
+      ]
+    },
+    "time": "2026-09-03T00:20:42+07:00",
+    "review": {
+      "id": "01a068e9-6d75-7ba8-a732-10d0fad0ebf2",
+      "history_id": "01a06323-224c-7ff5-9d1e-70ff53650be2",
+      "score": 3,
+      "content": "Được, giao hơi lâu"
+    }
+  },
+  {
+    "id": "01a06235-d2d6-7ecc-9b3a-afeca16b28b1",
+    "item_id": 138,
+    "item": {
+      "id": 138,
+      "uuid": "019ff9de-7366-7873-9f1c-b9d5f5e3260f",
+      "item_name": "Gấu bông Capybara",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/658927984",
+      "shop_name": "Shopee",
+      "created_at": "2026-08-13T13:45:33+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "category": "Quà tặng",
+      "notes": "Loại 40cm"
+    },
+    "time": "2026-09-02T20:01:29+07:00",
+    "review": {
+      "id": "01a064da-b215-7db2-820e-89256dd229a4",
+      "history_id": "01a06235-d2d6-7ecc-9b3a-afeca16b28b1",
+      "score": 3,
+      "content": "Ổn, nhưng có chỗ khác ngon hơn"
+    }
+  },
+  {
+    "id": "01a05398-45ec-7da4-9739-50869dcd0c96",
+    "item_id": 137,
+    "item": {
+      "id": 137,
+      "uuid": "01a018d3-b7ae-7fb1-8c71-6f58dba6f478",
+      "item_name": "Pizza 4P's",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-08-19T14:02:03+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Pizza burrata",
+      "cuisine_type": "Ý",
+      "address": "43 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-08-30T19:15:00+07:00"
+    },
+    "time": "2026-08-30T23:54:43+07:00",
+    "review": {
+      "id": "01a05770-da55-78ff-bd25-af7c13fc42ee",
+      "history_id": "01a05398-45ec-7da4-9739-50869dcd0c96",
+      "score": 4,
+      "content": "Đẹp, mặc vừa in"
+    }
+  },
+  {
+    "id": "01a052bc-1134-7bb7-979d-81c58325ae95",
+    "item_id": 136,
+    "item": {
+      "id": 136,
+      "uuid": "01a0355c-2b35-732d-b753-71c6c1453dbc",
+      "item_name": "Áo hoodie nỉ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Uniqlo Đồng Khởi",
+      "created_at": "2026-08-25T03:00:27+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "L",
+      "color": "Xám",
+      "brand": "Uniqlo"
+    },
+    "time": "2026-08-30T19:54:12+07:00",
+    "review": {
+      "id": "01a05b2a-ffe1-7b9c-9086-a15edce937e4",
+      "history_id": "01a052bc-1134-7bb7-979d-81c58325ae95",
+      "score": 4,
+      "content": "Thích lắm, cảm ơn anh nha 💕"
+    }
+  },
+  {
+    "id": "01a049d9-9249-757d-975d-36c5a9bdbbeb",
+    "item_id": 135,
+    "item": {
+      "id": 135,
+      "uuid": "019fdeea-cded-7e93-b188-32d1fd07b7ca",
+      "item_name": "Giày Air Force 1",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Nike Store",
+      "created_at": "2026-08-08T08:09:17+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "42",
+      "color": "Trắng",
+      "brand": "Nike"
+    },
+    "time": "2026-08-29T02:29:50+07:00",
+    "review": {
+      "id": "01a05286-8564-77d6-a4c2-cc1c09662f39",
+      "history_id": "01a049d9-9249-757d-975d-36c5a9bdbbeb",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a03474-a631-7454-873e-f4721ba98d07",
+    "item_id": 134,
+    "item": {
+      "id": 134,
+      "uuid": "01a005da-6b37-796e-ae5f-364a8594bce1",
+      "item_name": "Quần jean ống rộng",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Levi's Store",
+      "created_at": "2026-08-15T21:36:35+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "28",
+      "color": "Xanh nhạt",
+      "brand": "Levi's"
+    },
+    "time": "2026-08-24T22:47:35+07:00",
+    "review": null
+  },
+  {
+    "id": "01a03380-2dd6-7187-bb8a-c7f102eaa918",
+    "item_id": 133,
+    "item": {
+      "id": 133,
+      "uuid": "019fdd72-0a76-79f5-86e3-897a83d335a6",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-08-08T01:17:46+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": "2026-08-26T21:00:00+07:00",
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-08-24T18:20:33+07:00",
+    "review": {
+      "id": "01a03d39-f74b-7ac6-9b28-31e134d4b99c",
+      "history_id": "01a03380-2dd6-7187-bb8a-c7f102eaa918",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "01a02a21-6ea1-7a90-9eef-616aa2e29977",
+    "item_id": 132,
+    "item": {
+      "id": 132,
+      "uuid": "019fcf9f-6632-7d9d-b9d7-62c9cd55c3de",
+      "item_name": "Bánh flan caramel",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Flan Hồng",
+      "created_at": "2026-08-05T08:52:37+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": "2026-08-22T22:21:29+07:00",
+      "sugar": null,
+      "size": null,
+      "notes": null,
+      "toppings": [
+        "cà phê"
+      ]
+    },
+    "time": "2026-08-22T22:40:29+07:00",
+    "review": null
+  },
+  {
+    "id": "01a00a2f-1264-76c8-b5bc-df3c8445d1a4",
+    "item_id": 131,
+    "item": {
+      "id": 131,
+      "uuid": "019fa62d-6aee-7d8e-ad9e-a62ae896319b",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-07-28T07:43:42+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-08-16T17:47:32+07:00",
+    "review": {
+      "id": "01a00d17-7b76-7215-808e-79eab3a2159e",
+      "history_id": "01a00a2f-1264-76c8-b5bc-df3c8445d1a4",
+      "score": 4,
+      "content": "Thích lắm, cảm ơn anh nha 💕"
+    }
+  },
+  {
+    "id": "01a00578-9845-74b1-8495-c05b1f8c686d",
+    "item_id": 130,
+    "item": {
+      "id": 130,
+      "uuid": "019fe710-a51a-744a-a07a-ffad8b8cc88a",
+      "item_name": "Sinh tố bơ",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Sinh Tố 142",
+      "created_at": "2026-08-09T22:07:35+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "30%",
+      "size": "L",
+      "notes": "Thêm sữa đặc",
+      "toppings": []
+    },
+    "time": "2026-08-15T19:49:44+07:00",
+    "review": {
+      "id": "01a005e7-9ade-7ac9-9444-7a8fb76a1294",
+      "history_id": "01a00578-9845-74b1-8495-c05b1f8c686d",
+      "score": 5,
+      "content": "Hoàn hảo, không chê được gì"
+    }
+  },
+  {
+    "id": "01a00394-a4ef-7541-8483-55956e696346",
+    "item_id": 129,
+    "item": {
+      "id": 129,
+      "uuid": "019fd260-ae50-7bc6-a826-c069910ab842",
+      "item_name": "Lẩu Thái Tomyum",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-08-05T21:42:59+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Lẩu hải sản",
+      "cuisine_type": "Thái",
+      "address": "45 Trần Thái Tông, Cầu Giấy, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-08-15T19:00:00+07:00"
+    },
+    "time": "2026-08-15T11:01:08+07:00",
+    "review": null
+  },
+  {
+    "id": "019ffdba-52a8-77e7-9b74-d2f6a8347fb4",
+    "item_id": 128,
+    "item": {
+      "id": 128,
+      "uuid": "019fcd7b-a0ca-7529-94eb-1e9f8fc37287",
+      "item_name": "Gogi House",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-08-04T22:54:19+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Ba chỉ bò nướng",
+      "cuisine_type": "Hàn",
+      "address": "Vincom Bà Triệu, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-08-14T19:30:00+07:00"
+    },
+    "time": "2026-08-14T07:44:34+07:00",
+    "review": {
+      "id": "01a00598-6140-7d4d-a8e2-17ff59a071a9",
+      "history_id": "019ffdba-52a8-77e7-9b74-d2f6a8347fb4",
+      "score": 5,
+      "content": "Đúng thứ em muốn luôn ❤️"
+    }
+  },
+  {
+    "id": "019ff99c-8084-7586-95d7-371deaed9e29",
+    "item_id": 127,
+    "item": {
+      "id": 127,
+      "uuid": "019f9704-dada-784e-8e3b-57101ef5d57c",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-07-25T09:05:05+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-08-13T12:33:31+07:00",
+    "review": {
+      "id": "01a001fa-9979-743d-8fe0-f36ec72877b1",
+      "history_id": "019ff99c-8084-7586-95d7-371deaed9e29",
+      "score": 5,
+      "content": "Tuyệt vời, yêu anh nhất 🥰"
+    }
+  },
+  {
+    "id": "019ff542-fd63-73fa-9c2a-2dc0997898f0",
+    "item_id": 126,
+    "item": {
+      "id": 126,
+      "uuid": "019febf8-ec02-7880-b758-50f04d7a6404",
+      "item_name": "Phở Thìn",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-08-10T20:59:46+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Phở bò tái",
+      "cuisine_type": "Việt",
+      "address": "13 Lò Đúc, Hai Bà Trưng, Hà Nội",
+      "time_to_eat": "Sáng",
+      "schedule": "2026-08-12T08:00:00+07:00"
+    },
+    "time": "2026-08-12T16:17:16+07:00",
+    "review": {
+      "id": "019ffccd-e90b-79dd-8337-dda661963ad7",
+      "history_id": "019ff542-fd63-73fa-9c2a-2dc0997898f0",
+      "score": 5,
+      "content": ""
+    }
+  },
+  {
+    "id": "019fed4f-1668-7aae-83d6-877d1ddfe2b6",
+    "item_id": 125,
+    "item": {
+      "id": 125,
+      "uuid": "019fb43d-2836-78a1-908e-5b362dfbc7b2",
+      "item_name": "Sách 'Hiểu về trái tim'",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Fahasa",
+      "created_at": "2026-07-31T01:15:34+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-08-11T21:00:00+07:00",
+      "buy_at": null,
+      "category": "Sách",
+      "notes": null
+    },
+    "time": "2026-08-11T03:13:31+07:00",
+    "review": null
+  },
+  {
+    "id": "019fe0a0-221c-7c5b-8fe7-a42a5b0c691d",
+    "item_id": 124,
+    "item": {
+      "id": 124,
+      "uuid": "019fca21-27b1-7026-a13b-b87bbf3b9167",
+      "item_name": "Trà đào cam sả",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Highlands Coffee",
+      "created_at": "2026-08-04T07:16:38+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": null,
+      "toppings": [
+        "thạch đào"
+      ]
+    },
+    "time": "2026-08-08T16:06:58+07:00",
+    "review": null
+  },
+  {
+    "id": "019fc956-05ed-74f5-82ed-ffa98c285417",
+    "item_id": 123,
+    "item": {
+      "id": 123,
+      "uuid": "019f60de-0ec9-7244-95e5-bc121adc2207",
+      "item_name": "Ốp lưng điện thoại",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/886597408",
+      "shop_name": "Shopee",
+      "created_at": "2026-07-14T20:43:13+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "category": "Phụ kiện",
+      "notes": "iPhone 16"
+    },
+    "time": "2026-08-04T03:34:45+07:00",
+    "review": {
+      "id": "019fcb2f-bf88-78a9-8b98-3f0b4afc59d6",
+      "history_id": "019fc956-05ed-74f5-82ed-ffa98c285417",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "019fc0fd-0bbf-7e77-bfb2-18ea19cada68",
+    "item_id": 122,
+    "item": {
+      "id": 122,
+      "uuid": "019f7af0-dfb8-75f5-8c8d-a302158e9c4b",
+      "item_name": "Matcha latte",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Katinat",
+      "created_at": "2026-07-19T22:13:54+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": "Sữa yến mạch",
+      "toppings": [
+        "kem cheese"
+      ]
+    },
+    "time": "2026-08-02T12:40:36+07:00",
+    "review": {
+      "id": "019fcad6-fc45-7f6a-89fa-a7fb616dd027",
+      "history_id": "019fc0fd-0bbf-7e77-bfb2-18ea19cada68",
+      "score": 4,
+      "content": "Thích lắm, cảm ơn anh nha 💕"
+    }
+  },
+  {
+    "id": "019fa399-36bf-7d05-9abc-12f8f35031ce",
+    "item_id": 121,
+    "item": {
+      "id": 121,
+      "uuid": "019f5eb9-06f0-7e4d-bc1f-9183275e1a38",
+      "item_name": "Sushi Hokkaido Sachi",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-07-14T10:43:32+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Sashimi cá hồi",
+      "cuisine_type": "Nhật",
+      "address": "Lotte Center, Ba Đình, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-07-27T19:00:00+07:00"
+    },
+    "time": "2026-07-27T19:42:35+07:00",
+    "review": null
+  },
+  {
+    "id": "019fa12f-da44-7dc5-97fb-eeeb469855d2",
+    "item_id": 120,
+    "item": {
+      "id": 120,
+      "uuid": "019f3ef5-9043-7f9e-b50f-9e6c6629bc24",
+      "item_name": "Trà đào cam sả",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Highlands Coffee",
+      "created_at": "2026-07-08T06:41:48+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": null,
+      "toppings": [
+        "thạch đào"
+      ]
+    },
+    "time": "2026-07-27T08:28:15+07:00",
+    "review": {
+      "id": "019fa6ef-a84d-7c9f-a5a3-4078795c2b9b",
+      "history_id": "019fa12f-da44-7dc5-97fb-eeeb469855d2",
+      "score": 4,
+      "content": "Đáng tiền ghê"
+    }
+  },
+  {
+    "id": "019f8a7c-6208-7a21-9738-f7c743e5a40a",
+    "item_id": 119,
+    "item": {
+      "id": 119,
+      "uuid": "019f2f47-20b3-7a64-89ba-f21c8d903c66",
+      "item_name": "Túi tote canvas",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/984531678",
+      "shop_name": "Shopee",
+      "created_at": "2026-07-05T05:36:58+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": null,
+      "color": "Be",
+      "brand": "Local Brand"
+    },
+    "time": "2026-07-22T22:40:35+07:00",
+    "review": {
+      "id": "019f8f72-2968-7adc-b8ca-6b4af85e9bea",
+      "history_id": "019f8a7c-6208-7a21-9738-f7c743e5a40a",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "019f64bf-5b36-725f-895e-f1d04145ff00",
+    "item_id": 118,
+    "item": {
+      "id": 118,
+      "uuid": "019f1673-0fd0-78e2-af0a-61488a94a6ef",
+      "item_name": "Giày Air Force 1",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Nike Store",
+      "created_at": "2026-06-30T09:54:27+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "42",
+      "color": "Trắng",
+      "brand": "Nike"
+    },
+    "time": "2026-07-15T14:48:10+07:00",
+    "review": {
+      "id": "019f69ca-8f34-750b-b55e-e054438973ec",
+      "history_id": "019f64bf-5b36-725f-895e-f1d04145ff00",
+      "score": 3,
+      "content": "Được, giao hơi lâu"
+    }
+  },
+  {
+    "id": "019f4bf3-d575-74d6-a7e2-7f8cf92af541",
+    "item_id": 117,
+    "item": {
+      "id": 117,
+      "uuid": "019f3c6c-eb2a-785c-a02c-b15a098db860",
+      "item_name": "Áo thun oversize",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/480148254",
+      "shop_name": "Shopee",
+      "created_at": "2026-07-07T18:53:18+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "M",
+      "color": "Trắng",
+      "brand": "Local Brand"
+    },
+    "time": "2026-07-10T19:14:58+07:00",
+    "review": {
+      "id": "019f53ff-c7a2-7c64-b835-6e48a99fb266",
+      "history_id": "019f4bf3-d575-74d6-a7e2-7f8cf92af541",
+      "score": 4,
+      "content": "Ngon, sẽ quay lại"
+    }
+  },
+  {
+    "id": "019f183e-8e16-71f7-aa75-e258ccc284da",
+    "item_id": 116,
+    "item": {
+      "id": 116,
+      "uuid": "019f132b-d787-74a1-949e-cc0ab1ff38d8",
+      "item_name": "Túi tote canvas",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/880746286",
+      "shop_name": "Shopee",
+      "created_at": "2026-06-29T18:37:48+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": null,
+      "color": "Be",
+      "brand": "Local Brand"
+    },
+    "time": "2026-06-30T18:16:20+07:00",
+    "review": {
+      "id": "019f1ded-385f-78f8-b28b-f8ae57ad057d",
+      "history_id": "019f183e-8e16-71f7-aa75-e258ccc284da",
+      "score": 4,
+      "content": "Thích lắm, cảm ơn anh nha 💕"
+    }
+  },
+  {
+    "id": "019ef462-2372-7fa9-ad16-75c1767187fd",
+    "item_id": 115,
+    "item": {
+      "id": 115,
+      "uuid": "019e902e-7d2b-7372-9b97-d72a50e98d6d",
+      "item_name": "Pizza 4P's",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": null,
+      "created_at": "2026-06-04T08:10:26+07:00",
+      "item_type": "restaurant",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "main_food": "Pizza burrata",
+      "cuisine_type": "Ý",
+      "address": "43 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+      "time_to_eat": "Tối",
+      "schedule": "2026-06-23T19:30:00+07:00"
+    },
+    "time": "2026-06-23T19:08:52+07:00",
+    "review": {
+      "id": "019ef885-81e6-75b3-911a-d49df272c2ef",
+      "history_id": "019ef462-2372-7fa9-ad16-75c1767187fd",
+      "score": 5,
+      "content": "Đúng thứ em muốn luôn ❤️"
+    }
+  },
+  {
+    "id": "019eecbe-de62-78fa-af92-53851807dfaf",
+    "item_id": 114,
+    "item": {
+      "id": 114,
+      "uuid": "019ee88a-ac25-705c-bc37-bb0118b0f10e",
+      "item_name": "Nến thơm vanilla",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Tiki",
+      "created_at": "2026-06-21T11:57:42+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "category": "Đồ trang trí",
+      "notes": null
+    },
+    "time": "2026-06-22T07:33:12+07:00",
+    "review": {
+      "id": "019ef07e-37cb-79b5-b4bf-589bc79e23da",
+      "history_id": "019eecbe-de62-78fa-af92-53851807dfaf",
+      "score": 4,
+      "content": ""
+    }
+  },
+  {
+    "id": "019ee057-aedf-7694-838d-04fb1018d7f5",
+    "item_id": 113,
+    "item": {
+      "id": 113,
+      "uuid": "019e9b3f-8da9-746d-9044-df5c81b2499e",
+      "item_name": "Sinh tố bơ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Sinh Tố 142",
+      "created_at": "2026-06-06T11:44:54+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-06-22T21:00:00+07:00",
+      "buy_at": "2026-06-19T21:24:03+07:00",
+      "sugar": "30%",
+      "size": "L",
+      "notes": "Thêm sữa đặc",
+      "toppings": []
+    },
+    "time": "2026-06-19T21:45:03+07:00",
+    "review": null
+  },
+  {
+    "id": "019ecfd6-3049-7ab9-84a2-3f659015b7c2",
+    "item_id": 112,
+    "item": {
+      "id": 112,
+      "uuid": "019e9295-c2b6-736e-bb20-e1d5916b2b37",
+      "item_name": "Giày Air Force 1",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Nike Store",
+      "created_at": "2026-06-04T19:22:28+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "42",
+      "color": "Trắng",
+      "brand": "Nike"
+    },
+    "time": "2026-06-16T16:49:41+07:00",
+    "review": {
+      "id": "019ed1c7-50ea-7c24-8f78-15f2af3e7dd9",
+      "history_id": "019ecfd6-3049-7ab9-84a2-3f659015b7c2",
+      "score": 5,
+      "content": ""
+    }
+  },
+  {
+    "id": "019ece82-1260-7f60-aeb5-2387ab9f4430",
+    "item_id": 111,
+    "item": {
+      "id": 111,
+      "uuid": "019e87c4-875b-7c8a-8b89-0fec6872d96b",
+      "item_name": "Áo thun oversize",
+      "quantity": 1,
+      "buy_url": "https://shopee.vn/product/995022427",
+      "shop_name": "Shopee",
+      "created_at": "2026-06-02T16:57:44+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "size": "M",
+      "color": "Trắng",
+      "brand": "Local Brand"
+    },
+    "time": "2026-06-16T10:38:11+07:00",
+    "review": {
+      "id": "019ed463-f96f-789f-8ab3-9a0792845dae",
+      "history_id": "019ece82-1260-7f60-aeb5-2387ab9f4430",
+      "score": 4,
+      "content": "Đẹp, mặc vừa in"
+    }
+  },
+  {
+    "id": "019ec084-cdb7-7499-aa6d-c402d0a3727d",
+    "item_id": 110,
+    "item": {
+      "id": 110,
+      "uuid": "019eb5a3-c30b-7580-afec-42754e0e8896",
+      "item_name": "Bánh tráng trộn",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Cô Thảo",
+      "created_at": "2026-06-11T14:44:28+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": null,
+      "size": null,
+      "notes": "Không cay",
+      "toppings": [
+        "trứng cút",
+        "bò khô"
+      ]
+    },
+    "time": "2026-06-13T17:26:29+07:00",
+    "review": {
+      "id": "019ec8f6-dde7-73b0-b6de-6548d90e013a",
+      "history_id": "019ec084-cdb7-7499-aa6d-c402d0a3727d",
+      "score": 4,
+      "content": "Đẹp, mặc vừa in"
+    }
+  },
+  {
+    "id": "019e6983-29e7-7e1f-8910-8f8937fe43eb",
+    "item_id": 109,
+    "item": {
+      "id": 109,
+      "uuid": "019e5308-b8da-7e0a-adba-fed0b600860c",
+      "item_name": "Áo sơ mi linen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "H&M Aeon",
+      "created_at": "2026-05-23T11:12:21+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": "2026-05-29T21:00:00+07:00",
+      "buy_at": null,
+      "size": "M",
+      "color": "Kem",
+      "brand": "H&M"
+    },
+    "time": "2026-05-27T19:57:44+07:00",
+    "review": {
+      "id": "019e6b58-309e-763c-af9e-09c9d828f123",
+      "history_id": "019e6983-29e7-7e1f-8910-8f8937fe43eb",
+      "score": 3,
+      "content": ""
+    }
+  },
+  {
+    "id": "019e5eee-2a6c-7991-b575-0c2b561f8bfe",
+    "item_id": 108,
+    "item": {
+      "id": 108,
+      "uuid": "019e2b18-f29d-72bb-8e10-75039e5cf6e9",
+      "item_name": "Trà sữa trân châu đường đen",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Phúc Long",
+      "created_at": "2026-05-15T17:05:15+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "70%",
+      "size": "L",
+      "notes": "Ít đá",
+      "toppings": [
+        "trân châu đen"
+      ]
+    },
+    "time": "2026-05-25T18:38:47+07:00",
+    "review": {
+      "id": "019e5f99-e37c-7d6f-ae53-2f038b75d02a",
+      "history_id": "019e5eee-2a6c-7991-b575-0c2b561f8bfe",
+      "score": 5,
+      "content": "Quá đỉnh, mua lại liền!"
+    }
+  },
+  {
+    "id": "019e5c11-7824-7ef1-9a78-9b32a5721c6a",
+    "item_id": 107,
+    "item": {
+      "id": 107,
+      "uuid": "019e5800-5b3e-7e35-a3ac-4f141b2b980e",
+      "item_name": "Áo sơ mi linen",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "H&M Aeon",
+      "created_at": "2026-05-24T10:21:18+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-05-27T21:00:00+07:00",
+      "buy_at": null,
+      "size": "M",
+      "color": "Kem",
+      "brand": "H&M"
+    },
+    "time": "2026-05-25T05:18:29+07:00",
+    "review": {
+      "id": "019e6115-6508-7731-8dbd-6e02aecb9e68",
+      "history_id": "019e5c11-7824-7ef1-9a78-9b32a5721c6a",
+      "score": 3,
+      "content": "Được, giao hơi lâu"
+    }
+  },
+  {
+    "id": "019e55f3-4bdc-76ac-959d-6a384a6a03b3",
+    "item_id": 106,
+    "item": {
+      "id": 106,
+      "uuid": "019e0750-5bd3-7392-8bb9-c91222867c53",
+      "item_name": "Sinh tố bơ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Sinh Tố 142",
+      "created_at": "2026-05-08T18:19:27+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-05-25T21:00:00+07:00",
+      "buy_at": null,
+      "sugar": "30%",
+      "size": "L",
+      "notes": "Thêm sữa đặc",
+      "toppings": []
+    },
+    "time": "2026-05-24T00:47:48+07:00",
+    "review": {
+      "id": "019e5940-4418-7ced-a3f1-bbbc697b65cb",
+      "history_id": "019e55f3-4bdc-76ac-959d-6a384a6a03b3",
+      "score": 5,
+      "content": ""
+    }
+  },
+  {
+    "id": "019e4d46-3567-7f4e-8be4-0e7fc07991d4",
+    "item_id": 105,
+    "item": {
+      "id": 105,
+      "uuid": "019df267-639f-732f-8b34-8cea9c31b930",
+      "item_name": "Giày Air Force 1",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Nike Store",
+      "created_at": "2026-05-04T16:52:35+07:00",
+      "item_type": "clothes",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": "2026-05-24T21:00:00+07:00",
+      "buy_at": null,
+      "size": "42",
+      "color": "Trắng",
+      "brand": "Nike"
+    },
+    "time": "2026-05-22T08:21:47+07:00",
+    "review": {
+      "id": "019e4f0c-b330-7956-aa22-0078503dc86b",
+      "history_id": "019e4d46-3567-7f4e-8be4-0e7fc07991d4",
+      "score": 3,
+      "content": "Ổn, nhưng có chỗ khác ngon hơn"
+    }
+  },
+  {
+    "id": "019e3115-9b8e-7a60-9075-a5b0f0acdebe",
+    "item_id": 104,
+    "item": {
+      "id": 104,
+      "uuid": "019df81f-2a0f-7f73-ac06-43b173f29c6a",
+      "item_name": "Bánh flan caramel",
+      "quantity": 2,
+      "buy_url": null,
+      "shop_name": "Flan Hồng",
+      "created_at": "2026-05-05T19:31:25+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": null,
+      "size": null,
+      "notes": null,
+      "toppings": [
+        "cà phê"
+      ]
+    },
+    "time": "2026-05-16T20:59:20+07:00",
+    "review": {
+      "id": "019e32c6-67fe-7178-8397-a31dea9e7ab5",
+      "history_id": "019e3115-9b8e-7a60-9075-a5b0f0acdebe",
+      "score": 3,
+      "content": "Ổn, nhưng có chỗ khác ngon hơn"
+    }
+  },
+  {
+    "id": "019e13b3-2f88-7ea9-b528-ea79511070a7",
+    "item_id": 103,
+    "item": {
+      "id": 103,
+      "uuid": "019dc02e-ccc6-76f3-8ed6-6b447f45b096",
+      "item_name": "Matcha latte",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Katinat",
+      "created_at": "2026-04-24T22:49:45+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": null,
+      "sugar": "50%",
+      "size": "M",
+      "notes": "Sữa yến mạch",
+      "toppings": [
+        "kem cheese"
+      ]
+    },
+    "time": "2026-05-11T04:02:50+07:00",
+    "review": null
+  },
+  {
+    "id": "019dfa83-df61-7e1e-a7d8-3351265c28ea",
+    "item_id": 102,
+    "item": {
+      "id": 102,
+      "uuid": "019dae37-8b42-766f-a26b-524ace0d8d87",
+      "item_name": "Sinh tố bơ",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Sinh Tố 142",
+      "created_at": "2026-04-21T11:06:08+07:00",
+      "item_type": "food_and_drink",
+      "bought": true,
+      "wanted_by": 0,
+      "item_media_folder": null,
+      "owner": "lan",
+      "deadline_at": null,
+      "buy_at": "2026-05-06T06:33:39+07:00",
+      "sugar": "30%",
+      "size": "L",
+      "notes": "Thêm sữa đặc",
+      "toppings": []
+    },
+    "time": "2026-05-06T06:40:39+07:00",
+    "review": {
+      "id": "019e0414-02fd-7333-abe8-0fa95c24c1ae",
+      "history_id": "019dfa83-df61-7e1e-a7d8-3351265c28ea",
+      "score": 2,
+      "content": "Không hợp lắm"
+    }
+  },
+  {
+    "id": "019df9d5-3d78-774e-b361-8e1ca06d7a69",
+    "item_id": 101,
+    "item": {
+      "id": 101,
+      "uuid": "019dc9ec-ae49-7e25-bb6b-c3c62475263c",
+      "item_name": "Son kem lì",
+      "quantity": 1,
+      "buy_url": null,
+      "shop_name": "Hasaki",
+      "created_at": "2026-04-26T20:13:44+07:00",
+      "item_type": "others",
+      "bought": true,
+      "wanted_by": 1,
+      "item_media_folder": null,
+      "owner": "minh",
+      "deadline_at": "2026-05-08T21:00:00+07:00",
+      "buy_at": null,
+      "category": "Mỹ phẩm",
+      "notes": "Màu đỏ đất"
+    },
+    "time": "2026-05-06T03:29:54+07:00",
+    "review": {
+      "id": "019dfc94-3790-7ffa-ab74-fe5766eebc57",
+      "history_id": "019df9d5-3d78-774e-b361-8e1ca06d7a69",
+      "score": 2,
+      "content": ""
+    }
+  }
+]
